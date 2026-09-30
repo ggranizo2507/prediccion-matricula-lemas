@@ -176,7 +176,8 @@ def decidir_inclusion_c1(
 # --------------------------------------------------------------------------- #
 # 3. Reporte obligatorio por cohorte (v5, sección 6.3)
 # --------------------------------------------------------------------------- #
-EXCLUSIONES = ["en_proceso", "reserva_despues_t0", "terminales_excluidos", "confirmados_antes_t0"]
+EXCLUSIONES = ["sin_reserva", "pendientes", "estado_no_reconocido", "reserva_despues_t0",
+               "terminales_excluidos", "confirmados_antes_t0"]
 
 
 def reporte_por_cohorte(
