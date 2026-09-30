@@ -1,0 +1,21 @@
+# Versiones exactas con las que se verificó el proyecto (reproducibilidad total)
+# --- Datos ---
+pandas==3.0.2
+numpy==2.4.4
+openpyxl==3.1.5
+PyYAML==6.0.3
+# --- Modelado, optimización y explicabilidad ---
+scikit-learn==1.8.0
+optuna==5.0.0
+mlflow==3.16.1
+shap==0.52.0
+fairlearn==0.14.0
+joblib==1.5.3
+# --- Visualización e interfaz ---
+matplotlib==3.10.8
+seaborn==0.13.2
+plotly==7.1.0
+streamlit==1.64.0
+# --- Calidad ---
+pytest==9.1.1
+ruff==0.16.9

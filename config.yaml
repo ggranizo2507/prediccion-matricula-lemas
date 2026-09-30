@@ -1,0 +1,127 @@
+# =============================================================================
+# Configuración central · Predicción de matrícula y continuidad estudiantil
+# Todas las reglas del estudio viven aquí: el código no tiene fechas ni umbrales
+# escritos a mano. Cualquier cambio se registra en docs/planificacion.md.
+# =============================================================================
+
+proyecto:
+  nombre: "Predicción de matrícula y continuidad estudiantil - LEMAS"
+  semilla: 42
+
+rutas:
+  base_real: "data/raw/base_seud.csv"            # nunca se sube al repositorio
+  base_sintetica: "data/synthetic/base_sintetica.csv"
+  procesados: "data/processed"
+  modelos: "models"
+  figuras: "results/figures"
+  metricas: "results/metrics"
+  reportes: "results/reports"
+
+# Fuente de datos por defecto: "sintetica" (repositorio público) o "real" (solo en LEMAS)
+fuente_datos: "sintetica"
+
+# -----------------------------------------------------------------------------
+# Calendario. Cohorte = transición de un ciclo de origen al siguiente.
+# t0: corte de información (los predictores solo usan datos anteriores a t0).
+# H : cierre de la ventana de matrícula ordinaria (etiqueta).
+# -----------------------------------------------------------------------------
+calendario:
+  t0_mes_dia: [2, 20]     # 20 de febrero del año de destino
+  h_mes_dia: [4, 30]      # 30 de abril del año de destino
+
+# C1 es CONDICIONAL (Ficha técnica, 26-sep-2026): entra al entrenamiento solo si
+# supera la auditoría de comparabilidad frente a C2-C3 (ver sección auditoria).
+cohortes:
+  C1: {anio_origen: 2021, rol: entrenamiento}
+  C2: {anio_origen: 2022, rol: entrenamiento}
+  C3: {anio_origen: 2023, rol: entrenamiento}
+  C4: {anio_origen: 2024, rol: seleccion}
+  C5: {anio_origen: 2025, rol: prueba}    # se evalúa una sola vez
+
+# -----------------------------------------------------------------------------
+# Columnas de la base seudonimizada (nombres tal como vienen de LEMAS)
+# -----------------------------------------------------------------------------
+columnas:
+  anio_origen: "anoa"
+  sede: "Sede"
+  nivel: "Nivel"
+  paralelo: "Paralelo"
+  promedio: "P.Académico"
+  conducta: "P.Conducta"
+  fecha_pago: "fecha_pago_matricula"
+  reserva: "Reserva"
+  estado_reserva: "RColegio"
+  fecha_reserva: "Fecha Reserva"
+  tipo_reserva: "Tiempo"
+  beca: "beca"
+  atrasos: "# meses caído"
+  anio_ingreso: "anio_ingreso"
+  id_estudiante: "id_seudonimo"
+  id_familia: "id_familia_seudonimo"
+
+# -----------------------------------------------------------------------------
+# Población elegible en la foto t0
+# -----------------------------------------------------------------------------
+elegibilidad:
+  reserva_si: ["SI"]
+  estados_aprobados: ["Aprobar", "Aprobar extraordinaria"]
+  # Análisis de sensibilidad: repetir excluyendo aprobaciones que pudieron ser tardías
+  estados_sensibilidad: ["Aprobar"]
+  # Cursos sin continuidad en LEMAS (expresión regular buscada en el texto de Nivel).
+  # Ajustar con los valores reales que muestre el perfil de datos.
+  cursos_terminales_regex: "(?i)\\b(?:3(?:ro|ero|er)?|tercero)\\b\\.?\\s*(?:de\\s*)?(?:bgu|bachiller)"
+
+# Conducta: el sistema registra letras A-E (escala cualitativa vigente desde 2023;
+# 2021 y 2022 se convierten a letras antes de la extracción con la regla institucional).
+# Se codifica como escala ordenada: A=5 (mejor) ... E=1.
+conducta:
+  formato: "letras"
+  letras_a_ordinal: {A: 5, B: 4, C: 3, D: 2, E: 1}
+
+# -----------------------------------------------------------------------------
+# Auditoría obligatoria de Sprint 1 (Checklist SMART, 20-sep-2026):
+# conteo de eventos de no matrícula y comparabilidad de C1.
+# -----------------------------------------------------------------------------
+auditoria:
+  min_eventos_por_cohorte: 30     # casos de no matrícula mínimos para usar una cohorte
+  eventos_por_predictor: 10       # regla EPV para el conjunto de entrenamiento
+  umbral_smd: 0.20                # |diferencia estandarizada| que señala cambio relevante
+  tolerancia_precision_k: 0.02    # pérdida máxima aceptada en C4 al incluir C1 (v5, 5.3.4)
+  referencia_comparabilidad: [C2, C3, C4]   # cohortes contra las que se compara C1 (v5, 5.3.4)
+  configuraciones_entrenamiento:
+    con_C1: [C1, C2, C3]
+    sin_C1: [C2, C3]
+
+# Variables que el modelo tiene PROHIBIDO recibir (guardas anti-fuga)
+prohibidas_en_X:
+  - "fecha_pago_destino"
+  - "estado_reserva"
+  - "fecha_reserva"
+  - "y_no_matricula"
+  - "matricula_tardia"
+  - "id_estudiante"
+  - "id_familia"
+
+# -----------------------------------------------------------------------------
+# Capacidad de contacto: k por sede = promedio histórico (cohortes de
+# entrenamiento) de representantes con no matrícula en esa sede.
+# El personal se usa para verificar que k sea atendible.
+# -----------------------------------------------------------------------------
+capacidad:
+  regla_k: "promedio_entrenamiento_por_sede"
+  semanas_campania: 10
+  personal_por_sede:
+    "Mucho Lote 1": 6     # 5 secretarias + 1 admisiones
+    "Mucho Lote 2": 4     # 3 secretarias + 1 admisiones
+
+privacidad:
+  min_celda: 5            # supresión de celdas pequeñas en todo reporte público
+
+figuras:
+  dpi: 300                # requisito de la actividad de la semana 3
+
+sintetico:
+  estudiantes_por_anio: 1200
+  anios: [2021, 2022, 2023, 2024, 2025, 2026]
+  tasa_no_matricula: 0.12
+  desplazamiento_c1: 0.40   # +40 % de atrasos en C1: ejercita la auditoría de comparabilidad

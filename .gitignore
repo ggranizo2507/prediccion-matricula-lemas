@@ -1,0 +1,32 @@
+# ---- DATOS REALES: nunca se suben (LOPDP) ----
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*_seud.csv
+*.acta.json
+*.xlsx
+*.xls
+perfil_lemas.json
+# Claves de seudonimización
+*.key
+custodio/
+# Modelos entrenados con datos reales
+models/*_real*
+# Resultados individuales (solo se publican agregados)
+results/reports/*_individual*
+# ---- Entorno ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.ipynb_checkpoints/
+.pytest_cache/
+.ruff_cache/
+mlruns/
+mlartifacts/
+.DS_Store
+
+# Paquetes de figuras descargables
+figuras_*.zip
