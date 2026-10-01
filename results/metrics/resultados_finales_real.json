@@ -1,0 +1,186 @@
+{
+  "fuente": "real",
+  "sha256_sistema": "ab86463689d57108188d1dedead2057e614777caed66a7aab84bc9b1b31d69d7",
+  "k_por_sede": {
+    "Mucho Lote 1": 118,
+    "Mucho Lote 2": 47
+  },
+  "cohortes_entrenamiento": [
+    "C2",
+    "C3"
+  ],
+  "priorizacion": "D2 · señales administrativas",
+  "C4": [
+    {
+      "candidato": "D2 · señales administrativas",
+      "tipo": "regla",
+      "precision_k": 0.1758,
+      "lift_k": 1.9278,
+      "recall_k": 0.3053,
+      "pr_auc": 0.1367,
+      "roc_auc": 0.6008,
+      "brier": NaN
+    },
+    {
+      "candidato": "D · más atrasos primero",
+      "tipo": "regla",
+      "precision_k": 0.1697,
+      "lift_k": 1.8613,
+      "recall_k": 0.2947,
+      "pr_auc": 0.1117,
+      "roc_auc": 0.5707,
+      "brier": NaN
+    },
+    {
+      "candidato": "Logística híbrida (señales de D2 + variables académicas)",
+      "tipo": "hibrido",
+      "precision_k": 0.1394,
+      "lift_k": 1.5289,
+      "recall_k": 0.2421,
+      "pr_auc": 0.1252,
+      "roc_auc": 0.5886,
+      "brier": 0.2196
+    },
+    {
+      "candidato": "Regresión logística regularizada",
+      "tipo": "logistica",
+      "precision_k": 0.1273,
+      "lift_k": 1.396,
+      "recall_k": 0.2211,
+      "pr_auc": 0.1133,
+      "roc_auc": 0.534,
+      "brier": 0.0815
+    },
+    {
+      "candidato": "Gradient boosting (árboles, monotonía en atrasos)",
+      "tipo": "arboles",
+      "precision_k": 0.097,
+      "lift_k": 1.0636,
+      "recall_k": 0.1684,
+      "pr_auc": 0.1035,
+      "roc_auc": 0.5398,
+      "brier": 0.1997
+    }
+  ],
+  "C5": [
+    {
+      "sistema": "Logística híbrida (señales de D2 + variables académicas)",
+      "precision_k": 0.0667,
+      "lift_k": 0.9847,
+      "recall_k": 0.1486,
+      "pr_auc": 0.0884,
+      "roc_auc": 0.5455,
+      "brier": 0.0648,
+      "ic95_precision_k": [
+        0.0303,
+        0.103
+      ],
+      "ic95_lift_k": [
+        0.4665,
+        1.5218
+      ],
+      "ic95_recall_k": [
+        0.0704,
+        0.2297
+      ]
+    },
+    {
+      "sistema": "D · más atrasos primero",
+      "precision_k": 0.1152,
+      "lift_k": 1.7008,
+      "recall_k": 0.2568,
+      "pr_auc": 0.0942,
+      "roc_auc": 0.5734,
+      "brier": NaN,
+      "ic95_precision_k": [
+        0.0667,
+        0.1636
+      ],
+      "ic95_lift_k": [
+        1.0323,
+        2.2964
+      ],
+      "ic95_recall_k": [
+        0.1558,
+        0.3467
+      ]
+    },
+    {
+      "sistema": "D2 · señales administrativas",
+      "precision_k": 0.1333,
+      "lift_k": 1.9694,
+      "recall_k": 0.2973,
+      "pr_auc": 0.097,
+      "roc_auc": 0.5825,
+      "brier": NaN,
+      "ic95_precision_k": [
+        0.0788,
+        0.1818
+      ],
+      "ic95_lift_k": [
+        1.242,
+        2.5614
+      ],
+      "ic95_recall_k": [
+        0.1875,
+        0.3867
+      ]
+    },
+    {
+      "sistema": "A · selección al azar de k familias",
+      "precision_k": 0.073,
+      "lift_k": 1.0781,
+      "recall_k": 0.1627,
+      "pr_auc": 0.0736,
+      "roc_auc": 0.498,
+      "brier": NaN,
+      "ic95_precision_k": null,
+      "ic95_lift_k": null,
+      "ic95_recall_k": null
+    }
+  ],
+  "brier_C5": [
+    {
+      "linea_base": "R · si reservó, continúa",
+      "brier": 0.0695
+    },
+    {
+      "linea_base": "B0 · clase mayoritaria",
+      "brier": 0.0695
+    },
+    {
+      "linea_base": "B1 · tasa histórica (0.076)",
+      "brier": 0.0647
+    },
+    {
+      "linea_base": "Modelo calibrado · Logística híbrida (señales de D2 + variables académicas)",
+      "brier": 0.0648
+    }
+  ],
+  "mape_C5": {
+    "modelo": 0.0283,
+    "B1": 0.0278
+  },
+  "hiperparametros": {
+    "logistica": {
+      "conjunto": "completo",
+      "balanceado": false,
+      "C": 2.745026856683684,
+      "l1_ratio": 0.8669904130070579
+    },
+    "arboles": {
+      "conjunto": "completo",
+      "balanceado": true,
+      "learning_rate": 0.03509858574254279,
+      "max_depth": 3,
+      "max_leaf_nodes": 6,
+      "min_samples_leaf": 101,
+      "l2_regularization": 4.249411419942127,
+      "max_iter": 359
+    },
+    "hibrido": {
+      "balanceado": true,
+      "C": 9.013186751477164
+    }
+  }
+}
