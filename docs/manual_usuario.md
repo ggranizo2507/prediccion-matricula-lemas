@@ -22,7 +22,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 
 ## 3. Uso paso a paso (demostración)
 
-1. **Abra la aplicación** con el enlace del README. Arriba verá un aviso azul: *Modo demostración*.
+1. **Abra la aplicación:** [continuidad-matricula-lemas.streamlit.app](https://continuidad-matricula-lemas.streamlit.app/) (también enlazada en el README). Si estuvo inactiva, Streamlit puede tardar unos segundos en despertarla. Arriba verá un aviso azul: *Modo demostración*.
 2. **Cargue datos.** En la barra lateral pulse **▶️ Prueba con ejemplo**. Aparecerá *Datos: Ejemplo sintético*.
 3. **Revise los parámetros** en la barra lateral:
    - **Ciclo de origen:** el ciclo cuyas reservas se van a priorizar. Viene elegido el más reciente.

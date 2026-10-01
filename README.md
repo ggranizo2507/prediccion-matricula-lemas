@@ -8,7 +8,9 @@
 
 Sistema de IA que identifica, al **20 de febrero** de cada año, a las familias con reserva aprobada que podrían **no concretar la matrícula** antes del **30 de abril**. Entrega a Secretaría y Admisiones de la Unidad Educativa LEMAS una lista priorizada de contactos ajustada a su capacidad real y una proyección de matrícula por sede y subnivel. En la prueba final con datos reales, la priorización encontró **casi el doble** de familias que no se matricularon que una selección al azar (Lift@k = 1,97, IC 95 % [1,24; 2,56]).
 
-🔗 **Aplicación (demo con datos sintéticos):** *enlace de Streamlit Community Cloud (se agrega al desplegar)*
+🔗 **Aplicación (demo con datos sintéticos):** [continuidad-matricula-lemas.streamlit.app](https://continuidad-matricula-lemas.streamlit.app/)
+
+[![Abrir en Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://continuidad-matricula-lemas.streamlit.app/)
 
 > Proyecto integrador · Maestría en Inteligencia Artificial · Universidad de Especialidades Espíritu Santo (UEES), 2026.
 

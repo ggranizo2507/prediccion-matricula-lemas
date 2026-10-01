@@ -9,7 +9,7 @@ Este documento explica cómo se optimizaron los modelos, qué se obtuvo y qué s
 | Herramienta | **Optuna 5**, muestreador TPE con semilla 42 | Búsqueda bayesiana eficiente y reproducible |
 | Validación interna | Entrenar con **C2** y validar con **C3** | Respeta el orden temporal: el modelo nunca ve el futuro. C4 y C5 quedan fuera de la búsqueda |
 | Función objetivo | **PR-AUC** (precisión promedio) en C3 | Con alrededor de 80 eventos por cohorte, Precision@k es muy ruidosa como objetivo. La PR-AUC resume el orden completo y es estable |
-| Presupuesto | 60 trials por modelo | La curva de mejor valor se estabiliza antes del trial 40 (Figura 13) |
+| Presupuesto | 60 trials por modelo (180 en total) | La mejor PR-AUC se estabiliza antes del trial 30 en los tres modelos (Figura 13) |
 | Selección final | **Lift@k en C4** (desempate: PR-AUC), frente a las reglas D y D2 | La métrica principal del proyecto se mide en datos que no participaron en la búsqueda |
 | Reentrenamiento | El mejor conjunto de hiperparámetros se reentrena con C2+C3 | Usa todos los datos de entrenamiento disponibles |
 
@@ -39,7 +39,25 @@ Los rangos son **conservadores a propósito**: árboles poco profundos, hojas gr
 | Logística híbrida | — | 1,53 | Estable: brecha 0,000 |
 | *Referencia: regla D2* | — | *1,93* | — |
 
-La Figura 13 (`results/figures/real_13_optuna.png`) y el archivo `optuna_historial_real.csv` muestran la evolución de la búsqueda.
+### Evolución de la búsqueda (validación interna C2 → C3, datos reales)
+
+![Figura 13. Optimización con Optuna](img/real_13_optuna.png)
+
+| Modelo | PR-AUC mínima | Mediana | Máxima (trial) | Llega cerca del máximo en |
+|---|---|---|---|---|
+| Regresión logística | 0,062 | 0,102 | **0,106** (52) | trial 5 |
+| Gradient boosting | 0,067 | 0,084 | 0,089 (28) | trial 28 |
+| Logística híbrida | 0,084 | 0,087 | 0,088 (10) | trial 3 |
+
+*Referencia: la tasa de no matrícula de C3 es 0,062, que es la PR-AUC de un modelo sin capacidad de ordenar.*
+
+**Lectura:**
+- **La regresión logística** fue la que más mejoró con la búsqueda, de 0,062 a 0,106. Sus valores mínimos (0,062) corresponden a regularización muy fuerte (`C` < 0,02), que reduce el modelo a la tasa base. Los mejores trials usan poca regularización, mezcla L1/L2 alta, todas las variables y **sin balanceo** (mediana 0,102 frente a 0,095 con balanceo).
+- **El gradient boosting** necesitó más trials (mejor en el 28) y prefiere hojas grandes (`min_samples_leaf` ≈ 100) y el conjunto completo (mediana 0,084 frente a 0,077 sin `curso`). Aun su mejor valor queda por debajo de la logística.
+- **La logística híbrida** casi no cambia con `C` (0,084 a 0,088): sus variables son fijas y pocas. El balanceo ayuda (0,087 frente a 0,084).
+- **El orden de los modelos cambió de C3 a C4:** en la validación interna ganó la logística regularizada (0,106), pero en C4 fue mejor la híbrida (Lift@k 1,53 frente a 1,40). Esta inestabilidad entre cohortes es la razón principal para seleccionar en una cohorte distinta (C4) y no confiar solo en la búsqueda.
+
+Archivo completo de los 180 trials: `results/metrics/optuna_historial_real.csv`. Contiene hiperparámetros y PR-AUC, sin datos de estudiantes.
 
 ## 3. Análisis: ¿por qué la optimización no mejoró la priorización?
 
