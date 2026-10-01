@@ -140,7 +140,15 @@ with st.sidebar:
     for sede, k in SISTEMA.k_por_sede.items():
         k_editado[sede] = st.number_input(
             sede, min_value=1, max_value=2000, value=int(k), step=1,
-            help="Valor aprobado: 2 × el promedio histórico de familias con no matrícula.")
+            help="Valor aprobado: 2 × el promedio histórico (ciclos de entrenamiento) de "
+                 "familias con no matrícula. Representa la capacidad de contacto de la sede, "
+                 "por eso no cambia al elegir otro ciclo; ajústelo si cambia el personal.")
+    st.caption("k es la capacidad de contacto: se calcula una vez con los ciclos de "
+               "entrenamiento y no depende del ciclo elegido.")
+    if anio != ciclo_por_defecto(BASE):
+        st.warning("Ciclo histórico: el resultado es retrospectivo. Los ciclos de "
+                   "entrenamiento y selección ya se usaron para ajustar el sistema, así que "
+                   "no equivale a una predicción nueva.", icon="🕰️")
     st.caption(SISTEMA.descripcion)
 
 tab_lista, tab_proy, tab_estudiante, tab_acerca = st.tabs(
