@@ -256,3 +256,40 @@ def test_alias_anoaa_y_fecha_se_unifican(config, cohorte_c1):
     assert base["fecha_reserva"].notna().all()
     tabla, _ = construir_cohorte(base, cohorte_c1, config)
     assert tabla["y_no_matricula"].tolist() == [0]
+
+
+@pytest.mark.parametrize(("texto", "esperado"), [
+    ("Segundo Grado EGB", "Segundo Grado"),
+    ("Segundo Grado", "Segundo Grado"),
+    ("Primer Curso", "Primero de bachillerato"),
+    ("Tercer Curso", "Tercero de bachillerato"),
+    ("Tercero de bachillerato", "Tercero de bachillerato"),
+    ("Inicial 2", "Inicial 2"),
+    ("", "SIN_DATO"),
+])
+def test_normalizar_curso_unifica_formatos(texto, esperado):
+    from src.data_processing import normalizar_curso
+    assert normalizar_curso(texto) == esperado
+
+
+def test_tercer_curso_es_terminal(config, cohorte_c1):
+    filas = [_fila(2021, "E1", "F1", "2021-03-01", nivel="Tercer Curso A - Bachillerato"),
+             _fila(2021, "E2", "F2", "2021-03-01",
+                   nivel="Tercer Grado EGB A - Educación General Básica"),
+             _fila(2022, "E2", "F2", "2022-03-01")]
+    base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
+    tabla, reporte = construir_cohorte(base, cohorte_c1, config)
+    assert set(tabla["id_estudiante"]) == {"E2"} and reporte["terminales_excluidos"] == 1
+
+
+def test_representante_atipico_se_individualiza(config, cohorte_c1):
+    maximo = config["familias"]["max_estudiantes_por_representante"]
+    filas = [_fila(2021, f"E{i}", "GEN", "2021-03-01") for i in range(maximo + 1)]
+    filas += [_fila(2021, "H1", "F1", "2021-03-01"), _fila(2021, "H2", "F1", "2021-03-01"),
+              _fila(2022, "H1", "F1", "2022-03-01")]
+    base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
+    assert base["representante_atipico"].sum() == maximo + 1
+    assert base.loc[base["representante_atipico"] == 1, "id_familia"].nunique() == maximo + 1
+    tabla, _ = construir_cohorte(base, cohorte_c1, config)
+    hermanos = tabla.set_index("id_estudiante")["hermanos_lemas"]
+    assert hermanos["E0"] == 0 and hermanos["H1"] == 1

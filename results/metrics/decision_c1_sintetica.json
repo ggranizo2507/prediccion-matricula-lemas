@@ -1,0 +1,43 @@
+{
+  "fuente": "sintetica",
+  "incluir_C1": true,
+  "motivo": "Se incluye C1: Precision@k en C4 0.133 frente a 0.135 sin C1 (Δ = -0.002).",
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "robustez_bootstrap": {
+    "diferencia_media": -0.0049,
+    "ic95": [
+      -0.0266,
+      0.0107
+    ],
+    "repeticiones": 2000
+  },
+  "comparacion": [
+    {
+      "configuracion": "con_C1",
+      "cohortes": "C1+C2+C3",
+      "n_entrenamiento": 3401,
+      "eventos_entrenamiento": 291,
+      "precision_k_C4": 0.133,
+      "lift_k_C4": 1.399,
+      "recall_k_C4": 0.2551,
+      "pr_auc_C4": 0.1606,
+      "roc_auc_C4": 0.5909,
+      "brier_C4": 0.2188
+    },
+    {
+      "configuracion": "sin_C1",
+      "cohortes": "C2+C3",
+      "n_entrenamiento": 2284,
+      "eventos_entrenamiento": 208,
+      "precision_k_C4": 0.1353,
+      "lift_k_C4": 1.4231,
+      "recall_k_C4": 0.2857,
+      "pr_auc_C4": 0.1611,
+      "roc_auc_C4": 0.5805,
+      "brier_C4": 0.2297
+    }
+  ]
+}

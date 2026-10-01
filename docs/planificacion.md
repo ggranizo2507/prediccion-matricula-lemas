@@ -32,6 +32,15 @@
 | D24 | 30-sep-2026 | Se eliminan `Orden`, `saldo`, `deuda` y `statusp`; la columna de pago se llama `fecha_pago` | Equipo |
 | D25 | 30-sep-2026 | Datos disponibles de 2021–2022 a 2026–2027: fechas de pago, notas y becas de todos los años; `# meses caído` se calcula desde el registro mensual de pagos (recomendado: mayo a enero) | Equipo |
 | D26 | 30-sep-2026 | Encabezados distintos entre hojas: `anoaa` (2022–2026) se lee como `anoa` y `Fecha` (2022–2025) como `Fecha Reserva` (`alias_columnas` en `config.yaml`). La hoja 2026 solo aporta `fecha_pago`, porque es únicamente destino de C5 | Perfil de datos reales |
+| D27 | 30-sep-2026 | El curso se normaliza entre años: se quita "EGB" y "Primer/Segundo/Tercer Curso" pasa a "… de bachillerato" | Perfil de datos reales (88 textos de Nivel) |
+| D28 | 30-sep-2026 | El curso terminal (3.º de bachillerato) se detecta en el nivel o en el curso normalizado, para cubrir el formato "Tercer Curso" | Perfil de datos reales |
+| D29 | 30-sep-2026 | Un representante con más de 6 estudiantes en el año se trata como atípico: cada estudiante es su propio contacto y no cuenta como hermano | Figura 4 (un representante con 39 estudiantes) |
+| D30 | 30-sep-2026 | Referencias obligatorias en C4: azar (R), más atrasos primero (D), señales administrativas (D2) y regresión logística (B1). Se agrega un IC 95 % por bootstrap a la decisión sobre C1, como dato informativo | Equipo |
+| D31 | 30-sep-2026 | Base sintética calibrada con `perfil_lemas.json` (sedes, beca, promedio, conducta, atrasos; ~1500 estudiantes por año; tasa ≈ 8,5 %). Los parámetros agregados están en `data/synthetic/parametros_calibracion.json` | Fase 1 |
+| D32 | 01-oct-2026 | k por sede = **2 ×** el promedio histórico de representantes con no matrícula (`capacidad.multiplicador_k`), porque la capacidad de contacto supera con holgura el promedio. Se prioriza el recall | Equipo |
+| D33 | 01-oct-2026 | El representante con 39 estudiantes es una **cédula genérica** que se usa para familias extranjeras sin cédula ecuatoriana. Se confirma el tratamiento D29. `representante_atipico` **no** es predictor, porque equivaldría a usar la nacionalidad | Equipo |
+| D34 | 01-oct-2026 | La conversión de conducta 2022 a letras es correcta (18 % de B ese año); la variable se mantiene sin ajustes | Equipo |
+| D35 | 01-oct-2026 | Se confirma que la columna `Fecha` de 2022–2025 es la fecha en que el padre hace la reserva (= `Fecha Reserva`) | Equipo |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
@@ -48,3 +57,4 @@ La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_re
 | I7 | Proyecto | Canvas ausente | Resuelta: el Canvas volvió a subirse |
 | I8 | Canvas | Declara "cumple con todos los criterios SMART" junto a 25/31 | Pendiente |
 | I9 | v5 y Canvas | Algunas secciones aún citan t0, H y k como pendientes | Pendiente (menor) |
+| I10 | v5, sección 6.3 | La tabla del v5 debe actualizarse con las cifras reales cuando se vuelva a ejecutar el cuaderno 02 tras D27–D29 | Pendiente |

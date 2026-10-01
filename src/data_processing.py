@@ -105,6 +105,43 @@ def separar_nivel(nivel: str, paralelo: str | None = None) -> tuple[str, str]:
     return (izquierda or "SIN_DATO", derecha.strip() or "SIN_DATO")
 
 
+_CURSOS_BACHILLERATO = {"primer": "Primero", "segundo": "Segundo", "tercer": "Tercero"}
+
+
+def normalizar_curso(curso: str) -> str:
+    """Unifica los textos de curso que cambian entre años.
+
+    'Segundo Grado EGB' y 'Segundo Grado' → 'Segundo Grado';
+    'Tercer Curso' y 'Tercero de bachillerato' → 'Tercero de bachillerato'.
+    """
+    if not isinstance(curso, str) or not curso.strip() or curso == "SIN_DATO":
+        return "SIN_DATO"
+    texto = re.sub(r"\bEGB\b", "", curso, flags=re.IGNORECASE)
+    texto = " ".join(texto.split())
+    curso_bach = re.match(r"(?i)^(primer|segundo|tercer)o?\s+(?:curso|de\s+bachillerato)$", texto)
+    if curso_bach:
+        return f"{_CURSOS_BACHILLERATO[curso_bach.group(1).lower()]} de bachillerato"
+    return texto
+
+
+def marcar_representantes_atipicos(base: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Representantes con más estudiantes por año que el máximo configurado (cédula
+    genérica o institucional): cada estudiante pasa a ser su propio contacto."""
+    maximo = config.get("familias", {}).get("max_estudiantes_por_representante")
+    datos = base.copy()
+    datos["representante_atipico"] = 0
+    if not maximo:
+        return datos
+    tam = datos.groupby(["anio_origen", "id_familia"])["id_estudiante"].transform("nunique")
+    atipico = datos["id_familia"].notna() & (tam > maximo)
+    if atipico.any():
+        log.warning("%d filas tienen un representante con más de %d estudiantes en el año; "
+                    "se tratan como contactos individuales.", int(atipico.sum()), maximo)
+        datos.loc[atipico, "id_familia"] = "IND-" + datos.loc[atipico, "id_estudiante"].astype(str)
+        datos.loc[atipico, "representante_atipico"] = 1
+    return datos
+
+
 def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Renombra a nombres internos, tipa columnas y elimina duplicados."""
     df = unificar_alias(df, config.get("alias_columnas", {}))
@@ -147,7 +184,7 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         base["conducta"] = pd.to_numeric(base["conducta"], errors="coerce")
 
     partes = [separar_nivel(n, p) for n, p in zip(base["nivel"], base["paralelo"], strict=False)]
-    base["curso"] = [p[0] for p in partes]
+    base["curso"] = [normalizar_curso(p[0]) for p in partes]
     base["subnivel"] = [p[1] for p in partes]
 
     # Primero se quitan las filas sin llave; si no, todas las filas con año o
@@ -164,7 +201,8 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         base = base[~duplicados]
     log.info("Filas por año tras la limpieza: %s",
              base["anio_origen"].value_counts().sort_index().to_dict())
-    base = marcar_nuevos(base.reset_index(drop=True), config)
+    base = marcar_representantes_atipicos(base.reset_index(drop=True), config)
+    base = marcar_nuevos(base, config)
     return base
 
 
@@ -211,6 +249,13 @@ def _estado_pago_origen(fila: pd.Series, mes_dia_t0: tuple, mes_dia_h: tuple) ->
     return "en_plazo" if fila["fecha_pago"] <= cierre else "tardio"
 
 
+def es_curso_terminal(datos: pd.DataFrame, patron: str) -> pd.Series:
+    """Último curso de LEMAS (3.º de bachillerato) según el nivel o el curso normalizado."""
+    por_nivel = datos["nivel"].astype("string").str.contains(patron, regex=True, na=False)
+    por_curso = datos["curso"].astype("string").str.contains(patron, regex=True, na=False)
+    return por_nivel | por_curso
+
+
 def agregar_predictores(origen: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Deriva las variables del modelo a partir de la hoja del ciclo de origen."""
     datos = origen.copy()
@@ -248,8 +293,7 @@ def construir_cohorte(
         return pd.DataFrame(), {**reporte, "estado": "sin_destino"}
 
     origen = agregar_predictores(origen, config)
-    terminal_origen = origen["nivel"].str.contains(reglas["cursos_terminales_regex"],
-                                                   regex=True, na=False)
+    terminal_origen = es_curso_terminal(origen, reglas["cursos_terminales_regex"])
     categorias = origen["categoria_reserva"]
     reporte["reserva_si"] = int((categorias != "sin_reserva").sum())
     reporte["sin_reserva"] = int((categorias == "sin_reserva").sum())
@@ -262,12 +306,14 @@ def construir_cohorte(
         origen.loc[fuera, "id_estudiante"].isin(set(destino["id_estudiante"])).sum())
     paso = origen[categorias.isin(estados)]
     reporte["aprobados"] = len(paso)
+    if "representante_atipico" in paso:
+        reporte["representante_atipico"] = int(paso["representante_atipico"].sum())
 
     reserva_tardia = paso["fecha_reserva"].notna() & (paso["fecha_reserva"] >= cohorte.t0)
     reporte["reserva_despues_t0"] = int(reserva_tardia.sum())
     paso = paso[~reserva_tardia]
 
-    terminal = paso["nivel"].str.contains(reglas["cursos_terminales_regex"], regex=True, na=False)
+    terminal = es_curso_terminal(paso, reglas["cursos_terminales_regex"])
     reporte["terminales_excluidos"] = int(terminal.sum())
     paso = paso[~terminal].copy()
 

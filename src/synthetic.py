@@ -27,15 +27,15 @@ from src.utils import RAIZ, cargar_config, configurar_logging
 
 log = logging.getLogger("lemas.sintetico")
 
+# Nombres de curso y subnivel como aparecen en el sistema de LEMAS
 GRADOS = [
     ("Inicial 1", "Inicial"), ("Inicial 2", "Inicial"),
-    ("1ro EGB", "Preparatoria"),
-    ("2do EGB", "Básica Elemental"), ("3ro EGB", "Básica Elemental"),
-    ("4to EGB", "Básica Elemental"),
-    ("5to EGB", "Básica Media"), ("6to EGB", "Básica Media"), ("7mo EGB", "Básica Media"),
-    ("8vo EGB", "Básica Superior"), ("9no EGB", "Básica Superior"),
-    ("10mo EGB", "Básica Superior"),
-    ("1ro BGU", "BGU"), ("2do BGU", "BGU"), ("3ro BGU", "BGU"),
+    ("Primer Grado EGB", "Preparatoria"),
+    *[(f"{g} Grado EGB", "Educación General Básica") for g in
+      ("Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno",
+       "Décimo")],
+    ("Primero de bachillerato", "Bachillerato"), ("Segundo de bachillerato", "Bachillerato"),
+    ("Tercero de bachillerato", "Bachillerato"),
 ]
 ULTIMO_GRADO = len(GRADOS) - 1
 ESTADOS_HASTA_2023 = {"aprobada": ["Aprobar"], "extraordinaria": ["Aprobación extraordinaria"],
@@ -85,7 +85,8 @@ def calibrar_con_perfil(ruta: str | Path) -> dict:
     """Toma del perfil agregado solo los totales que existan; el resto queda por defecto."""
     parametros = dict(PARAMETROS_BASE)
     perfil = json.loads(Path(ruta).read_text(encoding="utf-8"))
-    columnas = next(iter(perfil["tablas"].values()))["columnas"]
+    tabla = next(iter(perfil["tablas"].values()))
+    columnas, filas = tabla["columnas"], tabla.get("filas")
 
     def frecuencias(nombre):
         info = columnas.get(nombre, {})
@@ -98,7 +99,8 @@ def calibrar_con_perfil(ruta: str | Path) -> dict:
     becas = frecuencias("beca")
     if becas:
         si = sum(v for k, v in becas.items() if k.upper() in {"SI", "1"})
-        parametros["tasa_beca"] = si / sum(becas.values())
+        # En LEMAS la beca vacía significa "sin beca": el denominador es el total de filas
+        parametros["tasa_beca"] = si / (filas or sum(becas.values()))
     atrasos = frecuencias("# meses caído")
     if atrasos:
         total = sum(atrasos.values())
@@ -123,7 +125,7 @@ def generar(
     cfg = config["sintetico"]
     anios, n_anio, tasa_obj = cfg["anios"], cfg["estudiantes_por_anio"], cfg["tasa_no_matricula"]
     sedes, pesos_sede = list(p["sedes"]), list(p["sedes"].values())
-    estres_escala = p["atrasos_media"] / 10
+    estres_escala = p["atrasos_media"] / 9
 
     familias: dict[str, dict] = {}
     estudiantes: list[dict] = []
@@ -145,7 +147,8 @@ def generar(
         if grado is None:
             grado = int(rng.choice(len(GRADOS), p=PESO_INGRESO / PESO_INGRESO.sum()))
         return {"id": _codigo(rng, "EST"), "familia": fid, "grado": grado,
-                "ingreso": anio, "habilidad": rng.normal(), "paralelo": rng.choice(["A", "B"])}
+                "ingreso": anio, "habilidad": rng.normal(),
+                "paralelo": rng.choice(["A", "B", "C", "D"], p=[0.42, 0.34, 0.21, 0.03])}
 
     # Población inicial: estudiantes que ya estaban antes de 2021
     for _ in range(n_anio):
@@ -169,7 +172,8 @@ def generar(
                 if est.get("tardio"):
                     pago = pd.Timestamp(anio, 5, 1) + pd.Timedelta(days=int(rng.integers(0, 40)))
             factor = factor_c1 if anio == anios[0] else 1.0
-            atrasos = int(rng.binomial(10, min(fam["estres"] * factor, 0.95)))
+            # Mayo a enero: como máximo 9 pensiones pagadas tarde antes de t0
+            atrasos = int(rng.binomial(9, min(fam["estres"] * factor, 0.95)))
             reserva = rng.random() < 0.97 - 0.5 * fam["estres"]
             u = rng.random()
             estado = ("pendiente" if u < 0.03 + 0.3 * fam["estres"] else
@@ -201,7 +205,7 @@ def generar(
                 "anio_ingreso": est["ingreso"] - 1, "id_seudonimo": est["id"],
                 "id_familia_seudonimo": est["familia"],
                 # Riesgo latente: supuesto plausible, NO estimado de datos reales
-                "_logit": (3.25 * (atrasos / 10 - estres_escala) - 0.45 * est["habilidad"]
+                "_logit": (3.25 * (atrasos / 9 - estres_escala) - 0.45 * est["habilidad"]
                            - 0.3 * fam["beca"] - 0.25 * min(anio - est["ingreso"], 6) / 6
                            + (1.2 if estado == "pendiente" else 0) + deriva[anio]),
                 "_reserva": reserva, "_terminal": est["grado"] == ULTIMO_GRADO,
@@ -250,11 +254,22 @@ def main(argv: list[str] | None = None) -> int:
     configurar_logging()
     parser = argparse.ArgumentParser(description="Genera la base sintética de LEMAS")
     parser.add_argument("--perfil", help="perfil_lemas.json para calibrar totales")
+    parser.add_argument("--parametros", help="JSON de parámetros ya calibrados (público)")
+    parser.add_argument("--guardar-parametros", help="Guarda los parámetros calibrados en JSON")
     parser.add_argument("--salida", help="Ruta del CSV (por defecto la de config.yaml)")
     args = parser.parse_args(argv)
 
     config = cargar_config()
-    parametros = calibrar_con_perfil(args.perfil) if args.perfil else None
+    if args.perfil:
+        parametros = calibrar_con_perfil(args.perfil)
+    elif args.parametros:
+        parametros = json.loads(Path(args.parametros).read_text(encoding="utf-8"))
+    else:
+        parametros = None
+    if args.guardar_parametros and parametros:
+        Path(args.guardar_parametros).write_text(
+            json.dumps(parametros, indent=2, ensure_ascii=False), encoding="utf-8")
+        log.info("Parámetros guardados en %s", args.guardar_parametros)
     base = generar(config, parametros)
     salida = Path(args.salida) if args.salida else RAIZ / config["rutas"]["base_sintetica"]
     salida.parent.mkdir(parents=True, exist_ok=True)
