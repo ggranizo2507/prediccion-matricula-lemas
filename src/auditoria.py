@@ -129,7 +129,9 @@ def comparar_configuraciones(dataset: pd.DataFrame, config: dict) -> pd.DataFram
         modelo = _modelo_referencia(semilla).fit(
             construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"])
         riesgo_entrenamiento = modelo.predict_proba(construir_matriz_x(entrenamiento))[:, 1]
-        k_por_sede = calcular_k_por_sede(consolidar_familias(entrenamiento, riesgo_entrenamiento))
+        k_por_sede = calcular_k_por_sede(
+            consolidar_familias(entrenamiento, riesgo_entrenamiento),
+            config["capacidad"].get("multiplicador_k", 1.0))
         riesgo = modelo.predict_proba(construir_matriz_x(seleccion))[:, 1]
         y = seleccion["y_no_matricula"].to_numpy()
         familias_c4 = consolidar_familias(seleccion, riesgo)
@@ -241,3 +243,94 @@ def sensibilidad_estados(base: pd.DataFrame, config: dict) -> pd.DataFrame:
     for col in [c for c in tabla.columns if c.startswith("estudiantes_")]:
         tabla[col] = tabla[col].fillna(0).astype(int)
     return tabla.reset_index()
+
+
+# --------------------------------------------------------------------------- #
+# 3. Referencias (líneas base) en la cohorte de selección
+# --------------------------------------------------------------------------- #
+def _puntaje_reglas(datos: pd.DataFrame) -> dict[str, np.ndarray]:
+    """Reglas sin aprendizaje que podría aplicar Secretaría con los datos de t0."""
+    atrasos = pd.to_numeric(datos["atrasos_pension"], errors="coerce").fillna(0).to_numpy()
+    tardio = (datos["pago_origen"] == "tardio").to_numpy().astype(float)
+    extra = pd.to_numeric(datos["reserva_extraordinaria"], errors="coerce").fillna(0).to_numpy()
+    return {
+        "D · más atrasos primero": atrasos,
+        # Prioridad lexicográfica: pago anterior tardío, luego reserva extraordinaria, luego atrasos
+        "D2 · señales administrativas": 100 * tardio + 20 * extra + atrasos,
+    }
+
+
+def evaluar_referencias(
+    dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
+    k_por_sede: dict[str, int], repeticiones_azar: int = 500,
+) -> pd.DataFrame:
+    """Compara en C4 (selección) el azar, las reglas D/D2 y la regresión logística base.
+
+    Todas usan el mismo k por sede y la misma consolidación por representante.
+    C5 no se utiliza.
+    """
+    semilla = config["proyecto"]["semilla"]
+    seleccion = dataset[dataset["rol"] == "seleccion"]
+    entrenamiento = dataset[dataset["cohorte"].isin(cohortes_entrenamiento)]
+    y = seleccion["y_no_matricula"].to_numpy()
+    filas = []
+
+    def _fila(nombre, riesgo, pr_auc=None):
+        total = precision_at_k_familiar(consolidar_familias(seleccion, riesgo), k_por_sede,
+                                        semilla).query("sede == 'TOTAL'").iloc[0]
+        filas.append({"referencia": nombre, "precision_k_C4": total["precision_k"],
+                      "lift_k_C4": total["lift_k"], "recall_k_C4": total["recall_k"],
+                      "pr_auc_C4": round(pr_auc if pr_auc is not None
+                                         else average_precision_score(y, riesgo), 4)})
+
+    rng = np.random.default_rng(semilla)
+    azar = [precision_at_k_familiar(consolidar_familias(seleccion, rng.random(len(seleccion))),
+                                    k_por_sede, semilla).query("sede == 'TOTAL'").iloc[0]
+            for _ in range(repeticiones_azar)]
+    filas.append({"referencia": "R · selección al azar",
+                  "precision_k_C4": round(float(np.mean([a["precision_k"] for a in azar])), 4),
+                  "lift_k_C4": round(float(np.mean([a["lift_k"] for a in azar])), 4),
+                  "recall_k_C4": round(float(np.mean([a["recall_k"] for a in azar])), 4),
+                  "pr_auc_C4": round(float(y.mean()), 4)})
+    for nombre, puntaje in _puntaje_reglas(seleccion).items():
+        _fila(nombre, puntaje)
+    modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
+                                             entrenamiento["y_no_matricula"])
+    _fila(f"B1 · regresión logística ({'+'.join(cohortes_entrenamiento)})",
+          modelo.predict_proba(construir_matriz_x(seleccion))[:, 1])
+    return pd.DataFrame(filas)
+
+
+def bootstrap_diferencia_c1(
+    dataset: pd.DataFrame, config: dict, k_por_sede: dict[str, int], repeticiones: int = 2000,
+) -> dict:
+    """IC 95 % de Precision@k(con C1) − Precision@k(sin C1) en C4, remuestreando
+    representantes de C4 por sede. Es informativo: la regla de decisión no cambia."""
+    semilla = config["proyecto"]["semilla"]
+    seleccion = dataset[dataset["rol"] == "seleccion"]
+    familias = {}
+    for nombre, cohortes in config["auditoria"]["configuraciones_entrenamiento"].items():
+        entrenamiento = dataset[dataset["cohorte"].isin(cohortes)]
+        modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
+                                                 entrenamiento["y_no_matricula"])
+        riesgo = modelo.predict_proba(construir_matriz_x(seleccion))[:, 1]
+        familias[nombre] = consolidar_familias(seleccion, riesgo).set_index("id_familia")
+    con, sin = familias["con_C1"], familias["sin_C1"].loc[familias["con_C1"].index]
+    rng = np.random.default_rng(semilla)
+    diferencias = []
+    for _ in range(repeticiones):
+        indices = np.concatenate([
+            rng.choice(np.flatnonzero(con["sede"].to_numpy() == sede),
+                       size=int((con["sede"] == sede).sum()), replace=True)
+            for sede in con["sede"].unique()])
+        muestra = []
+        for tabla in (con, sin):
+            remuestra = tabla.iloc[indices].reset_index(drop=True)
+            remuestra["id_familia"] = np.arange(len(remuestra))
+            total = precision_at_k_familiar(remuestra, k_por_sede, semilla)
+            muestra.append(total.query("sede == 'TOTAL'")["precision_k"].iloc[0])
+        diferencias.append(muestra[0] - muestra[1])
+    bajo, alto = np.percentile(diferencias, [2.5, 97.5])
+    return {"diferencia_media": round(float(np.mean(diferencias)), 4),
+            "ic95": [round(float(bajo), 4), round(float(alto), 4)],
+            "repeticiones": repeticiones}

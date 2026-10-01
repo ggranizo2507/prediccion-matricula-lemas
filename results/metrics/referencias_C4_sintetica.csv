@@ -1,0 +1,5 @@
+referencia,precision_k_C4,lift_k_C4,recall_k_C4,pr_auc_C4
+R · selección al azar,0.0963,1.0129,0.1847,0.0882
+D · más atrasos primero,0.1383,1.455,0.2653,0.1345
+D2 · señales administrativas,0.1011,1.0632,0.1939,0.095
+B1 · regresión logística (C1+C2+C3),0.133,1.399,0.2551,0.1606

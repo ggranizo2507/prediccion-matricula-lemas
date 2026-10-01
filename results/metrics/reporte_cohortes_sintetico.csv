@@ -1,6 +1,6 @@
-cohorte,origen_total,reserva_si,sin_reserva,pendientes,estado_no_reconocido,matriculados_sin_reserva_aprobada,aprobados,reserva_despues_t0,terminales_excluidos,confirmados_antes_t0,modelables,no_matricula,tardias,familias,familias_no_matricula,estado
-C1,1200,1061,139,73,0,88,988,10,69,0,909,97,8,759,95,ok
-C2,1200,1102,98,71,0,62,1031,10,51,0,970,109,19,831,108,ok
-C3,1200,1083,117,70,0,76,1013,8,41,0,964,111,16,859,109,ok
-C4,1200,1088,112,73,0,87,1015,10,65,0,940,101,16,864,100,ok
-C5,1200,1083,117,76,0,70,1007,14,56,0,937,104,21,866,104,ok
+cohorte,origen_total,reserva_si,sin_reserva,pendientes,estado_no_reconocido,matriculados_sin_reserva_aprobada,aprobados,representante_atipico,reserva_despues_t0,terminales_excluidos,confirmados_antes_t0,modelables,no_matricula,tardias,familias,familias_no_matricula,estado
+C1,1500,1320,180,106,0,117,1214,0,8,89,0,1117,83,9,932,76,ok
+C2,1500,1313,187,104,0,104,1209,0,10,74,0,1125,123,23,977,123,ok
+C3,1500,1324,176,97,0,105,1227,0,9,59,0,1159,85,10,1028,84,ok
+C4,1500,1311,189,100,0,109,1211,0,8,69,0,1134,100,13,1031,98,ok
+C5,1500,1353,147,99,0,114,1254,0,10,64,0,1180,88,12,1088,87,ok

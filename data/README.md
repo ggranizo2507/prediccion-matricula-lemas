@@ -33,7 +33,7 @@ LEMAS entrega un Excel con **una hoja por ciclo lectivo** y una fila por estudia
 | `fecha_pago` | Fecha del pago de la matrícula del ciclo `anoa`. Los antiguos pagan desde el 20 de febrero; los nuevos, antes | Etiqueta (en la hoja siguiente) y puntualidad del pago anterior (en la hoja de origen) |
 | `Reserva` | SI / NO / NO HIZO: la familia desea continuar | Filtro |
 | `RColegio` | Respuesta del colegio a la reserva. El texto varía por año y se normaliza a: aprobada, aprobada_extraordinaria, pendiente (en revisión o en proceso), sin_reserva (NO HIZO o vacío) | Filtro (no predictor) |
-| `Fecha Reserva` | Fecha y hora del formulario de reserva | Auditoría: se excluyen las reservas posteriores a t0 |
+| `Fecha Reserva` | Fecha y hora del formulario de reserva (en algunas hojas se llamó `Fecha`) | Auditoría: se excluyen las reservas posteriores a t0 |
 | `Tiempo` | ORDINARIA / EXTRAORDINARIA | Predictor |
 | `beca` | "SI" si tiene beca en `anoa`; vacío = sin beca (0) | Predictor y atributo de equidad |
 | `# meses caído` | Pensiones del ciclo pagadas después de la fecha tope de su mes, calculadas desde el registro de pagos (recomendado: solo mayo a enero) | Predictor |
@@ -43,7 +43,9 @@ LEMAS entrega un Excel con **una hoja por ciclo lectivo** y una fila por estudia
 
 ## Reglas del estudio
 - **t0 = 20 de febrero** y **H = 30 de abril** del año de destino (`config.yaml`).
-- **Elegibles:** reserva aprobada (ordinaria o extraordinaria), hecha antes de t0; curso distinto de 3.º de Bachillerato.
+- **Elegibles:** reserva aprobada (ordinaria o extraordinaria), hecha antes de t0; curso distinto de 3.º de Bachillerato (se reconoce como "Tercero de bachillerato" o como "Tercer Curso").
+- **Curso normalizado:** "Segundo Grado EGB" y "Segundo Grado" son el mismo curso; "Primer/Segundo/Tercer Curso" equivale a "Primero/Segundo/Tercero de bachillerato".
+- **Representante atípico:** si una misma cédula de representante tiene más de 6 estudiantes en un año, cada estudiante cuenta como su propio contacto (`representante_atipico = 1`).
 - **Estudiante nuevo en `anoa`:** no aparece en la hoja del año anterior. En la primera hoja (2021) se usa el pago de matrícula antes del 20 de febrero o un código del mismo año.
 - **Etiqueta `y_no_matricula`:** 1 si el estudiante no aparece en la hoja siguiente con pago entre t0 y H. Equivale a `1 − matricula_efectiva` del documento v5.
 - **C1 condicional:** se usa en el entrenamiento solo si supera la auditoría (eventos suficientes y sin pérdida de Precision@k en C4 frente a entrenar con C2–C3).
@@ -56,4 +58,4 @@ LEMAS entrega un Excel con **una hoja por ciclo lectivo** y una fila por estudia
 - La unidad de contacto es el representante: dos hermanos con distinto representante cuentan como dos contactos.
 
 ## Base sintética
-`base_sintetica.csv` tiene la columna `origen_datos = SINTETICO`. Para que la auditoría de comparabilidad tenga algo que detectar, C1 lleva un aumento artificial de atrasos en pensiones (`sintetico.desplazamiento_c1`). Sus relaciones entre variables son supuestos del generador; **las métricas obtenidas con ella no describen a LEMAS**.
+`base_sintetica.csv` se calibra con los totales agregados de `perfil_lemas.json` (`data/synthetic/parametros_calibracion.json`; para regenerarla: `python -m src.synthetic --parametros data/synthetic/parametros_calibracion.json`). Tiene la columna `origen_datos = SINTETICO`. Para que la auditoría de comparabilidad tenga algo que detectar, C1 lleva un aumento artificial de atrasos en pensiones (`sintetico.desplazamiento_c1`). Sus relaciones entre variables son supuestos del generador; **las métricas obtenidas con ella no describen a LEMAS**.

@@ -38,12 +38,16 @@ def consolidar_familias(
     return familias.reset_index().rename(columns={col_familia: "id_familia"})
 
 
-def calcular_k_por_sede(familias_entrenamiento: pd.DataFrame) -> dict[str, int]:
-    """Regla aprobada: k de cada sede = promedio, en las cohortes de entrenamiento,
-    de representantes con al menos un caso de no matrícula. Mínimo 1."""
+def calcular_k_por_sede(
+    familias_entrenamiento: pd.DataFrame, multiplicador: float = 1.0
+) -> dict[str, int]:
+    """Regla aprobada: k de cada sede = multiplicador × promedio, en las cohortes de
+    entrenamiento, de representantes con al menos un caso de no matrícula. Mínimo 1.
+    El multiplicador vive en config.yaml (capacidad.multiplicador_k)."""
     por_cohorte = familias_entrenamiento.groupby(["sede", "cohorte"])["evento"].sum()
     promedio = por_cohorte.groupby(level="sede").mean()
-    return {str(sede): max(int(round(valor)), 1) for sede, valor in promedio.items()}
+    return {str(sede): max(int(round(multiplicador * valor)), 1)
+            for sede, valor in promedio.items()}
 
 
 def verificar_capacidad(k_por_sede: dict[str, int], config: dict) -> pd.DataFrame:

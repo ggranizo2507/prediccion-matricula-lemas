@@ -83,7 +83,15 @@ elegibilidad:
   estados_sensibilidad: ["aprobada"]
   # Cursos sin continuidad en LEMAS (expresión regular buscada en el texto de Nivel).
   # Ajustar con los valores reales que muestre el perfil de datos.
-  cursos_terminales_regex: "(?i)\\b(?:3(?:ro|ero|er)?|tercero)\\b\\.?\\s*(?:de\\s*)?(?:bgu|bachiller)"
+  # Se aplica al curso ya normalizado ("Tercer Curso" y "Tercero de bachillerato" se
+  # unifican), así que cubre los dos formatos de texto que usa LEMAS.
+  cursos_terminales_regex: "(?i)\\b(?:3(?:ro|ero|er)?|tercer[oa]?)\\b.*\\b(?:bgu|bachiller)"
+
+# Representantes con demasiados estudiantes en un mismo año (p. ej., una cédula
+# genérica o institucional): no se usan para hermanos ni como unidad de contacto;
+# cada estudiante cuenta como su propio contacto y se reporta aparte.
+familias:
+  max_estudiantes_por_representante: 6
 
 # Conducta: el sistema registra letras A-E (escala cualitativa vigente desde 2023;
 # 2021 y 2022 se convierten a letras antes de la extracción con la regla institucional).
@@ -123,6 +131,9 @@ prohibidas_en_X:
 # -----------------------------------------------------------------------------
 capacidad:
   regla_k: "promedio_entrenamiento_por_sede"
+  # k = multiplicador × promedio histórico. El equipo eligió 2 (01-oct-2026): la
+  # capacidad de contacto supera con holgura el promedio y se prioriza cubrir más casos.
+  multiplicador_k: 2
   semanas_campania: 10
   personal_por_sede:
     "Mucho Lote 1": 6     # 5 secretarias + 1 admisiones
@@ -134,8 +145,11 @@ privacidad:
 figuras:
   dpi: 300                # requisito de la actividad de la semana 3
 
+# Calibrado con perfil_lemas.json (30-sep-2026): ~1500 estudiantes por año y tasa de
+# no matrícula de la población modelable ≈ 8 %. Solo totales agregados.
 sintetico:
-  estudiantes_por_anio: 1200
+  parametros: "data/synthetic/parametros_calibracion.json"
+  estudiantes_por_anio: 1500
   anios: [2021, 2022, 2023, 2024, 2025, 2026]
-  tasa_no_matricula: 0.12
+  tasa_no_matricula: 0.085
   desplazamiento_c1: 0.40   # +40 % de atrasos en C1: ejercita la auditoría de comparabilidad

@@ -114,3 +114,11 @@ def test_reporte_6_3_cuadra_y_suprime(base, dataset, config):
 def test_sensibilidad_solo_aprobar_reduce_poblacion(base, config):
     tabla = sensibilidad_estados(base, config)
     assert (tabla["estudiantes_solo_Aprobar"] <= tabla["estudiantes_principal"]).all()
+
+
+def test_multiplicador_duplica_k():
+    from src.evaluate import calcular_k_por_sede
+    familias = pd.DataFrame({"sede": ["S"] * 4, "cohorte": ["C1", "C1", "C2", "C2"],
+                             "evento": [1, 1, 1, 0]})
+    assert calcular_k_por_sede(familias) == {"S": 2}
+    assert calcular_k_por_sede(familias, multiplicador=2) == {"S": 3}
