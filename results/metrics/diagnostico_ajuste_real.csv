@@ -1,0 +1,4 @@
+modelo,pr_auc_entrenamiento,pr_auc_C4,brecha,diagnostico
+Regresión logística regularizada,0.1398,0.1133,0.0265,subajuste
+"Gradient boosting (árboles, monotonía en atrasos)",0.245,0.1035,0.1415,sobreajuste
+Logística híbrida (señales de D2 + variables académicas),0.1256,0.1252,0.0004,subajuste

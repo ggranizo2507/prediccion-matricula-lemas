@@ -1,0 +1,43 @@
+{
+  "fuente": "real",
+  "incluir_C1": false,
+  "motivo": "Se excluye C1: Precision@k en C4 cae 0.027 (> 0.02).",
+  "k_por_sede": {
+    "Mucho Lote 1": 118,
+    "Mucho Lote 2": 47
+  },
+  "robustez_bootstrap": {
+    "diferencia_media": -0.0259,
+    "ic95": [
+      -0.0606,
+      0.0121
+    ],
+    "repeticiones": 2000
+  },
+  "comparacion": [
+    {
+      "configuracion": "con_C1",
+      "cohortes": "C1+C2+C3",
+      "n_entrenamiento": 3576,
+      "eventos_entrenamiento": 308,
+      "precision_k_C4": 0.1124,
+      "lift_k_C4": 1.2324,
+      "recall_k_C4": 0.2105,
+      "pr_auc_C4": 0.1285,
+      "roc_auc_C4": 0.5325,
+      "brier_C4": 0.2336
+    },
+    {
+      "configuracion": "sin_C1",
+      "cohortes": "C2+C3",
+      "n_entrenamiento": 2541,
+      "eventos_entrenamiento": 193,
+      "precision_k_C4": 0.1394,
+      "lift_k_C4": 1.5289,
+      "recall_k_C4": 0.2421,
+      "pr_auc_C4": 0.1187,
+      "roc_auc_C4": 0.5425,
+      "brier_C4": 0.2285
+    }
+  ]
+}

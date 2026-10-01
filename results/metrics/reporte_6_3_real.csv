@@ -1,0 +1,6 @@
+Cohorte,N elegibles pendientes,M matrículas,U no matrículas,q = U/N,Familias F,Familias con no matrícula,q familiar,Exclusiones,Comparable,Suficiente (≥ mínimo de eventos)
+C1,1035,920,115,0.1111,797,102,0.128,263,No,Sí
+C2,1236,1124,112,0.0906,948,96,0.1013,247,Sí,Sí
+C3,1305,1224,81,0.0621,996,69,0.0693,208,Sí,Sí
+C4,1374,1252,122,0.0888,1042,95,0.0912,205,Sí,Sí
+C5,1411,1313,98,0.0695,1093,74,0.0677,161,Sí,Sí

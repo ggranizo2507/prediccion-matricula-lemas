@@ -1,0 +1,6 @@
+candidato,tipo,precision_k,lift_k,recall_k,pr_auc,roc_auc,brier
+D2 · señales administrativas,regla,0.1758,1.9278,0.3053,0.1367,0.6008,
+D · más atrasos primero,regla,0.1697,1.8613,0.2947,0.1117,0.5707,
+Logística híbrida (señales de D2 + variables académicas),hibrido,0.1394,1.5289,0.2421,0.1252,0.5886,0.2196
+Regresión logística regularizada,logistica,0.1273,1.396,0.2211,0.1133,0.534,0.0815
+"Gradient boosting (árboles, monotonía en atrasos)",arboles,0.097,1.0636,0.1684,0.1035,0.5398,0.1997
