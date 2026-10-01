@@ -1,6 +1,6 @@
 {
   "fuente": "sintetica",
-  "fecha": "2026-10-01T11:15:22",
+  "fecha": "2026-10-01T12:05:07",
   "tipo": "hibrido",
   "nombre": "Logística híbrida (señales de D2 + variables académicas)",
   "hiperparametros": {
@@ -28,5 +28,5 @@
     "brier": 0.0801
   },
   "tasa_historica_no_matricula": 0.08556306968538666,
-  "sha256": "f338a3468c37ddb8ec3694c2b44e774da84a3249c4d48b72cead493e99a3d0d5"
+  "sha256": "f317fefb237d502e8942b8db3a5fb45b2b50d0888bf928bd82207efe27a442f9"
 }

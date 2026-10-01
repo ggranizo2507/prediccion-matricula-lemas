@@ -1,0 +1,15 @@
+{
+  "nota": "Agregados de la validación con datos reales de LEMAS (Fase 2, 01-oct-2026). Sin datos individuales.",
+  "esquema": "Entrenamiento C2+C3 · selección y calibración C4 · prueba única C5 (matrícula 2026-2027)",
+  "k_por_sede": {"Mucho Lote 1": 118, "Mucho Lote 2": 47},
+  "familias_C5": 1093,
+  "c5": [
+    {"sistema": "D2 · señales administrativas", "lift": 1.97, "ic95": [1.24, 2.56], "precision": 0.133, "recall": 0.30},
+    {"sistema": "D · más atrasos primero", "lift": 1.70, "ic95": [1.03, 2.30], "precision": 0.115, "recall": 0.26},
+    {"sistema": "Logística híbrida (modelo)", "lift": 0.98, "ic95": [0.47, 1.52], "precision": 0.067, "recall": 0.15},
+    {"sistema": "A · selección al azar", "lift": 1.08, "ic95": null, "precision": 0.073, "recall": 0.16}
+  ],
+  "brier_c5": {"R / B0 · todos se matriculan": 0.0695, "B1 · tasa histórica": 0.0647, "Modelo calibrado": 0.0648},
+  "mape_c5": {"modelo": 0.028, "B1": 0.028},
+  "equidad": "Recall de D2 menor en familias becadas (0,18 frente a 0,32; 11 eventos)."
+}

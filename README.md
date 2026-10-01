@@ -3,9 +3,12 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/licencia-MIT-green)
 ![Tests](https://img.shields.io/badge/tests-pytest-orange)
-![Estado](https://img.shields.io/badge/estado-en%20desarrollo-yellow)
+![Estado](https://img.shields.io/badge/estado-fase%203-blue)
+![Streamlit](https://img.shields.io/badge/app-Streamlit-FF4B4B)
 
-Sistema de aprendizaje automático que estima, al **20 de febrero** de cada año, qué estudiantes con reserva aprobada tienen mayor riesgo de **no concretar su matrícula** antes del **30 de abril**. Entrega a Secretaría y Admisiones de la Unidad Educativa LEMAS una lista priorizada de familias para contactar, ajustada a su capacidad real de atención, y una proyección de matrícula por sede y nivel.
+Sistema de IA que identifica, al **20 de febrero** de cada año, a las familias con reserva aprobada que podrían **no concretar la matrícula** antes del **30 de abril**. Entrega a Secretaría y Admisiones de la Unidad Educativa LEMAS una lista priorizada de contactos ajustada a su capacidad real y una proyección de matrícula por sede y subnivel. En la prueba final con datos reales, la priorización encontró **casi el doble** de familias que no se matricularon que una selección al azar (Lift@k = 1,97, IC 95 % [1,24; 2,56]).
+
+🔗 **Aplicación (demo con datos sintéticos):** *enlace de Streamlit Community Cloud (se agrega al desplegar)*
 
 > Proyecto integrador · Maestría en Inteligencia Artificial · Universidad de Especialidades Espíritu Santo (UEES), 2026.
 
@@ -45,14 +48,28 @@ Cada año, entre septiembre y noviembre, las familias de LEMAS reservan un cupo 
 
 ## Metodología
 - **Enfoque:** clasificación binaria supervisada con validación temporal por cohortes.
-- **Modelos:** regresión logística (referencia interpretable), Random Forest y HistGradientBoosting, comparados contra líneas base simples (incluida la regla "más atrasos primero").
+- **Candidatos:** regresión logística elastic-net, gradient boosting (HistGradientBoosting con monotonía en atrasos) y una logística híbrida, comparados contra reglas sin IA (D: más atrasos primero; D2: señales administrativas) y las líneas base del v5 (A, R, B0, B1).
 - **Preprocesamiento:** limpieza, derivación de variables conocidas en t0 y guardas automáticas anti-fuga (`src/data_processing.py`).
 - **Auditoría de datos:** conteo de eventos de no matrícula por cohorte y comparabilidad de C1. Se entrena con y sin C1, se evalúa en C4 y C1 se incluye solo si no degrada la priorización (`src/auditoria.py`).
-- **Optimización:** Optuna con validación por ventanas temporales crecientes y seguimiento en MLflow. Ver [`docs/optimizacion.md`](docs/optimizacion.md).
+- **Optimización:** Optuna (TPE, 60 trials por modelo) con validación interna temporal C2 → C3; selección en C4; calibración de Platt; sistema congelado (SHA-256) y prueba única en C5. Ver [`docs/optimizacion.md`](docs/optimizacion.md).
 - **Métricas:** Precision@k y Lift@k por sede (métrica principal, con k igual a la capacidad de contacto), Recall@k, PR-AUC, ROC-AUC, Brier, matriz de confusión e intervalos bootstrap por familia.
 
 ## Resultados
-*En construcción (Fase 2).* Aquí se publicarán las métricas de la prueba final C5, solo en forma agregada.
+Prueba final en **C5** (matrícula 2026–2027), evaluada **una sola vez** con el sistema congelado. k = 118 familias en Mucho Lote 1 y 47 en Mucho Lote 2 (≈ 15 % de 1.093 familias). Solo cifras agregadas.
+
+| Sistema | Precision@k | Lift@k [IC 95 %] | Recall@k |
+|---|---|---|---|
+| **D2 · señales administrativas** (solución elegida) | **0,133** | **1,97 [1,24; 2,56]** | **0,30** |
+| D · más atrasos primero | 0,115 | 1,70 [1,03; 2,30] | 0,26 |
+| Logística híbrida (mejor modelo de ML en C4) | 0,067 | 0,98 [0,47; 1,52] | 0,15 |
+| A · selección al azar | 0,073 | 1,08 | 0,16 |
+
+- **Hallazgo principal:** contactando al 15 % de las familias se llega al **30 %** de las que no se matriculan. La regla D2 (pago anterior tardío → reserva extraordinaria → pensiones pagadas tarde) surgió del análisis de datos y se confirmó fuera de muestra.
+- **Los modelos de aprendizaje automático no superaron a la regla** con 193 eventos de entrenamiento: el gradient boosting se sobreajustó y los modelos lineales se quedaron cortos. Es un resultado válido y está documentado.
+- **Calibración y proyección:** la logística híbrida calibrada iguala a la tasa histórica (Brier 0,0648 frente a 0,0647; MAPE 2,8 % en ambos).
+- **Equidad:** menor detección en familias becadas (recall 0,18 frente a 0,32), que se advierte en la app.
+
+Detalle en [`docs/analisis_datos.md`](docs/analisis_datos.md) y [`docs/modelado.md`](docs/modelado.md).
 
 ## Instalación y uso
 
@@ -82,24 +99,55 @@ pytest -q                                            # ejecuta las pruebas
 ```
 
 ## Interfaz de usuario
-*En construcción (Fase 3).* Aplicación Streamlit con evaluación individual, priorización por lote, proyección por sede y nivel, y una sección "Acerca del modelo".
+Aplicación **Streamlit** en español (`app/app.py`), con **dos modos** (decisión D42):
+
+| Modo | Dónde | Datos |
+|---|---|---|
+| **Demo** (por defecto) | Streamlit Community Cloud | Solo **sintéticos**; rechaza cualquier otro archivo |
+| **Institucional** | Computador de LEMAS (`LEMAS_MODO=institucional`) | `base_seud.csv` seudonimizado; nada se guarda |
+
+**Funciones:** botón *Prueba con ejemplo*; carga validada de CSV (rechaza cédulas o nombres); lista de contactos por sede con k editable, motivo de cada prioridad y descarga CSV; proyección por sede y subnivel frente a B1; formulario para evaluar a un estudiante; sección *Acerca de* con métricas, limitaciones y privacidad.
+
+```bash
+pip install -r app/requirements.txt
+streamlit run app/app.py                          # demo
+LEMAS_MODO=institucional streamlit run app/app.py # solo dentro de LEMAS
+```
+Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño en [`docs/arquitectura.md`](docs/arquitectura.md).
 
 ## Estructura del proyecto
 | Carpeta | Contenido |
 |---|---|
 | `data/` | `raw/` y `processed/` (vacías en el repositorio público) y `synthetic/` con la base artificial |
-| `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado, 04 optimización, 05 evaluación (listos para Colab) |
-| `src/` | Código modular: procesamiento (`data_processing`), auditoría, evaluación (Precision@k familiar y k por sede), generador sintético y utilidades |
+| `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (optimización, selección, calibración, explicabilidad y evaluación final), listos para Colab |
+| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `modeling` (entrenamiento, Optuna, calibración, evaluación), `inferencia` (lógica de la app), `synthetic` y `utils` |
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
-| `models/` | Modelos entrenados con datos sintéticos |
-| `app/` | Aplicación Streamlit |
-| `tests/` | Pruebas unitarias |
+| `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
+| `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
+| `tests/` | 73 pruebas: datos, métricas, modelado e interfaz |
 | `results/` | Figuras, métricas y reportes agregados |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
 
+### Documentación
+| Documento | Contenido |
+|---|---|
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D43 |
+| [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
+| [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
+| [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
+| [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
+| [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Privacidad, sesgos, impacto social, mitigaciones y limitaciones |
+| [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
+| [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
+
 ## Consideraciones éticas
-El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni becas**. La variable de atrasos en pensiones funciona como proxy socioeconómico: se mide la equidad del modelo según beca y sede, y la lista no debe usarse para presionar a las familias. Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md).
+El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni becas**, y la decisión final es siempre humana.
+- **Privacidad:** seudonimización HMAC-SHA256 con clave custodiada, celdas menores a 5 suprimidas, app pública solo con datos sintéticos y repositorio sin datos reales.
+- **Sesgos:** los atrasos son un proxy socioeconómico; la detección es menor en familias becadas; la cédula genérica de familias extranjeras no se usa como predictor.
+- **Honestidad:** se informa que los modelos de ML no superaron a la regla y se reporta la incertidumbre.
+
+Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md).
 
 ## Autores y contribuciones
 | Integrante | Rol |

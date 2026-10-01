@@ -1,0 +1,10 @@
+# Dependencias de la aplicación (Streamlit Community Cloud las instala desde aquí).
+# Versiones alineadas con requirements-lock.txt para reproducibilidad.
+pandas==3.0.2
+numpy==2.4.4
+scikit-learn==1.8.0
+PyYAML==6.0.3
+joblib==1.5.3
+optuna==5.0.0
+streamlit==1.64.0
+plotly==7.1.0
