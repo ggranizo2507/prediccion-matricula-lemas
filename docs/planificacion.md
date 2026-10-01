@@ -31,6 +31,7 @@
 | D23 | 30-sep-2026 | "Nuevo" = no estaba en la hoja del año anterior (no se usa el prefijo del código) | Equipo |
 | D24 | 30-sep-2026 | Se eliminan `Orden`, `saldo`, `deuda` y `statusp`; la columna de pago se llama `fecha_pago` | Equipo |
 | D25 | 30-sep-2026 | Datos disponibles de 2021–2022 a 2026–2027: fechas de pago, notas y becas de todos los años; `# meses caído` se calcula desde el registro mensual de pagos (recomendado: mayo a enero) | Equipo |
+| D26 | 30-sep-2026 | Encabezados distintos entre hojas: `anoaa` (2022–2026) se lee como `anoa` y `Fecha` (2022–2025) como `Fecha Reserva` (`alias_columnas` en `config.yaml`). La hoja 2026 solo aporta `fecha_pago`, porque es únicamente destino de C5 | Perfil de datos reales |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
