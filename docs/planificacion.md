@@ -86,6 +86,7 @@ El documento v5 y el Checklist mantienen el cronograma original de 6 semanas (I5
 | D41 | 01-oct-2026 | **Prueba final en C5 (única):** D2 obtiene Lift@k = 1,97 [1,24; 2,56], Precision@k = 0,133 y Recall@k = 0,30; la logística híbrida obtiene 0,98 [0,47; 1,52]. Brier del modelo calibrado = 0,0648, frente a 0,0647 de B1. MAPE de 2,8 % (igual que B1). La solución final es la regla D2 para priorizar, con probabilidades y proyección del modelo calibrado presentadas junto a B1 | Notebook 03 · ver `docs/modelado.md` |
 | D42 | 01-oct-2026 | **Aplicación en dos modos:** *demo* pública (Streamlit Community Cloud) que solo acepta datos sintéticos, e *institucional* (`LEMAS_MODO=institucional`), que corre solo en un equipo de LEMAS con `base_seud.csv` y procesa en memoria. Ambos modos rechazan archivos con identificadores directos. La reidentificación de la lista la hace únicamente el custodio | Equipo (aprobado por el PO) |
 | D43 | 01-oct-2026 | La app prioriza con D2 (desempate: probabilidad del modelo), muestra la probabilidad calibrada junto a la tasa histórica y la proyección junto a B1. En modo demo el sistema se reentrena con la base sintética usando los hiperparámetros reales (C = 9, balanceado) | Fase 3 |
+| D44 | 01-oct-2026 | App demo publicada en Streamlit Community Cloud: https://continuidad-matricula-lemas.streamlit.app/ (rama `main`, `app/app.py`, sin `LEMAS_MODO`) | Equipo |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
