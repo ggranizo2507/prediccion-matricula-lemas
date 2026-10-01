@@ -239,6 +239,7 @@ class Candidato:
     pr_auc_validacion_interna: float
     metricas_entrenamiento: dict = field(default_factory=dict)
     metricas_c4: dict = field(default_factory=dict)
+    historial: pd.DataFrame = field(default_factory=pd.DataFrame)   # trials de Optuna
 
 
 def entrenar_candidatos(
@@ -268,6 +269,7 @@ def entrenar_candidatos(
         params = dict(estudio.best_params)
         modelo = construir_modelo(tipo, params, semilla).fit(X_e, y_e)
         candidato = Candidato(tipo, params, modelo, round(estudio.best_value, 4))
+        candidato.historial = estudio.trials_dataframe(attrs=("number", "value", "params"))
         candidato.metricas_entrenamiento = metricas(
             entrenamiento, modelo.predict_proba(X_e)[:, 1], k_por_sede, semilla)
         candidato.metricas_c4 = metricas(

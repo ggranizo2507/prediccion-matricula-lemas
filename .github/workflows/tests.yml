@@ -16,6 +16,6 @@ jobs:
           cache: pip
       - run: pip install -r requirements-lock.txt
       - name: Estilo (PEP 8)
-        run: ruff check src tests tools
+        run: ruff check src tests tools app
       - name: Pruebas
         run: pytest -q

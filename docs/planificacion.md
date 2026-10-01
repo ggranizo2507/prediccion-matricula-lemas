@@ -1,6 +1,43 @@
 # Planificación del proyecto
 
-> **Estado:** en construcción. La versión completa se redacta en la Fase 3 e incluirá problema y objetivos, relevancia, alcance, cronograma planificado frente a real, recursos y riesgos. Esta versión contiene el **registro de decisiones** y las **inconsistencias pendientes** entre los documentos del proyecto, que se actualizan a medida que avanza el trabajo.
+Documento vivo del proyecto: problema, objetivos, alcance, cronograma, recursos, riesgos, **registro de decisiones** (D01–D43) e inconsistencias entre documentos. El detalle académico completo está en el documento integral v5.
+
+## 1. Problema y relevancia
+No todas las reservas aprobadas en LEMAS terminan en matrícula pagada (entre 6 % y 11 % por cohorte). La institución se entera tarde, sin tiempo para ofrecer apoyo ni para planificar cupos, paralelos y personal. El proyecto entrega, al 20 de febrero, una **lista priorizada de familias** para contactar entre el 20 de febrero y el 30 de abril, y una **proyección de matrícula** por sede y subnivel.
+
+## 2. Objetivo SMART
+Desarrollar en 6 semanas (14-sep a 25-oct-2026) un sistema que, validado temporalmente con cinco cohortes, priorice familias con una **Precision@k familiar mayor que la tasa base** y **Lift@k ≥ 1,20** (IC 95 % bootstrap), respetando la capacidad de contacto de cada sede.
+**Resultado (C5):** D2 obtuvo Lift@k = 1,97 [1,24; 2,56] y Precision@k = 0,133, frente a una tasa base familiar de 0,068. ✅
+
+## 3. Alcance
+- **Incluye:** estudiantes antiguos con reserva aprobada antes de t0, excepto 3.º de bachillerato; priorización por representante; proyección; app; documentación y ética.
+- **Excluye:** estudiantes nuevos, reservas pendientes o rechazadas, predicción de abandono durante el año, despliegue productivo integrado y contacto automático.
+
+## 4. Cronograma planificado frente a real
+
+| Fase | Contenido | Planificado | Real |
+|---|---|---|---|
+| Fase 1 | Datos, seudonimización, EDA y auditoría de cohortes | 25-sep a 03-oct | 25-sep a 01-oct ✅ |
+| Fase 2 | Modelado, optimización y evaluación final | 04-oct a 10-oct | 01-oct ✅ (adelantada) |
+| Fase 3 | App Streamlit, ética y documentación | 11-oct a 15-oct | Desde 01-oct (en curso) |
+| Fase 4 | Pulido final, pitch y video de respuestas | 16-oct a 18-oct | — |
+
+El documento v5 y el Checklist mantienen el cronograma original de 6 semanas (I5); el plan comprimido de 3 semanas se aprobó al inicio del trabajo.
+
+## 5. Recursos
+- **Equipo:** Guillermo Granizo (Product Owner, dominio y datos reales) y José Ulloa (Scrum Master, repositorio, código y app).
+- **Técnicos:** Google Colab (autorizado), GitHub con integración continua y Streamlit Community Cloud. Costo incremental: USD 0.
+
+## 6. Riesgos y estado
+
+| Riesgo | Mitigación | Estado |
+|---|---|---|
+| Acceso a datos y autorización | Seudonimización y autorización institucional | Cerrado (01-oct) |
+| Fuga temporal | Corte t0, guardas anti-fuga y C5 intacta hasta el final | Cerrado |
+| Pocos eventos y sobreajuste | Modelos regularizados, diagnóstico y reglas de referencia | Materializado: los modelos de ML no superaron a D2 (documentado) |
+| Comparabilidad de C1 | Auditoría con regla registrada de antemano | Cerrado: C1 excluida |
+| Sesgos | Análisis de equidad y uso solo para apoyo | Abierto: menor recall en becadas (monitorear) |
+| Exposición de datos en la app | Dos modos; la app pública solo acepta sintéticos | Cerrado (D42) |
 
 ## Registro de decisiones
 
@@ -47,6 +84,8 @@
 | D39 | 01-oct-2026 | **Un único intento adicional, registrado antes de verlo en C4:** logística híbrida con las señales de D2 (pago anterior tardío, reserva extraordinaria y atrasos por tramos 0 / 1-2 / 3-5 / 6+) más es_nuevo, conducta "no A", subnivel y promedio; Optuna solo ajusta C y el balanceo (C2 → C3). Si en C4 no supera a la mejor regla, la priorización final es D2 y no se prueban más variantes | Equipo (resultado C4: RL 1,40 y árboles 1,06 frente a D2 1,93) |
 | D40 | 01-oct-2026 | **Resultado de D39 en C4 (datos reales):** la logística híbrida obtiene Lift@k = 1,53, frente a 1,93 de D2. **La priorización final es la regla D2.** La logística híbrida, calibrada en C4, se conserva solo para probabilidades y proyección. No se prueban más variantes. La regresión logística (1,40) y el gradient boosting (1,06) se reprodujeron idénticos | Notebook 03 |
 | D41 | 01-oct-2026 | **Prueba final en C5 (única):** D2 obtiene Lift@k = 1,97 [1,24; 2,56], Precision@k = 0,133 y Recall@k = 0,30; la logística híbrida obtiene 0,98 [0,47; 1,52]. Brier del modelo calibrado = 0,0648, frente a 0,0647 de B1. MAPE de 2,8 % (igual que B1). La solución final es la regla D2 para priorizar, con probabilidades y proyección del modelo calibrado presentadas junto a B1 | Notebook 03 · ver `docs/modelado.md` |
+| D42 | 01-oct-2026 | **Aplicación en dos modos:** *demo* pública (Streamlit Community Cloud) que solo acepta datos sintéticos, e *institucional* (`LEMAS_MODO=institucional`), que corre solo en un equipo de LEMAS con `base_seud.csv` y procesa en memoria. Ambos modos rechazan archivos con identificadores directos. La reidentificación de la lista la hace únicamente el custodio | Equipo (aprobado por el PO) |
+| D43 | 01-oct-2026 | La app prioriza con D2 (desempate: probabilidad del modelo), muestra la probabilidad calibrada junto a la tasa histórica y la proyección junto a B1. En modo demo el sistema se reentrena con la base sintética usando los hiperparámetros reales (C = 9, balanceado) | Fase 3 |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
