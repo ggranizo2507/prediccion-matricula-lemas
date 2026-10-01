@@ -264,7 +264,7 @@ def evaluar_referencias(
     dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
     k_por_sede: dict[str, int], repeticiones_azar: int = 500,
 ) -> pd.DataFrame:
-    """Compara en C4 (selección) el azar, las reglas D/D2 y la regresión logística base.
+    """Compara en C4 (selección) A (azar), las reglas D/D2 y la regresión logística base (RL).
 
     Todas usan el mismo k por sede y la misma consolidación por representante.
     C5 no se utiliza.
@@ -287,7 +287,7 @@ def evaluar_referencias(
     azar = [precision_at_k_familiar(consolidar_familias(seleccion, rng.random(len(seleccion))),
                                     k_por_sede, semilla).query("sede == 'TOTAL'").iloc[0]
             for _ in range(repeticiones_azar)]
-    filas.append({"referencia": "R · selección al azar",
+    filas.append({"referencia": "A · selección al azar de k familias",
                   "precision_k_C4": round(float(np.mean([a["precision_k"] for a in azar])), 4),
                   "lift_k_C4": round(float(np.mean([a["lift_k"] for a in azar])), 4),
                   "recall_k_C4": round(float(np.mean([a["recall_k"] for a in azar])), 4),
@@ -296,7 +296,7 @@ def evaluar_referencias(
         _fila(nombre, puntaje)
     modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
                                              entrenamiento["y_no_matricula"])
-    _fila(f"B1 · regresión logística ({'+'.join(cohortes_entrenamiento)})",
+    _fila(f"RL · regresión logística base ({'+'.join(cohortes_entrenamiento)})",
           modelo.predict_proba(construir_matriz_x(seleccion))[:, 1])
     return pd.DataFrame(filas)
 

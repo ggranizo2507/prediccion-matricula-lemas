@@ -83,10 +83,10 @@ Todas se evalúan en C4, con el mismo k por sede y la misma consolidación por r
 
 | Referencia | Precision@k | Lift@k | Recall@k | PR-AUC |
 |---|---|---|---|---|
-| R · selección al azar | 0,103 | 1,13 | 0,18 | 0,089 |
+| A · selección al azar de k familias | 0,103 | 1,13 | 0,18 | 0,089 |
 | D · más atrasos primero | 0,170 | 1,86 | 0,29 | 0,112 |
 | **D2 · señales administrativas** (pago anterior tardío → reserva extraordinaria → atrasos) | **0,176** | **1,93** | **0,31** | **0,137** |
-| B1 · regresión logística balanceada (C2+C3) | 0,139 | 1,53 | 0,24 | 0,119 |
+| RL · regresión logística base (C2+C3) | 0,139 | 1,53 | 0,24 | 0,119 |
 
 - **Hallazgo clave:** las reglas simples D y D2 **superan** a la regresión logística con todas las variables, que discrimina poco (ROC-AUC ≈ 0,54). Con 193 eventos en el entrenamiento y muchas categorías de curso, el modelo completo tiende a sobreajustar. En la ejecución anterior su ROC-AUC llegaba a 0,59, pero se apoyaba en el falso grupo de 38 hermanos, que D29 eliminó.
 - **Meta para la Fase 2:** el modelo optimizado debe superar a **D2** (Lift@k ≈ 1,93, Recall@k ≈ 0,31) en C4. Si no lo logra, se recomendará la regla D2 como solución operativa, y eso también es un resultado válido del proyecto.

@@ -6,7 +6,7 @@ numpy>=1.26
 openpyxl>=3.1
 PyYAML>=6.0
 # --- Modelado, optimización y explicabilidad ---
-scikit-learn>=1.4
+scikit-learn>=1.6
 optuna>=3.6
 mlflow>=2.12
 shap>=0.45

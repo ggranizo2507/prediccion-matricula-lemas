@@ -33,3 +33,5 @@ figuras_*.zip
 
 # Carpeta temporal para empaquetar figuras
 figuras_*/
+fase2_*/
+fase2_*.zip
