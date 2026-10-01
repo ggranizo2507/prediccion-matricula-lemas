@@ -1,17 +1,14 @@
 variable,shap_medio_abs
-atrasos_pension,0.16500466929520943
-promedio,0.12157504364581233
-anios_permanencia,0.011192217899615811
-sede_Mucho Lote 1,0.0020472626457554827
-reserva_extraordinaria,0.001971590277475052
-subnivel_Inicial,0.0007314249191122677
-conducta,0.0007217481731077285
-sede_Mucho Lote 2,0.00025992538992443827
-hermanos_lemas,0.0
-beca,0.0
-subnivel_Bachillerato,0.0
-subnivel_Educación General Básica,0.0
-subnivel_Preparatoria,0.0
-pago_origen_en_plazo,0.0
-pago_origen_nuevo,0.0
-pago_origen_tardio,0.0
+promedio,0.05106375097961852
+atrasos_tramo_0,0.021298233662257065
+atrasos_tramo_3-5,0.011497890690323401
+atrasos_tramo_1-2,0.008401581322133174
+subnivel_Educación General Básica,0.005845574753074739
+subnivel_Inicial,0.0021843288284209383
+subnivel_Bachillerato,0.0011567718666197452
+conducta_no_A,0.0010440652453990002
+es_nuevo,0.000840761440099058
+atrasos_tramo_6+,0.0006871831106450615
+reserva_extraordinaria,0.0004559842196835174
+subnivel_Preparatoria,0.00045456838244481174
+pago_tardio,2.5734329621512974e-05

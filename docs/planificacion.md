@@ -44,6 +44,7 @@
 | D36 | 01-oct-2026 | Fase 2: dos modelos obligatorios (regresión logística elastic-net y gradient boosting con monotonía creciente en atrasos), optimizados con Optuna (TPE, semilla 42) maximizando la PR-AUC en la validación interna temporal (C2 → C3) | Plan aprobado |
 | D37 | 01-oct-2026 | La selección en C4 se hace por Lift@k (desempate: PR-AUC) frente a la mejor regla (D o D2). Si el modelo no la supera, se recomienda la regla para priorizar y el modelo se usa solo para probabilidades y proyección | Equipo |
 | D38 | 01-oct-2026 | Calibración de Platt en C4 sobre el modelo congelado; huella SHA-256 registrada antes de abrir C5; C5 se evalúa una sola vez (`EVALUAR_C5`) | v5, 6.2 |
+| D39 | 01-oct-2026 | **Un único intento adicional, registrado antes de verlo en C4:** logística híbrida con las señales de D2 (pago anterior tardío, reserva extraordinaria y atrasos por tramos 0 / 1-2 / 3-5 / 6+) más es_nuevo, conducta "no A", subnivel y promedio; Optuna solo ajusta C y el balanceo (C2 → C3). Si en C4 no supera a la mejor regla, la priorización final es D2 y no se prueban más variantes | Equipo (resultado C4: RL 1,40 y árboles 1,06 frente a D2 1,93) |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 

@@ -40,13 +40,14 @@ def k(dataset, config):
 
 PARAMS = {
     "logistica": {"conjunto": "reducido", "C": 0.1, "l1_ratio": 0.5},
+    "hibrido": {"C": 0.5, "balanceado": False},
     "arboles": {"conjunto": "completo", "learning_rate": 0.05, "max_depth": 3,
                 "max_leaf_nodes": 8, "min_samples_leaf": 30, "l2_regularization": 1.0,
                 "max_iter": 50},
 }
 
 
-@pytest.mark.parametrize("tipo", ["logistica", "arboles"])
+@pytest.mark.parametrize("tipo", ["logistica", "arboles", "hibrido"])
 def test_modelos_entrenan_y_devuelven_probabilidades(dataset, tipo):
     entrenamiento = dataset[dataset["cohorte"].isin(["C2", "C3"])]
     modelo = construir_modelo(tipo, PARAMS[tipo], 42).fit(
@@ -123,3 +124,14 @@ def test_lineas_base_y_proyeccion(dataset):
     tabla = proyeccion(c5, np.full(len(c5), 0.1), 0.1)
     assert (tabla["observadas"] >= 10).all()
     assert np.allclose(tabla["esperadas_modelo"], tabla["esperadas_B1"])
+
+
+def test_hibrido_usa_solo_variables_registradas(dataset):
+    from src.modeling import HIBRIDAS_BINARIAS, HIBRIDAS_NUMERICAS
+    entrenamiento = dataset[dataset["cohorte"].isin(["C2", "C3"])]
+    modelo = construir_modelo("hibrido", PARAMS["hibrido"], 42).fit(
+        construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"])
+    nombres = list(modelo.named_steps["prep"].get_feature_names_out())
+    assert set(HIBRIDAS_BINARIAS + HIBRIDAS_NUMERICAS) <= set(nombres)
+    assert all(n.split("_")[0] in {"pago", "es", "reserva", "conducta", "atrasos", "subnivel",
+                                   "promedio"} for n in nombres)
