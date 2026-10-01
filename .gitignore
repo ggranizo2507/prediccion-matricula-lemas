@@ -30,3 +30,6 @@ mlartifacts/
 
 # Paquetes de figuras descargables
 figuras_*.zip
+
+# Carpeta temporal para empaquetar figuras
+figuras_*/

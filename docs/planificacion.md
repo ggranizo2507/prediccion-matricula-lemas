@@ -44,6 +44,8 @@
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
+**Decisión C1 (01-oct-2026, datos reales):** C1 **se excluye**. Precision@k en C4 = 0,112 con C1 frente a 0,139 sin C1 (Δ = −0,027 > 0,02). IC 95 % bootstrap de Δ = [−0,061; +0,012]. Configuración final: entrenamiento C2+C3, selección C4, prueba C5. k = 118 (Mucho Lote 1) y 47 (Mucho Lote 2). Referencia a superar en la Fase 2: D2 (Lift@k = 1,93 en C4).
+
 ## Estado de las inconsistencias entre documentos (revisión del 28-sep-2026)
 
 | # | Documento | Inconsistencia | Estado |
@@ -57,4 +59,4 @@ La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_re
 | I7 | Proyecto | Canvas ausente | Resuelta: el Canvas volvió a subirse |
 | I8 | Canvas | Declara "cumple con todos los criterios SMART" junto a 25/31 | Pendiente |
 | I9 | v5 y Canvas | Algunas secciones aún citan t0, H y k como pendientes | Pendiente (menor) |
-| I10 | v5, sección 6.3 | La tabla del v5 debe actualizarse con las cifras reales cuando se vuelva a ejecutar el cuaderno 02 tras D27–D29 | Pendiente |
+| I10 | v5, sección 6.3 | Actualizar la tabla del v5 con las cifras reales de `docs/analisis_datos.md` (sección 3) y la decisión de C1 | Pendiente: lo hace el equipo en el documento |
