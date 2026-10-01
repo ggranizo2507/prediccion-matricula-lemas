@@ -198,3 +198,61 @@ def test_matriculados_sin_reserva_aprobada_se_reportan(config, cohorte_c1):
     tabla, reporte = construir_cohorte(base, cohorte_c1, config)
     assert set(tabla["id_estudiante"]) == {"E1"}
     assert reporte["matriculados_sin_reserva_aprobada"] == 1
+
+
+def test_base_seud_equivocada_se_borra(tmp_path):
+    from src.utils import obtener_base_seud
+    ruta = tmp_path / "base_seud.csv"
+    ruta.write_text("Nombre,Nota\nX,1\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="faltan columnas"):
+        obtener_base_seud(ruta, en_colab=False)
+    assert not ruta.exists()
+
+
+@pytest.mark.parametrize("valor", ["2021", "2021.0", "2021-2022", "2021 - 2022", "Ciclo 2021-2022"])
+def test_anio_de_ciclo_acepta_formatos(valor):
+    from src.data_processing import anio_de_ciclo
+    assert anio_de_ciclo(pd.Series([valor])).iloc[0] == 2021
+
+
+def test_anoa_en_texto_y_filas_vacias_no_rompen_cohortes(config, cohorte_c1):
+    filas = [_fila(2021, "E1", "F1", "2021-03-01"), _fila(2022, "E1", "F1", "2022-03-01")]
+    crudo = pd.DataFrame(filas, columns=COLUMNAS)
+    crudo["anoa"] = ["2021 - 2022", "2022 - 2023"]
+    vacias = pd.DataFrame([[None] * len(COLUMNAS)] * 3, columns=COLUMNAS)
+    base = limpiar_base(pd.concat([crudo, vacias], ignore_index=True), config)
+    assert sorted(base["anio_origen"].tolist()) == [2021, 2022]
+    tabla, _ = construir_cohorte(base, cohorte_c1, config)
+    assert tabla["y_no_matricula"].tolist() == [0]
+
+
+def test_anoa_vacio_se_completa_con_la_hoja(tmp_path):
+    from src.utils import leer_base_seud
+    ruta = tmp_path / "base_seud.csv"
+    pd.DataFrame({"hoja": ["2021", "2022"], "anoa": ["2021", None], "fecha_pago": ["", ""],
+                  "id_seudonimo": ["E", "E"], "id_familia_seudonimo": ["F", "F"]}).to_csv(ruta,
+                                                                                      index=False)
+    assert leer_base_seud(ruta)["anoa"].tolist() == ["2021", "2022"]
+
+
+def test_excel_con_encabezados_distintos_entre_hojas(tmp_path):
+    import sys
+    sys.path.insert(0, "tools")
+    from seudonimizar import _leer
+    ruta = tmp_path / "x.xlsx"
+    with pd.ExcelWriter(ruta) as w:
+        pd.DataFrame({"anoa": ["2021"], "CI": ["1"]}).to_excel(w, sheet_name="2021", index=False)
+        pd.DataFrame({"Anoa ": ["2022"], "ci": ["2"]}).to_excel(w, sheet_name="2022", index=False)
+    df = _leer(ruta)
+    assert list(df.columns) == ["hoja", "anoa", "CI"] and df["anoa"].tolist() == ["2021", "2022"]
+
+
+def test_alias_anoaa_y_fecha_se_unifican(config, cohorte_c1):
+    origen = pd.DataFrame([_fila(2021, "E1", "F1", "2021-03-01")], columns=COLUMNAS)
+    destino = pd.DataFrame([_fila(2022, "E1", "F1", "2022-03-01")], columns=COLUMNAS)
+    destino = destino.rename(columns={"anoa": "anoaa", "Fecha Reserva": "Fecha"})
+    base = limpiar_base(pd.concat([origen, destino], ignore_index=True), config)
+    assert sorted(base["anio_origen"].tolist()) == [2021, 2022]
+    assert base["fecha_reserva"].notna().all()
+    tabla, _ = construir_cohorte(base, cohorte_c1, config)
+    assert tabla["y_no_matricula"].tolist() == [0]

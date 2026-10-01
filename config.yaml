@@ -62,6 +62,12 @@ columnas:
   id_estudiante: "id_seudonimo"
   id_familia: "id_familia_seudonimo"
 
+# Encabezados con otro nombre en algunas hojas de LEMAS: se unifican al leer
+# (el valor del alias rellena la columna oficial y luego el alias se elimina).
+alias_columnas:
+  "anoaa": "anoa"                 # hojas 2022-2026
+  "Fecha": "Fecha Reserva"        # hojas 2022-2025
+
 # -----------------------------------------------------------------------------
 # Población elegible en la foto t0
 # -----------------------------------------------------------------------------
