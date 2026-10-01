@@ -50,9 +50,54 @@ CONJUNTOS = {
     "completo": (CATEGORICAS, NUMERICAS),
     "reducido": ([c for c in CATEGORICAS if c != "curso"], NUMERICAS),
 }
-TIPOS = ("logistica", "arboles")
+TIPOS = ("logistica", "arboles", "hibrido")
 NOMBRES = {"logistica": "Regresión logística regularizada",
-           "arboles": "Gradient boosting (árboles, monotonía en atrasos)"}
+           "arboles": "Gradient boosting (árboles, monotonía en atrasos)",
+           "hibrido": "Logística híbrida (señales de D2 + variables académicas)"}
+
+# Modelo híbrido (D39, registrado antes de evaluarlo en C4): parte de las señales de la
+# regla D2 y agrega pocas variables académicas, para medir si la IA aporta algo más.
+HIBRIDAS_BINARIAS = ["pago_tardio", "es_nuevo", "reserva_extraordinaria", "conducta_no_A"]
+HIBRIDAS_CATEGORICAS = ["atrasos_tramo", "subnivel"]
+HIBRIDAS_NUMERICAS = ["promedio"]
+
+
+def variables_hibridas(X: pd.DataFrame) -> pd.DataFrame:
+    """Deriva las variables del modelo híbrido a partir de la matriz X estándar."""
+    atrasos = pd.to_numeric(X["atrasos_pension"], errors="coerce").fillna(0)
+    return pd.DataFrame({
+        "pago_tardio": (X["pago_origen"] == "tardio").astype(float),
+        "es_nuevo": (X["pago_origen"] == "nuevo").astype(float),
+        "reserva_extraordinaria": pd.to_numeric(X["reserva_extraordinaria"],
+                                                errors="coerce").fillna(0),
+        "conducta_no_A": (pd.to_numeric(X["conducta"], errors="coerce") < 5).astype(float),
+        "atrasos_tramo": pd.cut(atrasos, [-1, 0, 2, 5, 99],
+                                labels=["0", "1-2", "3-5", "6+"]).astype(str),
+        "subnivel": X["subnivel"].astype(str),
+        "promedio": pd.to_numeric(X["promedio"], errors="coerce"),
+    }, index=X.index)
+
+
+def _nombres_hibridas(_transformador, _entrada):
+    return np.array(HIBRIDAS_BINARIAS + HIBRIDAS_CATEGORICAS + HIBRIDAS_NUMERICAS)
+
+
+def _preprocesador_hibrido() -> Pipeline:
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
+
+    columnas = ColumnTransformer([
+        ("bin", "passthrough", HIBRIDAS_BINARIAS),
+        ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+         HIBRIDAS_CATEGORICAS),
+        ("num", Pipeline([("imputar", SimpleImputer(strategy="median")),
+                          ("escalar", StandardScaler())]), HIBRIDAS_NUMERICAS),
+    ], verbose_feature_names_out=False)
+    return Pipeline([
+        ("derivar", FunctionTransformer(variables_hibridas, feature_names_out=_nombres_hibridas)),
+        ("columnas", columnas),
+    ])
 
 
 # --------------------------------------------------------------------------- #
@@ -77,6 +122,11 @@ def construir_modelo(tipo: str, params: dict, semilla: int) -> Pipeline:
             C=params["C"], l1_ratio=params.get("l1_ratio", 0.0), solver="saga",
             class_weight="balanced" if params.get("balanceado", True) else None,
             max_iter=5000, random_state=semilla, **_penalizacion_elastica())
+    elif tipo == "hibrido":
+        prep = _preprocesador_hibrido()
+        modelo = LogisticRegression(
+            C=params["C"], class_weight="balanced" if params.get("balanceado", True) else None,
+            max_iter=5000, random_state=semilla)
     elif tipo == "arboles":
         prep = construir_preprocesador(escalar=False, categoricas=categoricas,
                                        numericas=numericas).set_output(transform="pandas")
@@ -95,6 +145,10 @@ def construir_modelo(tipo: str, params: dict, semilla: int) -> Pipeline:
 
 
 def _espacio(tipo: str, trial: optuna.Trial) -> dict:
+    if tipo == "hibrido":   # variables fijas: solo se ajusta la regularización
+        return {"balanceado": trial.suggest_categorical("balanceado", [True, False]),
+                "C": trial.suggest_float("C", 1e-3, 10, log=True)}
+    # Mismo orden de sugerencias que en la primera ejecución: resultados reproducibles
     params = {"conjunto": trial.suggest_categorical("conjunto", list(CONJUNTOS)),
               "balanceado": trial.suggest_categorical("balanceado", [True, False])}
     if tipo == "logistica":
