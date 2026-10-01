@@ -16,9 +16,12 @@ Uso (en el entorno autorizado de LEMAS):
     python seudonimizar.py generar-clave --salida C:/custodio/clave_lemas.key
     python seudonimizar.py seudonimizar --entrada base_lemas.xlsx --salida base_seud.csv \
         --clave C:/custodio/clave_lemas.key \
-        --col-estudiante Codigo --col-familia cedulap \
-        --eliminar CI "Nombre Completo" "Nombres completos padre de familia" Orden \
-        --derivar-anio-ingreso
+        --col-estudiante CI --col-familia cedulap \
+        --derivar-anio-ingreso --col-codigo Codigo \
+        --eliminar Codigo Orden "Nombre Completo" "Nombres completos padre de familia" \
+                   saldo deuda statusp
+    La llave del estudiante es la cédula (no cambia con reingresos ni cambios de sede);
+    el código interno solo aporta el año de ingreso y luego se elimina.
     python seudonimizar.py reidentificar --entrada top_k.csv --padron padron.xlsx \
         --clave C:/custodio/clave_lemas.key --col-seudonimo id_familia_seudonimo \
         --col-padron cedula_representante --tipo FAM --salida top_k_interno.csv
@@ -164,13 +167,22 @@ def cmd_seudonimizar(args: argparse.Namespace) -> None:
     if args.col_familia:
         columnas[args.col_familia] = ("FAM", "id_familia_seudonimo")
 
-    faltantes = [c for c in [*columnas, *args.eliminar] if c not in df.columns]
+    col_codigo = args.col_codigo or args.col_estudiante
+    requeridas = [*columnas, *([col_codigo] if args.derivar_anio_ingreso else [])]
+    faltantes = [c for c in requeridas if c not in df.columns]
     if faltantes:
         raise KeyError(f"Columnas inexistentes en la entrada: {faltantes}")
+    # Las columnas a eliminar son opcionales: si ya no existen, solo se avisa.
+    ausentes = [c for c in args.eliminar if c not in df.columns]
+    if ausentes:
+        log.info("Columnas a eliminar que no están en el archivo (se omiten): %s", ausentes)
+    eliminar = [c for c in args.eliminar if c in df.columns]
 
     if args.derivar_anio_ingreso:
-        df["anio_ingreso"] = df[args.col_estudiante].map(anio_ingreso)
-        log.info("anio_ingreso derivado; %d filas sin valor.", df["anio_ingreso"].isna().sum())
+        # El código interno solo se usa para el año de ingreso (2 primeros dígitos).
+        df["anio_ingreso"] = df[col_codigo].map(anio_ingreso)
+        log.info("anio_ingreso derivado de %s; %d filas sin valor.",
+                 col_codigo, df["anio_ingreso"].isna().sum())
 
     for col, (tipo, destino) in columnas.items():
         if args.validar_cedula:
@@ -184,7 +196,7 @@ def cmd_seudonimizar(args: argparse.Namespace) -> None:
             log.warning("%s: %d filas sin identificador (quedan sin seudónimo).", col, nulos)
 
     # Se eliminan los identificadores originales y los campos directos pedidos.
-    df = df.drop(columns=list({*columnas, *args.eliminar}))
+    df = df.drop(columns=list({*columnas, *eliminar}))
     salida = Path(args.salida)
     df.to_csv(salida, index=False, encoding="utf-8")
 
@@ -197,7 +209,8 @@ def cmd_seudonimizar(args: argparse.Namespace) -> None:
         "estudiantes_unicos": int(df["id_seudonimo"].nunique()),
         "familias_unicas": int(df["id_familia_seudonimo"].nunique())
         if "id_familia_seudonimo" in df else None,
-        "columnas_eliminadas": sorted({*columnas, *args.eliminar}),
+        "columnas_eliminadas": sorted({*columnas, *eliminar}),
+        "llave_estudiante": args.col_estudiante,
         "tecnica": "HMAC-SHA256 con clave secreta, truncado a 60 bits, base32",
     }
     salida.with_suffix(".acta.json").write_text(
@@ -243,6 +256,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="Columnas identificatorias adicionales a borrar")
     p_seud.add_argument("--derivar-anio-ingreso", action="store_true",
                         help="Crea anio_ingreso con los 2 primeros dígitos del código")
+    p_seud.add_argument("--col-codigo",
+                        help="Columna del código interno para el año de ingreso "
+                             "(por defecto, la misma de --col-estudiante)")
     p_seud.add_argument("--validar-cedula", action="store_true",
                         help="Advierte si la columna no contiene cédulas válidas")
 

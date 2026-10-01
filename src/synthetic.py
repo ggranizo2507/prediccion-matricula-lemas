@@ -38,6 +38,11 @@ GRADOS = [
     ("1ro BGU", "BGU"), ("2do BGU", "BGU"), ("3ro BGU", "BGU"),
 ]
 ULTIMO_GRADO = len(GRADOS) - 1
+ESTADOS_HASTA_2023 = {"aprobada": ["Aprobar"], "extraordinaria": ["Aprobación extraordinaria"],
+                      "pendiente": ["En revisión"]}
+ESTADOS_DESDE_2024 = {"aprobada": ["Aprobado", "Aprobar"],
+                      "extraordinaria": ["Aprobado Extraordinaria"],
+                      "pendiente": ["En Revisión", "En Proceso", "En Revisión Extraordinaria"]}
 # Grados donde entran más estudiantes nuevos (pesos relativos)
 PESO_INGRESO = np.array([8, 3, 5, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2, 0.5, 0.2])
 
@@ -167,8 +172,11 @@ def generar(
             atrasos = int(rng.binomial(10, min(fam["estres"] * factor, 0.95)))
             reserva = rng.random() < 0.97 - 0.5 * fam["estres"]
             u = rng.random()
-            estado = ("En proceso" if u < 0.03 + 0.3 * fam["estres"] else
-                      "Aprobar extraordinaria" if u < 0.08 + 0.3 * fam["estres"] else "Aprobar")
+            estado = ("pendiente" if u < 0.03 + 0.3 * fam["estres"] else
+                      "extraordinaria" if u < 0.08 + 0.3 * fam["estres"] else "aprobada")
+            # Textos como aparecen en el sistema de LEMAS, que cambian según el año
+            textos = (ESTADOS_DESDE_2024 if anio >= 2024 else ESTADOS_HASTA_2023)
+            estado_texto = rng.choice(textos[estado])
             extra = rng.random() < 0.10 + 0.4 * fam["estres"]
             inicio = pd.Timestamp(anio, 11, 1) if extra else pd.Timestamp(anio, 9, 15)
             fecha_reserva = inicio + pd.Timedelta(days=int(rng.integers(0, 30)),
@@ -183,17 +191,19 @@ def generar(
                                      0.8 * est["habilidad"] + 0.6 * rng.normal()),
                 "P.Conducta": _letra_conducta(0.53 * est["habilidad"] + 0.85 * rng.normal(),
                                               p["conducta_letras"]),
-                "fecha_pago_matricula": pago.strftime("%Y-%m-%d"),
-                "Reserva": "SI" if reserva else "NO", "RColegio": estado if reserva else "",
+                "fecha_pago": pago.strftime("%Y-%m-%d"),
+                "Reserva": "SI" if reserva else "NO HIZO",
+                "RColegio": estado_texto if reserva else "NO HIZO",
                 "Fecha Reserva": fecha_reserva.strftime("%Y-%m-%d %H:%M") if reserva else "",
-                "Tiempo": ("EXTRAORDINARIA" if extra else "ORDINARIA") if reserva else "",
-                "beca": "SI" if fam["beca"] else "NO", "# meses caído": atrasos,
-                "anio_ingreso": est["ingreso"], "id_seudonimo": est["id"],
+                "Tiempo": ("EXTRAORDINARIA" if extra else "ORDINARIA") if reserva else "NO HIZO",
+                "beca": "SI" if fam["beca"] else "", "# meses caído": atrasos,
+                # El prefijo del código corresponde al año del proceso de admisión
+                "anio_ingreso": est["ingreso"] - 1, "id_seudonimo": est["id"],
                 "id_familia_seudonimo": est["familia"],
                 # Riesgo latente: supuesto plausible, NO estimado de datos reales
                 "_logit": (3.25 * (atrasos / 10 - estres_escala) - 0.45 * est["habilidad"]
                            - 0.3 * fam["beca"] - 0.25 * min(anio - est["ingreso"], 6) / 6
-                           + (1.2 if estado == "En proceso" else 0) + deriva[anio]),
+                           + (1.2 if estado == "pendiente" else 0) + deriva[anio]),
                 "_reserva": reserva, "_terminal": est["grado"] == ULTIMO_GRADO,
             })
         tabla = pd.DataFrame(registros)

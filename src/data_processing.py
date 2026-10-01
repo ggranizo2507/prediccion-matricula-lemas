@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 
 import numpy as np
 import pandas as pd
@@ -42,10 +43,37 @@ VALORES_NO = {"NO", "N", "0", "FALSE", "FALSO"}
 # --------------------------------------------------------------------------- #
 # Limpieza
 # --------------------------------------------------------------------------- #
-def _a_binario(serie: pd.Series) -> pd.Series:
-    """SI/NO, 1/0 → 1/0; cualquier otro valor queda como NaN."""
-    texto = serie.astype(str).str.strip().str.upper()
-    return texto.map(lambda v: 1 if v in VALORES_SI else 0 if v in VALORES_NO else np.nan)
+def _sin_tildes(texto: object) -> str:
+    """Mayúsculas, sin tildes y sin espacios extremos; vacío si no hay dato."""
+    if texto is None or (isinstance(texto, float) and np.isnan(texto)) or pd.isna(texto):
+        return ""
+    limpio = unicodedata.normalize("NFKD", str(texto).strip().upper())
+    limpio = "".join(c for c in limpio if not unicodedata.combining(c))
+    return "" if limpio in {"NAN", "NONE", "<NA>"} else limpio
+
+
+def categoria_reserva(reserva: object, estado: object) -> str:
+    """Unifica Reserva + RColegio en: aprobada, aprobada_extraordinaria, pendiente,
+    sin_reserva u otro. Los textos varían entre años (Aprobar/Aprobado,
+    Aprobación extraordinaria/Aprobado Extraordinaria, En revisión/En Proceso...)."""
+    r, e = _sin_tildes(reserva), _sin_tildes(estado)
+    if r not in {"SI", "S"} or e in {"", "NO HIZO", "NO"}:
+        return "sin_reserva"
+    if "APROB" in e:
+        return "aprobada_extraordinaria" if "EXTRA" in e else "aprobada"
+    if "REVISION" in e or "PROCESO" in e:
+        return "pendiente"
+    return "otro"
+
+
+def _beca_binaria(serie: pd.Series) -> pd.Series:
+    """"SI" = 1; vacío o "NO" = 0 (vacío significa que no tiene beca)."""
+    texto = serie.map(_sin_tildes)
+    resultado = texto.map(lambda v: 1 if v in VALORES_SI else 0 if v in VALORES_NO | {""}
+                          else np.nan)
+    if resultado.isna().any():
+        log.warning("%d valores de beca no reconocidos quedan vacíos.", resultado.isna().sum())
+    return resultado
 
 
 def _a_fecha(serie: pd.Series) -> pd.Series:
@@ -85,9 +113,11 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     base["anio_ingreso"] = pd.to_numeric(base["anio_ingreso"], errors="coerce").astype("Int64")
     base["promedio"] = pd.to_numeric(base["promedio"], errors="coerce")
     base["atrasos"] = pd.to_numeric(base["atrasos"], errors="coerce")
-    base["beca"] = _a_binario(base["beca"])
+    base["beca"] = _beca_binaria(base["beca"])
     base["fecha_pago"] = _a_fecha(base["fecha_pago"])
     base["fecha_reserva"] = _a_fecha(base["fecha_reserva"])
+    base["categoria_reserva"] = [categoria_reserva(r, e) for r, e in
+                                 zip(base["reserva"], base["estado_reserva"], strict=True)]
 
     if config["conducta"]["formato"] == "letras":
         mapa_letras = config["conducta"]["letras_a_ordinal"]
@@ -112,7 +142,34 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     if sin_id.any():
         log.warning("Se eliminan %d filas sin identificador o sin año.", sin_id.sum())
         base = base[~sin_id]
-    return base.reset_index(drop=True)
+    base = marcar_nuevos(base.reset_index(drop=True), config)
+    return base
+
+
+def marcar_nuevos(base: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """es_nuevo = el estudiante no estaba matriculado en el ciclo anterior.
+
+    Se determina por presencia en la hoja anterior (no por el código, cuyo prefijo
+    puede corresponder al año del proceso de admisión). En el primer año disponible
+    se usa el pago de matrícula antes del 20-feb (los antiguos pagan después) o un
+    código con año de ingreso igual o posterior al del ciclo.
+    """
+    datos = base.copy()
+    anios = sorted(datos["anio_origen"].dropna().unique())
+    ids_por_anio = {a: set(datos.loc[datos["anio_origen"] == a, "id_estudiante"]) for a in anios}
+    mes, dia = config["calendario"]["t0_mes_dia"]
+    nuevo = pd.Series(False, index=datos.index)
+    for anio in anios:
+        filas = datos["anio_origen"] == anio
+        if anio - 1 in ids_por_anio:
+            nuevo[filas] = ~datos.loc[filas, "id_estudiante"].isin(ids_por_anio[anio - 1])
+        else:
+            limite = pd.Timestamp(year=int(anio), month=mes, day=dia)
+            pago_temprano = datos.loc[filas, "fecha_pago"] < limite
+            codigo_reciente = datos.loc[filas, "anio_ingreso"].fillna(0) >= anio
+            nuevo[filas] = (pago_temprano | codigo_reciente).astype(bool)
+    datos["es_nuevo"] = nuevo.astype(bool)
+    return datos
 
 
 # --------------------------------------------------------------------------- #
@@ -120,7 +177,7 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 def _estado_pago_origen(fila: pd.Series, mes_dia_t0: tuple, mes_dia_h: tuple) -> str:
     """Puntualidad del pago que confirmó el propio ciclo de origen."""
-    if pd.notna(fila["anio_ingreso"]) and fila["anio_ingreso"] == fila["anio_origen"]:
+    if bool(fila.get("es_nuevo", False)):
         return "nuevo"
     if pd.isna(fila["fecha_pago"]):
         return "sin_dato"
@@ -169,11 +226,19 @@ def construir_cohorte(
         return pd.DataFrame(), {**reporte, "estado": "sin_destino"}
 
     origen = agregar_predictores(origen, config)
-    paso = origen[origen["reserva"].str.upper().isin(reglas["reserva_si"])]
-    reporte["reserva_si"] = len(paso)
-    en_proceso = paso["estado_reserva"].str.contains("proceso", case=False, na=False)
-    reporte["en_proceso"] = int(en_proceso.sum())
-    paso = paso[paso["estado_reserva"].isin(estados)]
+    terminal_origen = origen["nivel"].str.contains(reglas["cursos_terminales_regex"],
+                                                   regex=True, na=False)
+    categorias = origen["categoria_reserva"]
+    reporte["reserva_si"] = int((categorias != "sin_reserva").sum())
+    reporte["sin_reserva"] = int((categorias == "sin_reserva").sum())
+    reporte["pendientes"] = int((categorias == "pendiente").sum())
+    reporte["estado_no_reconocido"] = int((categorias == "otro").sum())
+    # Matriculados en el destino sin reserva aprobada (p. ej., autorización del director):
+    # fuera de la población del modelo; se reportan aparte.
+    fuera = ~categorias.isin(estados) & ~terminal_origen
+    reporte["matriculados_sin_reserva_aprobada"] = int(
+        origen.loc[fuera, "id_estudiante"].isin(set(destino["id_estudiante"])).sum())
+    paso = origen[categorias.isin(estados)]
     reporte["aprobados"] = len(paso)
 
     reserva_tardia = paso["fecha_reserva"].notna() & (paso["fecha_reserva"] >= cohorte.t0)

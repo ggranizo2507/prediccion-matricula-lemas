@@ -48,12 +48,15 @@ columnas:
   paralelo: "Paralelo"
   promedio: "P.Académico"
   conducta: "P.Conducta"
-  fecha_pago: "fecha_pago_matricula"
+  fecha_pago: "fecha_pago"
   reserva: "Reserva"
   estado_reserva: "RColegio"
   fecha_reserva: "Fecha Reserva"
   tipo_reserva: "Tiempo"
   beca: "beca"
+  # Pensiones pagadas después de la fecha tope de su mes, calculado por LEMAS desde el
+  # registro de pagos. Recomendado: contar solo mayo a enero (la pensión de febrero
+  # vence después de t0 = 20-feb y sería información futura).
   atrasos: "# meses caído"
   anio_ingreso: "anio_ingreso"
   id_estudiante: "id_seudonimo"
@@ -64,9 +67,14 @@ columnas:
 # -----------------------------------------------------------------------------
 elegibilidad:
   reserva_si: ["SI"]
-  estados_aprobados: ["Aprobar", "Aprobar extraordinaria"]
+  # RColegio se normaliza a cuatro categorías porque su texto cambia entre años
+  # ("Aprobar", "Aprobado", "Aprobación extraordinaria", "En revisión", "NO HIZO"...):
+  #   aprobada | aprobada_extraordinaria | pendiente | sin_reserva
+  # Los matriculados por autorización del director sin reserva aprobada quedan
+  # fuera de la población del modelo y se reportan aparte.
+  estados_aprobados: ["aprobada", "aprobada_extraordinaria"]
   # Análisis de sensibilidad: repetir excluyendo aprobaciones que pudieron ser tardías
-  estados_sensibilidad: ["Aprobar"]
+  estados_sensibilidad: ["aprobada"]
   # Cursos sin continuidad en LEMAS (expresión regular buscada en el texto de Nivel).
   # Ajustar con los valores reales que muestre el perfil de datos.
   cursos_terminales_regex: "(?i)\\b(?:3(?:ro|ero|er)?|tercero)\\b\\.?\\s*(?:de\\s*)?(?:bgu|bachiller)"

@@ -25,6 +25,12 @@
 | D17 | 28-sep-2026 | La comparabilidad descriptiva de C1 (diferencias estandarizadas) se calcula frente a C2–C4; la decisión de incluir C1 usa solo C4 como validación | v5_final, 5.3.4 |
 | D18 | 28-sep-2026 | Umbrales de auditoría: al menos 30 eventos de no matrícula por cohorte, EPV ≥ 10 en el entrenamiento y tolerancia de 0,02 en Precision@k familiar para incluir C1 | v5_final, 5.3.4 y 6.3 |
 | D19 | 28-sep-2026 | El notebook 02 genera la tabla "Reporte obligatorio por cohorte" de la sección 6.3 del v5 y el análisis de sensibilidad solo con "Aprobar" | v5_final, 5.3.1 y 6.3 |
+| D20 | 30-sep-2026 | La llave del estudiante es la cédula (seudonimizada); el código interno solo aporta el año de ingreso y luego se elimina | Equipo (el código cambia con reingreso o cambio de sede) |
+| D21 | 30-sep-2026 | `beca` vacía = sin beca (0) | Equipo |
+| D22 | 30-sep-2026 | `RColegio` se normaliza a aprobada, aprobada_extraordinaria, pendiente y sin_reserva. Los matriculados sin reserva aprobada (autorización del director) quedan fuera de la población y se reportan aparte | Equipo |
+| D23 | 30-sep-2026 | "Nuevo" = no estaba en la hoja del año anterior (no se usa el prefijo del código) | Equipo |
+| D24 | 30-sep-2026 | Se eliminan `Orden`, `saldo`, `deuda` y `statusp`; la columna de pago se llama `fecha_pago` | Equipo |
+| D25 | 30-sep-2026 | Datos disponibles de 2021–2022 a 2026–2027: fechas de pago, notas y becas de todos los años; `# meses caído` se calcula desde el registro mensual de pagos (recomendado: mayo a enero) | Equipo |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 

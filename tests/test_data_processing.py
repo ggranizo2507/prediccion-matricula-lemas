@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from src.data_processing import (
+    categoria_reserva,
     construir_cohorte,
     construir_dataset,
     construir_matriz_x,
@@ -16,7 +17,7 @@ from src.synthetic import generar
 from src.utils import cargar_config, cohortes_desde_config, tasa_por_grupo
 
 COLUMNAS = ["hoja", "anoa", "anos", "Sede", "Nivel", "Paralelo", "P.Académico", "P.Conducta",
-            "fecha_pago_matricula", "Reserva", "RColegio", "Fecha Reserva", "Tiempo", "beca",
+            "fecha_pago", "Reserva", "RColegio", "Fecha Reserva", "Tiempo", "beca",
             "# meses caído", "anio_ingreso", "id_seudonimo", "id_familia_seudonimo"]
 
 
@@ -79,7 +80,10 @@ def test_filtros_de_elegibilidad(base, cohorte_c1, config):
     assert reporte["confirmados_antes_t0"] == 1
     assert reporte["terminales_excluidos"] == 1
     assert reporte["reserva_despues_t0"] == 1
-    assert reporte["en_proceso"] == 1
+    assert reporte["pendientes"] == 1
+    assert reporte["sin_reserva"] == 1
+    # E05 (sin reserva) no aparece en destino → 0 matriculados fuera de la población
+    assert reporte["matriculados_sin_reserva_aprobada"] == 0
 
 
 def test_sensibilidad_excluye_aprobaciones_extraordinarias(base, cohorte_c1, config):
@@ -145,3 +149,52 @@ def test_tasa_por_grupo_oculta_grupos_pequenos():
     datos = pd.DataFrame({"g": ["a"] * 6 + ["b"] * 2, "y_no_matricula": [1, 0, 0, 0, 0, 0, 1, 1]})
     tabla = tasa_por_grupo(datos, "g", minimo=5)
     assert tabla["g"].tolist() == ["a"] and tabla["n"].iloc[0] == 6
+
+
+@pytest.mark.parametrize(("reserva", "estado", "esperado"), [
+    ("SI", "Aprobar", "aprobada"),
+    ("SI", "Aprobado", "aprobada"),
+    ("SI", "Aprobación extraordinaria", "aprobada_extraordinaria"),
+    ("SI", "Aprobado Extraordinaria", "aprobada_extraordinaria"),
+    ("SI", "En revisión", "pendiente"),
+    ("SI", "En Revisión Extraordinaria", "pendiente"),
+    ("SI", "En Proceso", "pendiente"),
+    ("NO HIZO", "NO HIZO", "sin_reserva"),
+    ("NO", None, "sin_reserva"),
+    ("SI", "", "sin_reserva"),
+])
+def test_categoria_reserva_unifica_textos(reserva, estado, esperado):
+    assert categoria_reserva(reserva, estado) == esperado
+
+
+def test_beca_vacia_es_cero(config):
+    crudo = pd.DataFrame([_fila(2021, f"E{i}", "F", "2021-03-01") for i in range(3)],
+                         columns=COLUMNAS)
+    crudo["beca"] = ["SI", "", None]
+    assert limpiar_base(crudo, config)["beca"].tolist() == [1, 0, 0]
+
+
+def test_nuevo_por_presencia_en_el_anio_anterior(config):
+    filas = [
+        _fila(2021, "A1", "F1", "2021-03-01", ingreso=2019),   # primer año: pago en plazo
+        _fila(2021, "N0", "F2", "2021-01-07", ingreso=2020),   # primer año: pago temprano
+        _fila(2022, "A1", "F1", "2022-03-01", ingreso=2019),   # estaba en 2021 → antiguo
+        _fila(2022, "N1", "F3", "2022-01-10", ingreso=2021),   # no estaba en 2021 → nuevo
+    ]
+    base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
+    nuevos = base.set_index(["anio_origen", "id_estudiante"])["es_nuevo"]
+    assert not nuevos[(2021, "A1")] and nuevos[(2021, "N0")]
+    assert not nuevos[(2022, "A1")] and nuevos[(2022, "N1")]
+
+
+def test_matriculados_sin_reserva_aprobada_se_reportan(config, cohorte_c1):
+    filas = [
+        _fila(2021, "E1", "F1", "2021-03-01"),
+        _fila(2021, "D1", "F2", "2021-03-01", reserva="NO HIZO", estado="NO HIZO"),
+        _fila(2022, "E1", "F1", "2022-03-01"),
+        _fila(2022, "D1", "F2", "2022-03-05"),   # matriculado por autorización del director
+    ]
+    base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
+    tabla, reporte = construir_cohorte(base, cohorte_c1, config)
+    assert set(tabla["id_estudiante"]) == {"E1"}
+    assert reporte["matriculados_sin_reserva_aprobada"] == 1
