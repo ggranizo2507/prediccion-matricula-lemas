@@ -35,12 +35,15 @@
 | D27 | 30-sep-2026 | El curso se normaliza entre años: se quita "EGB" y "Primer/Segundo/Tercer Curso" pasa a "… de bachillerato" | Perfil de datos reales (88 textos de Nivel) |
 | D28 | 30-sep-2026 | El curso terminal (3.º de bachillerato) se detecta en el nivel o en el curso normalizado, para cubrir el formato "Tercer Curso" | Perfil de datos reales |
 | D29 | 30-sep-2026 | Un representante con más de 6 estudiantes en el año se trata como atípico: cada estudiante es su propio contacto y no cuenta como hermano | Figura 4 (un representante con 39 estudiantes) |
-| D30 | 30-sep-2026 | Referencias obligatorias en C4: azar (R), más atrasos primero (D), señales administrativas (D2) y regresión logística (B1). Se agrega un IC 95 % por bootstrap a la decisión sobre C1, como dato informativo | Equipo |
+| D30 | 30-sep-2026 | Referencias obligatorias en C4: azar (A), más atrasos primero (D), señales administrativas (D2) y regresión logística base (RL). Se usan los nombres del v5: R, B0 y B1 no ordenan familias y se evalúan con Brier y error de proyección en la Fase 2. Se agrega un IC 95 % por bootstrap a la decisión sobre C1, como dato informativo | Equipo |
 | D31 | 30-sep-2026 | Base sintética calibrada con `perfil_lemas.json` (sedes, beca, promedio, conducta, atrasos; ~1500 estudiantes por año; tasa ≈ 8,5 %). Los parámetros agregados están en `data/synthetic/parametros_calibracion.json` | Fase 1 |
 | D32 | 01-oct-2026 | k por sede = **2 ×** el promedio histórico de representantes con no matrícula (`capacidad.multiplicador_k`), porque la capacidad de contacto supera con holgura el promedio. Se prioriza el recall | Equipo |
 | D33 | 01-oct-2026 | El representante con 39 estudiantes es una **cédula genérica** que se usa para familias extranjeras sin cédula ecuatoriana. Se confirma el tratamiento D29. `representante_atipico` **no** es predictor, porque equivaldría a usar la nacionalidad | Equipo |
 | D34 | 01-oct-2026 | La conversión de conducta 2022 a letras es correcta (18 % de B ese año); la variable se mantiene sin ajustes | Equipo |
 | D35 | 01-oct-2026 | Se confirma que la columna `Fecha` de 2022–2025 es la fecha en que el padre hace la reserva (= `Fecha Reserva`) | Equipo |
+| D36 | 01-oct-2026 | Fase 2: dos modelos obligatorios (regresión logística elastic-net y gradient boosting con monotonía creciente en atrasos), optimizados con Optuna (TPE, semilla 42) maximizando la PR-AUC en la validación interna temporal (C2 → C3) | Plan aprobado |
+| D37 | 01-oct-2026 | La selección en C4 se hace por Lift@k (desempate: PR-AUC) frente a la mejor regla (D o D2). Si el modelo no la supera, se recomienda la regla para priorizar y el modelo se usa solo para probabilidades y proyección | Equipo |
+| D38 | 01-oct-2026 | Calibración de Platt en C4 sobre el modelo congelado; huella SHA-256 registrada antes de abrir C5; C5 se evalúa una sola vez (`EVALUAR_C5`) | v5, 6.2 |
 
 La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_real.json`, generado por el notebook 02, y se transcribe aquí.
 
@@ -55,7 +58,7 @@ La decisión de C1 con datos reales se guarda en `results/metrics/decision_c1_re
 | I3 | v5, sección 3 | Puntaje 38/40 | Resuelta: 25/31 |
 | I4 | v5 | C1 fija y sin conteo de eventos | Resuelta: 5.3.3, 5.3.4, 6.2 y 6.3 |
 | I5 | v5 y Checklist | Cronograma de 6 semanas frente al plan de 3 semanas | Se mantiene a propósito; aquí se documentará el cronograma planificado frente al real |
-| I6 | v5, Checklist y Canvas | "Colab solo con autorización escrita" y autorización pendiente, aunque ya se trabaja con la extracción seudonimizada | **Pendiente:** registrar la autorización del custodio o limitarse a datos sintéticos |
+| I6 | v5, Checklist y Canvas | "Colab solo con autorización escrita" y autorización pendiente | **Resuelta (01-oct-2026):** LEMAS autorizó el tratamiento y el uso de Colab. Falta actualizar el texto en los documentos (Canvas, Checklist H1/H6 y v5 5.6, 5.7, 8.3, 8.4 y 15) |
 | I7 | Proyecto | Canvas ausente | Resuelta: el Canvas volvió a subirse |
 | I8 | Canvas | Declara "cumple con todos los criterios SMART" junto a 25/31 | Pendiente |
 | I9 | v5 y Canvas | Algunas secciones aún citan t0, H y k como pendientes | Pendiente (menor) |

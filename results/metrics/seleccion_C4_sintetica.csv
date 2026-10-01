@@ -1,0 +1,5 @@
+candidato,tipo,precision_k,lift_k,recall_k,pr_auc,roc_auc,brier
+D · más atrasos primero,regla,0.1383,1.455,0.2653,0.1345,0.5605,
+"Gradient boosting (árboles, monotonía en atrasos)",arboles,0.133,1.399,0.2551,0.1489,0.5887,0.2276
+Regresión logística regularizada,logistica,0.1277,1.343,0.2449,0.1657,0.586,0.0792
+D2 · señales administrativas,regla,0.1011,1.0632,0.1939,0.095,0.5406,

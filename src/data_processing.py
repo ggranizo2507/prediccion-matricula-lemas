@@ -338,8 +338,12 @@ def construir_cohorte(
         familias_no_matricula=int(evento_familiar.sum()),
         estado="ok",
     )
+    if "representante_atipico" not in paso:
+        paso["representante_atipico"] = 0
+    # representante_atipico solo se usa para revisar equidad: no es predictor
     columnas = ["cohorte", "rol", "id_estudiante", "id_familia", *CATEGORICAS, *NUMERICAS,
-                "fecha_pago_destino", "y_no_matricula", "matricula_tardia"]
+                "representante_atipico", "fecha_pago_destino", "y_no_matricula",
+                "matricula_tardia"]
     return paso[columnas].reset_index(drop=True), reporte
 
 
@@ -373,7 +377,10 @@ def construir_matriz_x(dataset: pd.DataFrame) -> pd.DataFrame:
     return X
 
 
-def construir_preprocesador(escalar: bool = True, min_frecuencia: int = 10) -> ColumnTransformer:
+def construir_preprocesador(
+    escalar: bool = True, min_frecuencia: int = 10,
+    categoricas: list[str] | None = None, numericas: list[str] | None = None,
+) -> ColumnTransformer:
     """Imputación + escalado (numéricas) y one-hot (categóricas).
 
     Se ajusta SOLO con las cohortes de entrenamiento dentro del pipeline del modelo.
@@ -383,13 +390,15 @@ def construir_preprocesador(escalar: bool = True, min_frecuencia: int = 10) -> C
     pasos_num = [("imputar", SimpleImputer(strategy="median"))]
     if escalar:
         pasos_num.append(("escalar", StandardScaler()))
-    categoricas = Pipeline([
+    columnas_cat = CATEGORICAS if categoricas is None else categoricas
+    columnas_num = NUMERICAS if numericas is None else numericas
+    transformador_cat = Pipeline([
         ("imputar", SimpleImputer(strategy="constant", fill_value="SIN_DATO")),
         ("onehot", OneHotEncoder(handle_unknown="infrequent_if_exist",
                                  min_frequency=min_frecuencia, sparse_output=False)),
     ])
     return ColumnTransformer(
-        [("num", Pipeline(pasos_num), NUMERICAS), ("cat", categoricas, CATEGORICAS)],
+        [("num", Pipeline(pasos_num), columnas_num), ("cat", transformador_cat, columnas_cat)],
         verbose_feature_names_out=False,
     )
 

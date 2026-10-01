@@ -1,0 +1,173 @@
+{
+  "fuente": "sintetica",
+  "sha256_sistema": "5a1d6142fe7b8f3792a8da5327ff96a6060cb132550045a84ddbd69a05b677fa",
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "cohortes_entrenamiento": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "priorizacion": "D · más atrasos primero",
+  "C4": [
+    {
+      "candidato": "D · más atrasos primero",
+      "tipo": "regla",
+      "precision_k": 0.1383,
+      "lift_k": 1.455,
+      "recall_k": 0.2653,
+      "pr_auc": 0.1345,
+      "roc_auc": 0.5605,
+      "brier": NaN
+    },
+    {
+      "candidato": "Gradient boosting (árboles, monotonía en atrasos)",
+      "tipo": "arboles",
+      "precision_k": 0.133,
+      "lift_k": 1.399,
+      "recall_k": 0.2551,
+      "pr_auc": 0.1489,
+      "roc_auc": 0.5887,
+      "brier": 0.2276
+    },
+    {
+      "candidato": "Regresión logística regularizada",
+      "tipo": "logistica",
+      "precision_k": 0.1277,
+      "lift_k": 1.343,
+      "recall_k": 0.2449,
+      "pr_auc": 0.1657,
+      "roc_auc": 0.586,
+      "brier": 0.0792
+    },
+    {
+      "candidato": "D2 · señales administrativas",
+      "tipo": "regla",
+      "precision_k": 0.1011,
+      "lift_k": 1.0632,
+      "recall_k": 0.1939,
+      "pr_auc": 0.095,
+      "roc_auc": 0.5406,
+      "brier": NaN
+    }
+  ],
+  "C5": [
+    {
+      "sistema": "Gradient boosting (árboles, monotonía en atrasos)",
+      "precision_k": 0.1383,
+      "lift_k": 1.7295,
+      "recall_k": 0.2989,
+      "pr_auc": 0.1049,
+      "roc_auc": 0.5562,
+      "brier": 0.0689,
+      "ic95_precision_k": [
+        0.0851,
+        0.1862
+      ],
+      "ic95_lift_k": [
+        1.1695,
+        2.2259
+      ],
+      "ic95_recall_k": [
+        0.202,
+        0.3846
+      ]
+    },
+    {
+      "sistema": "D · más atrasos primero",
+      "precision_k": 0.1011,
+      "lift_k": 1.2639,
+      "recall_k": 0.2184,
+      "pr_auc": 0.1098,
+      "roc_auc": 0.5922,
+      "brier": NaN,
+      "ic95_precision_k": [
+        0.0638,
+        0.1543
+      ],
+      "ic95_lift_k": [
+        0.8469,
+        1.8352
+      ],
+      "ic95_recall_k": [
+        0.1463,
+        0.3171
+      ]
+    },
+    {
+      "sistema": "D2 · señales administrativas",
+      "precision_k": 0.1011,
+      "lift_k": 1.2639,
+      "recall_k": 0.2184,
+      "pr_auc": 0.092,
+      "roc_auc": 0.5746,
+      "brier": NaN,
+      "ic95_precision_k": [
+        0.0585,
+        0.1489
+      ],
+      "ic95_lift_k": [
+        0.8037,
+        1.7981
+      ],
+      "ic95_recall_k": [
+        0.1389,
+        0.3107
+      ]
+    },
+    {
+      "sistema": "A · selección al azar de k familias",
+      "precision_k": 0.0825,
+      "lift_k": 1.0313,
+      "recall_k": 0.1782,
+      "pr_auc": 0.0798,
+      "roc_auc": 0.499,
+      "brier": NaN,
+      "ic95_precision_k": null,
+      "ic95_lift_k": null,
+      "ic95_recall_k": null
+    }
+  ],
+  "brier_C5": [
+    {
+      "linea_base": "R · si reservó, continúa",
+      "brier": 0.0746
+    },
+    {
+      "linea_base": "B0 · clase mayoritaria",
+      "brier": 0.0746
+    },
+    {
+      "linea_base": "B1 · tasa histórica (0.086)",
+      "brier": 0.0691
+    },
+    {
+      "linea_base": "Modelo calibrado · Gradient boosting (árboles, monotonía en atrasos)",
+      "brier": 0.0689
+    }
+  ],
+  "mape_C5": {
+    "modelo": 0.013,
+    "B1": 0.012
+  },
+  "hiperparametros": {
+    "logistica": {
+      "conjunto": "reducido",
+      "balanceado": false,
+      "C": 0.024189481491873988,
+      "l1_ratio": 0.6094520625358265
+    },
+    "arboles": {
+      "conjunto": "reducido",
+      "balanceado": true,
+      "learning_rate": 0.015777232078560362,
+      "max_depth": 2,
+      "max_leaf_nodes": 7,
+      "min_samples_leaf": 59,
+      "l2_regularization": 1.9392422417274633,
+      "max_iter": 72
+    }
+  }
+}

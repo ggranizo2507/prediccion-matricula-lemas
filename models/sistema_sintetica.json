@@ -1,0 +1,38 @@
+{
+  "fuente": "sintetica",
+  "fecha": "2026-10-01T09:18:09",
+  "tipo": "arboles",
+  "nombre": "Gradient boosting (árboles, monotonía en atrasos)",
+  "hiperparametros": {
+    "conjunto": "reducido",
+    "balanceado": true,
+    "learning_rate": 0.015777232078560362,
+    "max_depth": 2,
+    "max_leaf_nodes": 7,
+    "min_samples_leaf": 59,
+    "l2_regularization": 1.9392422417274633,
+    "max_iter": 72
+  },
+  "cohortes_entrenamiento": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "incluir_C1": true,
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "priorizacion": "D · más atrasos primero",
+  "modelo_supera_reglas": false,
+  "metricas_C4": {
+    "precision_k": 0.133,
+    "lift_k": 1.399,
+    "recall_k": 0.2551,
+    "pr_auc": 0.1489,
+    "roc_auc": 0.5887,
+    "brier": 0.2276
+  },
+  "tasa_historica_no_matricula": 0.08556306968538666,
+  "sha256": "5a1d6142fe7b8f3792a8da5327ff96a6060cb132550045a84ddbd69a05b677fa"
+}

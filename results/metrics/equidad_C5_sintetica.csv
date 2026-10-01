@@ -1,0 +1,10 @@
+variable,grupo,familias,eventos,tasa_seleccion,precision_k,recall_k
+sede,Mucho Lote 1,677,51,0.1669,0.0708,0.1569
+sede,Mucho Lote 2,411,36,0.1825,0.1467,0.3056
+beca,0,938,80,0.1706,0.1125,0.225
+beca,1,150,7,0.1867,0.0357,0.1429
+subnivel,Bachillerato,136,10,0.0882,0.0833,0.1
+subnivel,Educación General Básica,682,49,0.1774,0.1074,0.2653
+subnivel,Inicial,153,17,0.1895,0.1034,0.1765
+subnivel,Preparatoria,117,11,0.2222,0.0769,0.1818
+representante_atipico,0,1088,87,0.1728,0.1011,0.2184

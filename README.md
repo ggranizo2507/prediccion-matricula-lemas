@@ -65,6 +65,7 @@ Cada notebook trae una celda **0 · Preparar el entorno**. Esa celda clona el re
 | `00b_perfil_datos` | Perfil agregado para calibrar el sintético | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/00b_perfil_datos.ipynb) |
 | `01_exploracion` | EDA con 8 figuras a 300 DPI, conteo de eventos por estudiante y representante, y comparabilidad de C1 (SMD) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/01_exploracion.ipynb) |
 | `02_preprocesamiento` | Partición temporal, anti-fuga, transformaciones y decisión de incluir C1 (evaluada en C4) | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/02_preprocesamiento.ipynb) |
+| `03_modelado` | Optuna (regresión logística y gradient boosting), selección en C4 frente a las reglas D/D2, calibración, SHAP, congelamiento y prueba final única en C5 con IC bootstrap, equidad y proyección | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/03_modelado.ipynb) |
 
 En los notebooks 01 y 02, el parámetro `FUENTE` elige entre `sintetica` (cualquier persona) y `real` (solo en el entorno autorizado de LEMAS).
 

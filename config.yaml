@@ -123,6 +123,7 @@ prohibidas_en_X:
   - "matricula_tardia"
   - "id_estudiante"
   - "id_familia"
+  - "representante_atipico"   # solo para equidad (D33): equivaldría a usar nacionalidad
 
 # -----------------------------------------------------------------------------
 # Capacidad de contacto: k por sede = promedio histórico (cohortes de
