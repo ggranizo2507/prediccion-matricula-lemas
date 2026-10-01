@@ -1,0 +1,6 @@
+cohorte,origen_total,reserva_si,sin_reserva,pendientes,estado_no_reconocido,matriculados_sin_reserva_aprobada,aprobados,reserva_despues_t0,terminales_excluidos,confirmados_antes_t0,modelables,no_matricula,tardias,familias,familias_no_matricula,estado
+C1,1200,1061,139,73,0,88,988,10,69,0,909,97,8,759,95,ok
+C2,1200,1102,98,71,0,62,1031,10,51,0,970,109,19,831,108,ok
+C3,1200,1083,117,70,0,76,1013,8,41,0,964,111,16,859,109,ok
+C4,1200,1088,112,73,0,87,1015,10,65,0,940,101,16,864,100,ok
+C5,1200,1083,117,76,0,70,1007,14,56,0,937,104,21,866,104,ok

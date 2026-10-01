@@ -37,6 +37,7 @@ import json
 import logging
 import secrets
 import sys
+import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -133,22 +134,39 @@ def _verificar_colisiones(originales: pd.Series, codigos: pd.Series, tipo: str) 
         raise RuntimeError(f"Colisión de seudónimos en {tipo}. Aumente LONGITUD_CODIGO.")
 
 
+def _clave_encabezado(texto: str) -> str:
+    """'Anoa ', 'ANOA' y 'anoa' se tratan como el mismo encabezado."""
+    sin_tildes = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return " ".join(sin_tildes.lower().split())
+
+
 def _leer(ruta: Path) -> pd.DataFrame:
     """Lee CSV o Excel. En Excel une todas las hojas (una por ciclo lectivo)
     y agrega la columna 'hoja' para conservar su origen."""
     if ruta.suffix.lower() in {".xlsx", ".xls"}:
         hojas = pd.read_excel(ruta, sheet_name=None, dtype=str)
         partes = []
+        canonicas: dict[str, str] = {}   # encabezado normalizado -> nombre de la 1.ª hoja
         for nombre, df in hojas.items():
             df = df.dropna(how="all")
-            df.columns = [str(c).strip() for c in df.columns]
+            nombres = []
+            for c in df.columns:
+                limpio = " ".join(str(c).split())
+                clave = _clave_encabezado(limpio)
+                nombres.append(canonicas.setdefault(clave, limpio))
+            df.columns = nombres
             df.insert(0, "hoja", str(nombre))
             partes.append(df)
             log.info("Hoja '%s': %d filas", nombre, len(df))
-        columnas = {tuple(p.columns) for p in partes}
-        if len(columnas) > 1:
-            log.warning("Las hojas no tienen exactamente las mismas columnas; "
-                        "se unen igual y las faltantes quedan vacías.")
+        todas = set().union(*(set(p.columns) for p in partes))
+        for p in partes:
+            faltan = sorted(todas - set(p.columns))
+            vacias = [c for c in p.columns if c != "hoja" and p[c].isna().all()]
+            if faltan:
+                log.warning("Hoja '%s': no tiene las columnas %s", p["hoja"].iloc[0], faltan)
+            if vacias:
+                log.warning("Hoja '%s': columnas completamente vacías %s",
+                            p["hoja"].iloc[0], vacias)
         return pd.concat(partes, ignore_index=True)
     return pd.read_csv(ruta, dtype=str)
 

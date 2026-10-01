@@ -83,3 +83,82 @@ def tasa_por_grupo(
 def suprimir_celdas(conteos: pd.Series, minimo: int = 5) -> pd.Series:
     """Reemplaza conteos menores al mínimo por '<minimo' para reportes públicos."""
     return conteos.astype(object).where(conteos >= minimo, f"<{minimo}")
+
+
+COLUMNAS_BASE_SEUD = ("anoa", "fecha_pago", "id_seudonimo", "id_familia_seudonimo")
+
+
+def leer_base_seud(ruta: str | Path) -> pd.DataFrame:
+    """Lee base_seud.csv y verifica que sea la salida de 00a (columnas mínimas)."""
+    ruta = Path(ruta)
+    try:
+        df = pd.read_csv(ruta, dtype=str)
+    except Exception as error:  # archivo binario, Excel renombrado, etc.
+        raise ValueError(f"{ruta.name} no es un CSV legible: {error}") from error
+    faltan = [c for c in COLUMNAS_BASE_SEUD if c not in df.columns]
+    if faltan:
+        raise ValueError(f"{ruta.name} no parece base_seud.csv: faltan columnas {faltan}")
+    return completar_anoa_desde_hoja(unificar_alias(df, cargar_config().get("alias_columnas", {})))
+
+
+def unificar_alias(df: pd.DataFrame, alias: dict[str, str]) -> pd.DataFrame:
+    """Rellena cada columna oficial con su alias (encabezado distinto en otras hojas)."""
+    df = df.copy()
+    for viejo, oficial in alias.items():
+        if viejo not in df.columns:
+            continue
+        if oficial in df.columns:
+            vacio = df[oficial].isna() | (df[oficial].astype("string").str.strip() == "")
+            df.loc[vacio, oficial] = df.loc[vacio, viejo]
+        else:
+            df[oficial] = df[viejo]
+        df = df.drop(columns=viejo)
+        logging.getLogger("lemas.datos").info("Columna '%s' unificada en '%s'.", viejo, oficial)
+    return df
+
+
+def completar_anoa_desde_hoja(df: pd.DataFrame) -> pd.DataFrame:
+    """Si `anoa` está vacío en alguna hoja, lo toma del nombre de la hoja (p. ej. '2023')."""
+    if "hoja" not in df.columns:
+        return df
+    vacio = df["anoa"].isna() | (df["anoa"].astype("string").str.strip() == "")
+    anio_hoja = df["hoja"].astype("string").str.extract(r"(20\d{2})", expand=False)
+    completables = vacio & anio_hoja.notna()
+    if completables.any():
+        df = df.copy()
+        df.loc[completables, "anoa"] = anio_hoja[completables]
+        por_hoja = df.loc[completables, "hoja"].value_counts().sort_index().to_dict()
+        logging.getLogger("lemas.datos").warning(
+            "anoa vacío en %d filas; se completó con el nombre de la hoja: %s",
+            int(completables.sum()), por_hoja)
+    return df
+
+
+def obtener_base_seud(
+    ruta: str | Path, en_colab: bool, subir_de_nuevo: bool = False
+) -> pd.DataFrame:
+    """Devuelve la base seudonimizada; en Colab la pide si falta o si se pide reemplazarla.
+
+    Si el archivo subido no es válido, se borra para que la siguiente ejecución vuelva
+    a pedirlo (evita quedar atrapado con un archivo equivocado).
+    """
+    ruta = Path(ruta)
+    if subir_de_nuevo and ruta.exists():
+        ruta.unlink()
+    if not ruta.exists():
+        if not en_colab:
+            raise FileNotFoundError(f"Copie base_seud.csv en {ruta}")
+        from google.colab import files  # type: ignore[import-not-found]
+
+        print("Suba base_seud.csv (generado por 00a_seudonimizacion)")
+        subidos = files.upload()
+        nombre = next(iter(subidos))
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        Path(nombre).replace(ruta)
+        for otro in subidos:  # no dejar copias sueltas de otros archivos subidos
+            Path(otro).unlink(missing_ok=True)
+    try:
+        return leer_base_seud(ruta)
+    except ValueError:
+        ruta.unlink(missing_ok=True)
+        raise

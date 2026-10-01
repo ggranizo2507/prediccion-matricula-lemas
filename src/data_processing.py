@@ -22,7 +22,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.utils import Cohorte, cohortes_desde_config
+from src.utils import Cohorte, cohortes_desde_config, unificar_alias
 
 log = logging.getLogger("lemas.datos")
 
@@ -76,6 +76,13 @@ def _beca_binaria(serie: pd.Series) -> pd.Series:
     return resultado
 
 
+def anio_de_ciclo(serie: pd.Series) -> pd.Series:
+    """Año de inicio del ciclo a partir de textos como 2021, '2021.0', '2021-2022',
+    '2021 - 2022' o 'Ciclo 2021-2022' (toma el primer año de cuatro dígitos)."""
+    texto = serie.astype("string").str.extract(r"(20\d{2})", expand=False)
+    return pd.to_numeric(texto, errors="coerce").astype("Int64")
+
+
 def _a_fecha(serie: pd.Series) -> pd.Series:
     """Fechas ISO ('2021-11-09 14:53') o dd/mm/aaaa; lo ilegible queda NaT."""
     texto = serie.astype(str).str.strip()
@@ -100,16 +107,26 @@ def separar_nivel(nivel: str, paralelo: str | None = None) -> tuple[str, str]:
 
 def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Renombra a nombres internos, tipa columnas y elimina duplicados."""
+    df = unificar_alias(df, config.get("alias_columnas", {}))
     mapa = {origen: interno for interno, origen in config["columnas"].items()}
     faltantes = [c for c in mapa if c not in df.columns]
     if faltantes:
         raise KeyError(f"Faltan columnas en la base: {faltantes}")
 
+    vacias = df.isna().all(axis=1) | df.astype("string").apply(
+        lambda c: c.str.strip().fillna("") == "").all(axis=1)
+    if vacias.any():
+        log.info("Se descartan %d filas completamente vacías (formato de Excel).", vacias.sum())
+        df = df[~vacias]
+
     base = df.rename(columns=mapa)[list(mapa.values())].copy()
     for col in ("sede", "nivel", "paralelo", "reserva", "estado_reserva", "tipo_reserva"):
         base[col] = base[col].astype("string").str.strip()
 
-    base["anio_origen"] = pd.to_numeric(base["anio_origen"], errors="coerce").astype("Int64")
+    base["anio_origen"] = anio_de_ciclo(base["anio_origen"])
+    if "hoja" in df.columns:  # respaldo: el nombre de la hoja suele llevar el ciclo
+        base["anio_origen"] = base["anio_origen"].fillna(anio_de_ciclo(df["hoja"]))
+    base["id_estudiante"] = base["id_estudiante"].astype("string").str.strip().replace("", pd.NA)
     base["anio_ingreso"] = pd.to_numeric(base["anio_ingreso"], errors="coerce").astype("Int64")
     base["promedio"] = pd.to_numeric(base["promedio"], errors="coerce")
     base["atrasos"] = pd.to_numeric(base["atrasos"], errors="coerce")
@@ -133,15 +150,20 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     base["curso"] = [p[0] for p in partes]
     base["subnivel"] = [p[1] for p in partes]
 
+    # Primero se quitan las filas sin llave; si no, todas las filas con año o
+    # identificador vacío se tomarían como "duplicados" entre sí.
+    sin_id = base["id_estudiante"].isna() | base["anio_origen"].isna()
+    if sin_id.any():
+        log.warning("Se eliminan %d filas sin identificador (%d) o sin año (%d).", sin_id.sum(),
+                    base["id_estudiante"].isna().sum(), base["anio_origen"].isna().sum())
+        base = base[~sin_id]
+
     duplicados = base.duplicated(["anio_origen", "id_estudiante"], keep="first")
     if duplicados.any():
         log.warning("Se eliminan %d filas duplicadas (mismo estudiante y año).", duplicados.sum())
         base = base[~duplicados]
-
-    sin_id = base["id_estudiante"].isna() | base["anio_origen"].isna()
-    if sin_id.any():
-        log.warning("Se eliminan %d filas sin identificador o sin año.", sin_id.sum())
-        base = base[~sin_id]
+    log.info("Filas por año tras la limpieza: %s",
+             base["anio_origen"].value_counts().sort_index().to_dict())
     base = marcar_nuevos(base.reset_index(drop=True), config)
     return base
 
@@ -221,7 +243,7 @@ def construir_cohorte(
     reporte = {"cohorte": cohorte.nombre, "origen_total": len(origen)}
 
     if destino.empty:
-        log.warning("%s: no existe la hoja %d; la etiqueta no puede construirse.",
+        log.warning("%s: no hay filas con anoa = %d; la etiqueta no puede construirse.",
                     cohorte.nombre, cohorte.anio_destino)
         return pd.DataFrame(), {**reporte, "estado": "sin_destino"}
 

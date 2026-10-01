@@ -16,7 +16,7 @@ LEMAS entrega un Excel con **una hoja por ciclo lectivo** y una fila por estudia
 ## Flujo de preparación (dentro de LEMAS)
 1. `tools/seudonimizar.py` (o el notebook `00a`) une las hojas y deriva `anio_ingreso` de los dos primeros dígitos del código interno. Luego reemplaza la **cédula del estudiante** por `id_seudonimo` y la cédula del representante por `id_familia_seudonimo` (HMAC-SHA256 con clave custodiada). Por último, elimina el código, los nombres, las cédulas y las columnas internas (`Orden`, `saldo`, `deuda`, `statusp`) y genera un acta con la huella SHA-256 del archivo.
    - Se enlaza por cédula porque el código interno puede cambiar si el estudiante reingresa o se cambia de sede. Enlazar por código haría aparecer como "no matriculado" a quien sí se matriculó.
-2. `notebooks/00_perfil_datos_lemas.ipynb` produce `perfil_lemas.json`, que contiene solo agregados y suprime las celdas con menos de 5 casos.
+2. `notebooks/00b_perfil_datos.ipynb` produce `perfil_lemas.json`, que contiene solo agregados y suprime las celdas con menos de 5 casos.
 3. `src/synthetic.py --perfil perfil_lemas.json` calibra la base sintética con esos totales.
 
 ## Diccionario (base seudonimizada)
