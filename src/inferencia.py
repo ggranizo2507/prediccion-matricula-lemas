@@ -15,7 +15,9 @@ Todo ocurre en memoria. Nada se guarda en disco ni se envía a terceros.
 Modos (D42):
 - ``demo``: solo datos sintéticos (columna ``origen_datos = SINTETICO``).
 - ``institucional``: base seudonimizada real; solo en un equipo de LEMAS o en Colab
-  autorizado (variable de entorno ``LEMAS_MODO=institucional``).
+  autorizado (variable de entorno ``LEMAS_MODO=institucional``). Desde D45 la aplicación
+  también seudonimiza el Excel y muestra la lista con nombres (``src/institucional.py``);
+  este módulo sigue recibiendo únicamente la base seudonimizada.
 """
 
 from __future__ import annotations
@@ -73,8 +75,9 @@ def validar_entrada(df: pd.DataFrame, modo: str) -> None:
     if identificadores:
         raise ErrorEntrada(
             "El archivo contiene columnas con identificadores directos "
-            f"({', '.join(identificadores)}). Primero debe pasar por la seudonimización "
-            "(cuaderno 00a). La aplicación nunca recibe cédulas, nombres ni códigos internos.")
+            f"({', '.join(identificadores)}). Un archivo CSV debe estar seudonimizado. En "
+            "LEMAS, suba el Excel junto con la clave en el modo institucional (o use el "
+            "cuaderno 00a). La versión pública nunca recibe cédulas, nombres ni códigos.")
     faltan = [c for c in COLUMNAS_MINIMAS if c not in df.columns]
     if faltan:
         raise ErrorEntrada(f"Faltan columnas obligatorias: {', '.join(faltan)}.")

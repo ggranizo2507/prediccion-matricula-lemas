@@ -19,10 +19,13 @@ La lista es un **apoyo a la decisión humana**. La aplicación no contacta a nad
 | Riesgo | Medida implementada | Dónde |
 |---|---|---|
 | Exposición de identidades | Seudonimización **HMAC-SHA256** de las cédulas del estudiante y del representante, con clave custodiada por LEMAS. Se eliminan nombres, código interno y columnas financieras | `tools/seudonimizar.py`, `00a` |
-| Reidentificación por terceros | Solo el custodio puede revertir los seudónimos, con la clave y dentro de LEMAS | `seudonimizar.py reidentificar` |
+| Reidentificación por terceros | Solo quien tiene la clave y el Excel original puede revertir los seudónimos, y solo dentro de LEMAS | `seudonimizar.py reidentificar`, pestaña *Lista con nombres* |
 | Publicación accidental | `.gitignore` bloquea Excel, `base_seud.csv`, claves, actas, perfiles y modelos reales; el repositorio contiene solo código, datos **sintéticos** y agregados | `.gitignore` |
 | Inferencia a partir de agregados | Supresión de celdas con **menos de 5 casos** en tablas y figuras; con datos reales, el gráfico SHAP por estudiante no se muestra | `privacidad.min_celda`, cuadernos |
-| Datos reales en un servidor público | **Aplicación en dos modos (D42):** la versión pública rechaza todo archivo no sintético, y ambos modos rechazan archivos con cédulas, nombres o códigos | `src/inferencia.py` |
+| Datos reales en un servidor público | **Aplicación en dos modos (D42):** la versión pública rechaza todo archivo no sintético y no tiene carga de Excel ni pantalla con nombres. El modelo recibe solo la base seudonimizada | `src/inferencia.py` |
+| Datos personales en la app institucional (D45) | El Excel y la clave se procesan **en memoria y en el mismo equipo**; el arranque limita la app a `localhost`; se verifica que la base de trabajo no tenga nombres ni cédulas; los nombres se muestran solo tras confirmar que se es personal autorizado; botón para borrar los datos de la sesión | `src/institucional.py`, `iniciar_lemas.bat` |
+| Uso de una clave equivocada o nueva | La clave se sube en cada uso; la app muestra su huella para compararla con la de años anteriores y solo ofrece crear una clave si LEMAS confirma que no tiene | `app/app.py` |
+| Copias de la lista con nombres | El archivo descargado contiene datos personales: el manual indica guardarlo solo en carpetas autorizadas y eliminarlo al terminar la campaña; `.gitignore` bloquea esos archivos | Manual de usuario |
 | Retención | Las copias de trabajo en Colab se borran al terminar cada sesión; los modelos reales no salen de LEMAS; se propone eliminarlos 30 días después de la aceptación académica | Manual de usuario, v5 5.7 |
 | Minimización | Solo se usan variables necesarias y conocidas en t0. No se usan diagnósticos, motivos sensibles (DECE) ni texto libre | `config.yaml`, v5 5.6 |
 
@@ -63,11 +66,12 @@ La lista es un **apoyo a la decisión humana**. La aplicación no contacta a nad
 2. El número de eventos por grupo es pequeño: la equidad por beca, subnivel o nacionalidad no puede afirmarse con certeza.
 3. La regla D2 refleja el pasado. Si cambian las políticas de cobro o de reservas, debe revalidarse.
 4. No se midió el efecto causal del contacto: no se sabe aún si llamar a una familia cambia su decisión.
+5. Con D45 la aplicación institucional muestra nombres y permite descargar una lista con datos personales. Esto facilita el trabajo de Secretaría, pero amplía el número de personas que pueden verlos: la protección depende de que LEMAS limite quién usa el equipo y quién tiene la clave. Además, como la clave se sube en cada uso, pasa por más manos que si estuviera en un solo equipo.
 
 ## 7. Gobernanza propuesta para LEMAS
 | Rol | Responsabilidad |
 |---|---|
-| Custodio de datos | Guarda la clave, aprueba cada extracción, reidentifica la lista y elimina las copias |
+| Custodio de datos | Guarda la clave y la entrega solo para cada uso, aprueba cada extracción, obtiene la lista con nombres, verifica la huella de la clave y elimina las copias |
 | Admisiones / Secretaría | Usa la lista solo para contacto de apoyo y registra el resultado del contacto |
 | Dirección | Revisa cada año los resultados agregados y la equidad, y decide si se mantiene el sistema |
 | Equipo técnico | Revalida la regla y el modelo con cada cohorte nueva (mayo) |
@@ -80,6 +84,7 @@ La lista es un **apoyo a la decisión humana**. La aplicación no contacta a nad
 - [x] Variables sensibles excluidas (nacionalidad, DECE, texto libre)
 - [x] Análisis de equidad por sede, beca, subnivel y cédula genérica
 - [x] Decisión humana obligatoria; la app no actúa sola
+- [x] Datos personales solo en el modo institucional, en el mismo equipo y en memoria (D45)
 - [x] Limitaciones comunicadas en la app, el README y el pitch
 - [ ] Comunicación a las familias (recomendado antes de un uso permanente)
 

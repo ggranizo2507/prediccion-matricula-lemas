@@ -103,19 +103,23 @@ pytest -q                                            # ejecuta las pruebas
 ```
 
 ## Interfaz de usuario
-Aplicación **Streamlit** en español (`app/app.py`), con **dos modos** (decisión D42):
+Aplicación **Streamlit** en español (`app/app.py`), con **dos modos** (decisiones D42 y D45):
 
 | Modo | Dónde | Datos |
 |---|---|---|
 | **Demo** (por defecto) | Streamlit Community Cloud | Solo **sintéticos**; rechaza cualquier otro archivo |
-| **Institucional** | Computador de LEMAS (`LEMAS_MODO=institucional`) | `base_seud.csv` seudonimizado; nada se guarda |
+| **Institucional** | Computador de LEMAS, solo `localhost` (doble clic en `iniciar_lemas.bat`) | El **Excel de LEMAS + la clave del custodio**: se seudonimiza en el propio equipo. También acepta `base_seud.csv`. Nada se guarda |
 
 **Funciones:** botón *Prueba con ejemplo*; carga validada de CSV (rechaza cédulas o nombres); lista de contactos por sede con k editable, motivo de cada prioridad y descarga CSV; proyección por sede y subnivel frente a B1; formulario para evaluar a un estudiante; sección *Acerca de* con métricas, limitaciones y privacidad.
+
+**Solo en modo institucional (D45):** carga del Excel institucional y de la clave, seudonimización en memoria con verificación automática, descarga de `base_seud.csv` y del acta, pestaña **Lista con nombres** para personal autorizado y botón **Borrar datos de la sesión**. Así el personal de LEMAS no necesita Colab ni línea de comandos. La versión pública no tiene ninguna de estas funciones.
 
 ```bash
 pip install -r app/requirements.txt
 streamlit run app/app.py                          # demo
-LEMAS_MODO=institucional streamlit run app/app.py # solo dentro de LEMAS
+# Solo dentro de LEMAS: doble clic en iniciar_lemas.bat (Windows) o:
+bash iniciar_lemas.sh                             # macOS / Linux
+python tools/generar_excel_ejemplo.py             # Excel y clave FICTICIOS para practicar
 ```
 Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño en [`docs/arquitectura.md`](docs/arquitectura.md).
 
@@ -128,7 +132,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 73 pruebas: datos, métricas, modelado e interfaz |
+| `tests/` | 102 pruebas: datos, métricas, modelado, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -136,7 +140,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D44 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D45 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
@@ -144,7 +148,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Privacidad, sesgos, impacto social, mitigaciones y limitaciones |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
 | [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
-| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 27 preguntas probables de la defensa con sus respuestas |
+| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 28 preguntas probables de la defensa con sus respuestas |
 | [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
 
 ## Consideraciones éticas

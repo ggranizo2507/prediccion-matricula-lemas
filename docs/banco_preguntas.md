@@ -89,7 +89,10 @@ La regla detecta menos casos en familias becadas (recall 18 % frente a 32 %), au
 No. La nacionalidad nunca es predictor, y no usamos motivos del DECE ni información de salud. La cédula genérica de familias extranjeras se trató como problema de calidad, no como variable.
 
 **25. ¿Qué pasa si alguien sube datos reales a la app pública?**
-La versión pública funciona en modo demostración y solo acepta datos sintéticos. Además, en cualquier modo rechaza archivos con columnas de identificación (CI, cédula, nombre, teléfono, correo, dirección). El modo institucional se ejecuta solo en un equipo local dentro de LEMAS.
+La versión pública funciona en modo demostración y solo acepta datos sintéticos; rechaza cualquier otro archivo y no tiene carga de Excel ni pantalla con nombres. Los datos reales se procesan solo en el modo institucional, que corre en un computador de LEMAS y solo se abre en ese mismo equipo.
+
+**25b. ¿Cómo usa LEMAS el sistema si su personal no conoce Colab?**
+Con un doble clic abre la app en modo institucional y sube el Excel de siempre junto con la clave del custodio. La app seudonimiza en memoria con la misma técnica HMAC-SHA256, verifica que no queden nombres ni cédulas y genera la lista. Para llamar, el personal autorizado abre la pestaña "Lista con nombres". Nada se guarda en disco y la clave no se almacena.
 
 **26. ¿Quién toma la decisión final?**
 Siempre una persona de Secretaría. La app muestra el motivo de cada familia para que la decisión sea explicable y revisable.

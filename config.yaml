@@ -69,6 +69,19 @@ alias_columnas:
   "Fecha": "Fecha Reserva"        # hojas 2022-2025
 
 # -----------------------------------------------------------------------------
+# Seudonimización del Excel institucional (cuaderno 00a y modo institucional de la
+# aplicación, D45). Encabezados acordados con LEMAS el 30-sep-2026.
+# -----------------------------------------------------------------------------
+seudonimizacion:
+  col_estudiante: "CI"            # llave estable del estudiante
+  col_familia: "cedulap"          # cédula del representante
+  col_codigo: "Codigo"            # solo aporta el año de ingreso y luego se elimina
+  nombre_estudiante: "Nombre Completo"
+  nombre_representante: "Nombres completos padre de familia"
+  eliminar: ["Codigo", "Orden", "Nombre Completo", "Nombres completos padre de familia",
+             "saldo", "deuda", "statusp"]
+
+# -----------------------------------------------------------------------------
 # Población elegible en la foto t0
 # -----------------------------------------------------------------------------
 elegibilidad:

@@ -14,11 +14,12 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 
 | | **Demostración (pública)** | **Institucional (LEMAS)** |
 |---|---|---|
-| Dónde | En el navegador, con el enlace del README | En un computador de LEMAS |
-| Datos | Sintéticos (ficticios), ya incluidos | Base seudonimizada real del año |
+| Dónde | En el navegador, con el enlace del README | En un computador de LEMAS (doble clic en `iniciar_lemas.bat`) |
+| Datos | Sintéticos (ficticios), ya incluidos | El Excel de LEMAS y la clave del custodio |
+| Nombres | Nunca | Solo en la pestaña **Lista con nombres**, para personal autorizado |
 | Para qué | Conocer la herramienta, el video y la evaluación académica | Uso real cada 20 de febrero |
 
-**Importante:** nunca suba datos reales a la versión pública. La aplicación los rechaza.
+**Importante:** nunca suba datos reales a la versión pública. La aplicación los rechaza, pero el archivo alcanza a viajar por internet. El Excel y la clave solo se usan en el modo institucional.
 
 ## 3. Uso paso a paso (demostración)
 
@@ -48,37 +49,48 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 
 ## 5. Procedimiento anual en LEMAS (modo institucional)
 
-**Responsables:** responsable de datos (pasos 1–3), Admisiones (4–6) y custodio (7).
+No se necesita Colab ni escribir comandos. Todo ocurre en un computador de LEMAS.
 
-1. **Hasta el 19 de febrero:** exporte el Excel con la hoja del **ciclo actual** y la del **ciclo anterior**, con los encabezados estándar (ver `data/README.md`).
-2. Abra en Colab el cuaderno **`00a_seudonimizacion`**. Use `MODO_CLAVE = "subir"` y **la misma clave de siempre**. Descargue `base_seud.csv`.
-3. Ejecute la última celda de `00a` para borrar el Excel y la clave de Colab.
-4. **En un computador de LEMAS**, con el repositorio descargado, ejecute una sola vez la instalación:
-   ```bash
-   pip install -r app/requirements.txt
-   ```
-   Luego abra la aplicación en modo institucional:
-   ```bash
-   # Windows (PowerShell)
-   $env:LEMAS_MODO="institucional"; streamlit run app/app.py
-   # macOS / Linux
-   LEMAS_MODO=institucional streamlit run app/app.py
-   ```
-   Se abrirá en el navegador del mismo equipo (`http://localhost:8501`), con un aviso naranja de **Modo institucional**.
-5. Suba `base_seud.csv`, elija el ciclo, ajuste k si cambió el personal y pulse **Generar lista**.
-   - Si en la carpeta `models/` está el archivo `sistema_real.joblib` (el sistema validado en la Fase 2, generado por el cuaderno 03), la app lo usa. Si no, entrena uno nuevo con la base cargada, que debe incluir al menos los ciclos 2022 a 2025.
-6. **Descargue la lista** (seudónimos) y entréguela al custodio.
-7. **El custodio** obtiene los datos del representante solo para uso interno. El "padrón" es el Excel original del ciclo, que contiene `cedulap` y los nombres:
-   ```bash
-   python tools/seudonimizar.py reidentificar --entrada lista_contactos_2026.csv \
-       --padron Formato.xlsx --clave clave_lemas.key \
-       --col-seudonimo id_familia --col-padron cedulap --tipo FAM \
-       --salida lista_con_nombres.csv
-   ```
-   Las familias con cédula genérica aparecen como `IND-EST-…`. Para ellas se reidentifica al estudiante con `--col-seudonimo estudiantes_ids --col-padron CI --tipo EST`, quitando antes el prefijo `IND-`.
-8. Al terminar, cierre la aplicación y elimine `base_seud.csv` y las listas de las carpetas de trabajo.
+**Responsables:** responsable de datos (paso 1), Admisiones junto con el custodio (pasos 2–7).
 
-**Nunca:** suba `base_seud.csv` a la versión pública, a GitHub, al correo o a chats; ni comparta la clave.
+### 5.1 Preparación del equipo (una sola vez)
+1. Instale **Python 3.11 o superior** desde python.org y marque la opción *Add python.exe to PATH*.
+2. Descargue el repositorio (botón **Code → Download ZIP** en GitHub) y descomprímalo en una carpeta del equipo.
+3. Haga doble clic en **`iniciar_lemas.bat`**. La primera vez instala lo necesario (requiere internet y tarda unos minutos). En macOS o Linux use `bash iniciar_lemas.sh`.
+
+### 5.2 Uso cada 20 de febrero
+1. **Hasta el 19 de febrero:** exporte el Excel institucional de siempre, con una hoja por ciclo y los encabezados estándar (ver `data/README.md`). Debe incluir al menos los ciclos 2022 a 2025 y el ciclo actual.
+2. Haga doble clic en **`iniciar_lemas.bat`**. Se abre el navegador en `http://localhost:8501` con un aviso amarillo de **Modo institucional**. Deje abierta la ventana negra mientras trabaja.
+3. En la barra lateral suba dos archivos:
+   - **Excel de LEMAS (.xlsx)**.
+   - **Clave del custodio (.key)**: el archivo `clave_lemas.key`, **el mismo de siempre**.
+4. La aplicación seudonimiza el Excel en el equipo. Abra el recuadro **🔐 Excel seudonimizado en este equipo** y revise:
+   - que el número de hojas y de filas sea el esperado;
+   - que la **huella de la clave** sea la misma de años anteriores (anótela la primera vez). Si cambió, se usó otra clave;
+   - si lo necesita, descargue `base_seud.csv` y el acta de extracción.
+5. Elija el ciclo, ajuste k si cambió el personal y pulse **Generar lista** (pestaña *Lista de contactos*).
+   - Si en la carpeta `models/` está `sistema_real.joblib` (el sistema validado en la Fase 2, generado por el cuaderno 03), la app lo usa. Si no, entrena uno nuevo con el Excel cargado.
+6. Abra la pestaña **🪪 Lista con nombres**, marque **Soy personal autorizado y deseo ver los nombres** y descargue la lista. Muestra el representante, su cédula, sus estudiantes con el curso y el motivo.
+   - La columna **Observación** avisa cuando la cédula del representante es compartida (cédula genérica): en ese caso confirme el contacto con los datos del estudiante.
+7. Al terminar pulse **🧹 Borrar datos de la sesión**, cierre el navegador y la ventana negra. Guarde la lista con nombres solo en una carpeta autorizada y elimínela al terminar la campaña.
+
+### 5.3 La clave
+- LEMAS usa **una sola clave**. Con una clave distinta los seudónimos cambian y las listas anteriores no se pueden cruzar ni identificar.
+- La guarda el custodio de datos y la entrega solo para cada uso. La aplicación no la guarda.
+- La opción **¿LEMAS aún no tiene clave?** sirve únicamente la primera vez: crea una clave nueva para descargar. Si ya existe una clave, no la use.
+- Nunca envíe la clave por correo ni la suba a internet.
+
+### 5.4 Práctica sin datos reales
+Para capacitar al personal, genere un Excel y una clave **ficticios**:
+```bash
+python tools/generar_excel_ejemplo.py --salida ejemplo_lemas
+```
+Crea `ejemplo_institucional.xlsx` y `clave_ejemplo.key`, con personas inventadas («Estudiante 0001», «Representante 0001»). Úselos en el modo institucional para ensayar todo el procedimiento.
+
+### 5.5 Alternativa con Colab (uso académico)
+El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma clave. La aplicación también acepta ese archivo (**…o suba base_seud.csv**), pero con él no hay lista con nombres, porque el archivo no los contiene. En ese caso el custodio puede usar `python tools/seudonimizar.py reidentificar`.
+
+**Nunca:** suba el Excel, `base_seud.csv` o la lista con nombres a la versión pública, a GitHub, al correo o a chats; ni comparta la clave.
 
 ## 6. Protocolo sugerido para el contacto
 - Presentarse como apoyo: "Queremos saber si necesitan información o facilidades para la matrícula".
@@ -90,14 +102,23 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 | Mensaje | Qué hacer |
 |---|---|
 | "La versión pública solo acepta datos sintéticos" | Está en la versión de demostración. Use **Prueba con ejemplo**, o use el modo institucional dentro de LEMAS |
-| "El archivo contiene columnas con identificadores directos" | El archivo no pasó por `00a`. Seudonimícelo primero; nunca suba cédulas ni nombres |
+| "El archivo contiene columnas con identificadores directos" | Subió un CSV con cédulas o nombres. En LEMAS suba el **Excel junto con la clave** en el modo institucional; nunca lo suba a la versión pública |
+| "El archivo de clave no es válido" | Use el archivo `clave_lemas.key` del custodio, sin abrirlo ni modificarlo |
+| "No se pudo leer el Excel" | Verifique que sea `.xlsx`, sin contraseña y que no esté abierto en Excel |
+| "Al Excel le faltan columnas obligatorias" | Revise los encabezados `CI`, `cedulap` y `Codigo` (`data/README.md`) |
+| "Por seguridad no se continúa: … aún hay columnas con nombres o cédulas" | El Excel tiene una columna extra con datos personales. Elimínela y vuelva a subirlo |
+| "Modo institucional abierto desde otro equipo" | Abra la aplicación en el mismo computador, con `iniciar_lemas.bat` |
+| "Se necesitan los dos archivos: el Excel y la clave" | Suba el archivo que falta |
 | "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
-| "La base no tiene suficientes ciclos para entrenar" | Incluya los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
+| "La base no tiene suficientes ciclos para entrenar" | Incluya en el Excel las hojas de los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
 | "Ese ciclo no tiene estudiantes con reserva aprobada" | Elija otro ciclo: el actual aún no tiene reservas aprobadas o no está en el archivo |
 | "El archivo no tiene la estructura esperada" | Verifique que sea un CSV generado por `00a`, con fechas en formato día/mes/año o año-mes-día |
 
 ## 8. Preguntas frecuentes
 - **¿Por qué no se usa el modelo de IA para ordenar la lista?** Porque en la prueba final la regla D2 fue mejor (Lift 1,97 frente a 0,98). El análisis con IA sirvió para descubrir y validar esa regla.
 - **¿Puedo cambiar k?** Sí. Un k mayor encuentra más casos pero con menor proporción de aciertos.
-- **¿La app guarda los datos?** No. Procesa en memoria y no escribe en disco.
+- **¿La app guarda los datos?** No. Procesa en memoria y no escribe en disco. Solo quedan los archivos que usted descargue.
+- **¿Necesito Colab?** No. En el modo institucional la app convierte el Excel directamente.
+- **¿Qué pasa si se pierde la clave?** Las listas ya descargadas con nombres siguen sirviendo. Para trabajar de nuevo puede crear otra clave, pero los seudónimos cambiarán y no coincidirán con los archivos anteriores.
+- **¿Pueden ver la app desde otro computador?** No. El arranque solo permite abrirla en el mismo equipo.
 - **¿Sirve para estudiantes nuevos?** No. Solo para estudiantes antiguos con reserva aprobada.
