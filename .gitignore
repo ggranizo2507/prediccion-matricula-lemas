@@ -11,6 +11,9 @@ perfil_lemas.json
 # Claves de seudonimización
 *.key
 custodio/
+# Listas con nombres (datos personales) y ejemplos de práctica generados localmente
+lista_contactos_con_nombres_*
+ejemplo_lemas/
 # Modelos entrenados con datos reales
 models/*_real*
 # Resultados individuales (solo se publican agregados)

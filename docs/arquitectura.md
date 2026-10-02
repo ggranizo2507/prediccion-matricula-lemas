@@ -23,16 +23,19 @@ flowchart LR
 | Módulo | Responsabilidad |
 |---|---|
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0 y H, filtros de elegibilidad, alias de columnas, capacidad k, privacidad y figuras. El código no tiene fechas ni umbrales escritos a mano |
-| `tools/seudonimizar.py` | Seudonimización con HMAC-SHA256 (cédula del estudiante y del representante), derivación del año de ingreso, acta con huella SHA-256 y reidentificación por el custodio |
+| `tools/seudonimizar.py` | Seudonimización con HMAC-SHA256 (cédula del estudiante y del representante), derivación del año de ingreso, acta con huella SHA-256 y reidentificación por el custodio. Sus funciones trabajan en memoria y las usan el cuaderno 00a, la línea de comandos y la aplicación |
+| `tools/generar_excel_ejemplo.py` | Excel y clave **ficticios** con la estructura institucional, para capacitación y pruebas |
 | `src/data_processing.py` | Limpieza, normalización (curso, estados de reserva, alias), representantes atípicos, predictores conocidos en t0, cohortes, etiqueta y guardas anti-fuga |
 | `src/auditoria.py` | Conteo de eventos, EPV, diferencias estandarizadas, decisión sobre C1, tabla 6.3 del v5 y sensibilidad |
 | `src/evaluate.py` | Consolidación por representante, k por sede y Precision/Recall/Lift@k familiar |
 | `src/modeling.py` | Candidatos, optimización con Optuna, selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
 | `src/inferencia.py` | Lógica de la aplicación (validación, población del ciclo, puntuación, lista, proyección y formulario), separada de Streamlit para poder probarla |
+| `src/institucional.py` | Modo institucional (D45): seudonimiza el Excel en memoria, verifica que no queden identificadores, arma el acta y construye la lista con nombres. Comprueba que la app se use en el mismo equipo |
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 73 pruebas: reglas del estudio, métricas, modelado, protocolo (C5 nunca se usa al ajustar) e interfaz |
+| `tests/` | 102 pruebas: reglas del estudio, métricas, modelado, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
 
@@ -59,9 +62,9 @@ flowchart LR
 3. **Proyección por sede y subnivel:** suma de probabilidades de matrícula, comparada siempre con B1 (MAPE de 2,8 % en ambos casos).
 4. **Capacidad:** k = 2 × el promedio histórico de familias con no matrícula (D32): 118 en Mucho Lote 1 y 47 en Mucho Lote 2.
 
-## 4. Aplicación en dos modos (D42)
+## 4. Aplicación en dos modos (D42 y D45)
 
-Diseño aprobado el 01-oct-2026: **los datos reales nunca llegan a un servidor público.**
+Diseño aprobado el 01-oct-2026: **los datos reales nunca llegan a un servidor público.** Desde D45, el modo institucional cubre el ciclo completo dentro de LEMAS (Excel → lista priorizada → lista con nombres), sin Colab ni línea de comandos.
 
 ```mermaid
 flowchart TB
@@ -70,46 +73,62 @@ flowchart TB
         APPD --> RD[Lista, proyección y formulario<br/>con datos ficticios]
     end
     subgraph LEMAS["Modo institucional · equipo de LEMAS (localhost)"]
-        X[Excel del ciclo actual + anterior] -->|00a con la misma clave| BS[base_seud.csv]
-        BS --> APPI[app/app.py<br/>LEMAS_MODO=institucional]
+        X[Excel institucional<br/>una hoja por ciclo] --> SE[Seudonimización en memoria<br/>src/institucional.py]
+        K[Clave del custodio<br/>se sube en cada uso] --> SE
+        SE -->|verificación: sin nombres ni cédulas| BS[Base seudonimizada<br/>en memoria]
+        SE -.->|solo en memoria| P[Padrón: seudónimo → persona]
+        BS --> APPI[Priorización D2 y modelo<br/>src/inferencia.py]
         M[models/sistema_real.joblib<br/>sistema congelado, opcional] --> APPI
-        APPI --> L[Lista por seudónimo<br/>descarga CSV]
-        L -->|tools/seudonimizar.py reidentificar<br/>solo el custodio| N[Lista con nombres<br/>uso interno de Secretaría]
+        APPI --> L[Lista por seudónimo]
+        L --> N[Lista con nombres<br/>personal autorizado]
+        P -.-> N
     end
 ```
 
 | Aspecto | Modo demo | Modo institucional |
 |---|---|---|
 | Dónde corre | Streamlit Community Cloud | Un computador de LEMAS (`localhost`) |
-| Cómo se activa | Por defecto | Variable de entorno `LEMAS_MODO=institucional` |
-| Datos aceptados | Solo sintéticos (`origen_datos = SINTETICO`) | `base_seud.csv` seudonimizado |
+| Cómo se activa | Por defecto | `iniciar_lemas.bat`, que fija `LEMAS_MODO=institucional` y limita el servidor a `127.0.0.1` |
+| Datos aceptados | Solo sintéticos (`origen_datos = SINTETICO`) | Excel institucional + clave del custodio (se seudonimiza en el equipo), o `base_seud.csv` ya seudonimizado |
+| Seudonimización | No aplica | En memoria, con la misma técnica del cuaderno 00a; los seudónimos coinciden |
+| Nombres en pantalla | Nunca | Solo en la pestaña *Lista con nombres*, tras confirmar que se es personal autorizado |
 | Sistema de predicción | Se reentrena con la base sintética (mismo protocolo y mismos hiperparámetros) | `models/sistema_real.joblib` congelado en la Fase 2; si no está, se reentrena con la base cargada |
-| Salida | Lista ficticia | Lista por seudónimo; el custodio reidentifica |
+| Salida | Lista ficticia | Lista por seudónimo y, para personal autorizado, lista con nombres |
 
-**Controles implementados en `src/inferencia.py`:**
-- Rechaza cualquier archivo con columnas de identificadores directos (cédula, nombres, código interno, teléfono, correo, dirección), en **ambos** modos.
-- En modo demo rechaza todo archivo que no sea sintético.
-- Procesa en memoria: no escribe en disco ni envía datos a terceros. La caché de Streamlit vive solo durante la sesión.
+**Controles implementados en `src/inferencia.py` (ambos modos):**
+- El modelo y la priorización reciben **solo la base seudonimizada**. Un CSV con columnas de identificadores directos (cédula, nombres, código interno, teléfono, correo, dirección) se rechaza.
+- En modo demo se rechaza todo archivo que no sea sintético.
+- Procesa en memoria: no escribe en disco ni envía datos a terceros.
 - Muestra mensajes de error en lenguaje simple, sin detalles técnicos.
+
+**Controles del modo institucional (`src/institucional.py` y `app/app.py`, D45):**
+- El cargador de Excel, la clave y la pestaña con nombres **no existen** en el modo demo.
+- Solo funcionan si la app se abre en el mismo equipo (`localhost`). El arranque limita el servidor a `127.0.0.1`, así que otros equipos de la red no pueden conectarse; la app además comprueba la dirección con la que se abrió.
+- Después de seudonimizar se verifica que no quede ninguna columna con nombres ni cédulas válidas; si queda alguna, el proceso se detiene. También se eliminan columnas no previstas que parezcan identificadores (teléfono, correo, dirección).
+- La clave se sube en cada uso y no se guarda. La app muestra una **huella de la clave** (SHA-256 truncado, no reversible) para comprobar que es la misma de siempre.
+- El padrón (seudónimo → persona) vive solo en la memoria de la sesión. El botón **Borrar datos de la sesión** descarta el Excel, la clave, el padrón y los resultados.
+- Los nombres se muestran solo tras una confirmación explícita, con un aviso de uso interno.
+
+**Límite conocido:** la comprobación de `localhost` se basa en la dirección que envía el navegador, así que es una ayuda para el usuario y no una barrera por sí sola. La protección real es que el arranque solo escucha en `127.0.0.1`. Si alguien inicia la app a mano sin esa opción, queda expuesta a la red local.
 
 ## 5. Ciclo operativo anual (modo institucional)
 
 | Fecha | Paso | Responsable |
 |---|---|---|
 | Septiembre–enero | Reservas y su aprobación | Secretaría |
-| Hasta el 19 de febrero | Exportar el Excel (ciclo actual + anterior) y ejecutar `00a` con la clave | Responsable de datos |
-| 20 de febrero (t0) | Ejecutar la app en modo institucional y descargar la lista por sede | Admisiones |
-| 20 de febrero | Reidentificar la lista con `tools/seudonimizar.py reidentificar` | Custodio |
+| Hasta el 19 de febrero | Exportar el Excel institucional (una hoja por ciclo) | Responsable de datos |
+| 20 de febrero (t0) | Abrir la app con `iniciar_lemas.bat`, subir el Excel y la clave, y generar la lista por sede | Admisiones, con el custodio |
+| 20 de febrero | Obtener la lista con nombres en la app y borrar los datos de la sesión | Custodio |
 | 20-feb a 30-abr | Contacto de apoyo (planes de pago, información, inquietudes) | Secretaría |
 | Mayo | Comparar la lista con las matrículas reales y actualizar el historial | Datos + Dirección |
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` y registro de decisiones D01–D43.
+- **Configuración central** en `config.yaml` y registro de decisiones D01–D45.
 - **Versiones exactas** en `requirements-lock.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
-- **Cuadernos listos para Colab**, que se pueden ejecutar de punta a punta con la base sintética.
+- **Cuadernos listos para Colab**, que se pueden ejecutar de punta a punta con la base sintética. Siguen siendo la evidencia académica del proceso; el uso anual en LEMAS ya no los necesita.
 
 ## 7. Tecnologías
-Python 3.11+, pandas, NumPy, scikit-learn, Optuna, SHAP, Matplotlib/Seaborn, Plotly, Streamlit, pytest, ruff y GitHub Actions.
+Python 3.11+, pandas, NumPy, scikit-learn, Optuna, SHAP, Matplotlib/Seaborn, Plotly, Streamlit, openpyxl, pytest, ruff y GitHub Actions.

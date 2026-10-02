@@ -3,10 +3,13 @@ Aplicación Streamlit · Priorización de contacto y proyección de matrícula (
 
 Ejecutar desde la raíz del repositorio:
     streamlit run app/app.py                         # modo demo (datos sintéticos)
-    LEMAS_MODO=institucional streamlit run app/app.py # solo dentro de LEMAS
+    LEMAS_MODO=institucional streamlit run app/app.py --server.address 127.0.0.1
+                                                     # solo dentro de LEMAS (iniciar_lemas.bat)
 
 Diseño de dos modos aprobado el 01-oct-2026 (D42): la versión pública nunca recibe
-datos reales. Ver docs/arquitectura.md y docs/manual_usuario.md.
+datos reales. En modo institucional (D45) la aplicación también seudonimiza el Excel de
+LEMAS y muestra la lista con nombres, siempre en el mismo equipo y sin guardar nada.
+Ver docs/arquitectura.md y docs/manual_usuario.md.
 """
 
 from __future__ import annotations
@@ -40,6 +43,13 @@ from src.inferencia import (  # noqa: E402
     puntuar,
     validar_entrada,
 )
+from src.institucional import (  # noqa: E402
+    es_equipo_local,
+    leer_clave,
+    lista_con_nombres,
+    nueva_clave,
+    seudonimizar_excel,
+)
 from src.utils import cargar_config  # noqa: E402
 
 COLOR = "#8B1E3F"
@@ -48,6 +58,18 @@ st.set_page_config(page_title="Matrícula LEMAS · Priorización", page_icon="�
 
 CONFIG = cargar_config(RAIZ / "config.yaml")
 MODO = modo_actual()
+
+
+def _host() -> str | None:
+    try:
+        return st.context.headers.get("Host")
+    except Exception:   # sin navegador (pruebas automáticas)
+        return None
+
+
+# Excel institucional, clave y nombres: solo en modo institucional y en el mismo equipo
+LOCAL = es_equipo_local(_host())
+INSTITUCIONAL = MODO == "institucional"
 RESULTADOS = json.loads((RAIZ / "app/assets/resultados_validacion.json").read_text("utf-8"))
 
 
@@ -78,6 +100,25 @@ def bytes_ejemplo() -> bytes:
     return (RAIZ / CONFIG["rutas"]["base_sintetica"]).read_bytes()
 
 
+def usar_datos(contenido: bytes, origen: str, institucional=None) -> None:
+    """Cambia la fuente de datos de la sesión. La última acción del usuario manda."""
+    for clave in ("generar", "puntuados", "lista", "institucional"):
+        st.session_state.pop(clave, None)
+    if institucional is not None:
+        st.session_state["institucional"] = institucional
+    st.session_state["contenido"] = contenido
+    st.session_state["origen"] = origen
+
+
+def borrar_sesion() -> None:
+    """Descarta de la memoria el Excel, la clave, el padrón y los resultados."""
+    reinicio = st.session_state.get("reinicio", 0) + 1
+    st.session_state.clear()
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.session_state["reinicio"] = reinicio   # vacía también los cuadros de carga
+
+
 # --------------------------------------------------------------------------- #
 # Encabezado y barra lateral
 # --------------------------------------------------------------------------- #
@@ -88,34 +129,107 @@ if MODO == "demo":
     st.info("**Modo demostración.** Solo acepta datos **sintéticos**: ningún resultado describe "
             "a estudiantes reales. Los datos de LEMAS se procesan únicamente en el modo "
             "institucional, dentro de la institución.", icon="🧪")
+elif LOCAL:
+    st.warning("**Modo institucional.** Todo se procesa **en este equipo** y nada se guarda: "
+               "el Excel se convierte aquí en la base seudonimizada y el sistema trabaja solo "
+               "con seudónimos. Los nombres aparecen únicamente en la pestaña **Lista con "
+               "nombres**, para uso interno de LEMAS.", icon="🔒")
 else:
-    st.warning("**Modo institucional.** Use solo la base seudonimizada (cuaderno 00a). Los "
-               "resultados identifican familias por seudónimo; la reidentificación la hace el "
-               "custodio de datos.", icon="🔒")
+    st.error("**Modo institucional abierto desde otro equipo.** Por seguridad, la carga del "
+             "Excel con cédulas y la lista con nombres solo funcionan en el mismo computador "
+             "donde se ejecuta la aplicación (inicie con `iniciar_lemas.bat`). Desde aquí "
+             "solo se acepta la base ya seudonimizada.", icon="⛔")
 
+REINICIO = st.session_state.get("reinicio", 0)
 with st.sidebar:
     st.header("1 · Datos")
+    if INSTITUCIONAL and LOCAL:
+        st.markdown("**Excel institucional y clave**")
+        excel = st.file_uploader(
+            "Excel de LEMAS (.xlsx)", type=["xlsx", "xls"], key=f"excel_{REINICIO}",
+            help="El archivo de siempre: una hoja por ciclo, con cédulas y nombres. Se "
+                 "seudonimiza en este equipo y no se guarda.")
+        archivo_clave = st.file_uploader(
+            "Clave del custodio (.key)", type=["key", "txt"], key=f"clave_{REINICIO}",
+            help="El archivo clave_lemas.key que guarda el custodio. Use siempre la misma.")
+        if excel is not None and archivo_clave is not None:
+            firma = hashlib.sha256(excel.getvalue() + archivo_clave.getvalue()).hexdigest()
+            if st.session_state.get("visto_excel") != firma:   # archivos nuevos: procesar
+                st.session_state["visto_excel"] = firma
+                st.session_state.pop("error_excel", None)
+                try:
+                    with st.spinner("Seudonimizando en este equipo…"):
+                        resultado = seudonimizar_excel(
+                            excel.getvalue(), excel.name,
+                            leer_clave(archivo_clave.getvalue()), CONFIG)
+                except ErrorEntrada as error:
+                    st.session_state["error_excel"] = str(error)
+                except Exception:   # sin detalles técnicos ni datos en pantalla
+                    st.session_state["error_excel"] = (
+                        "No se pudo procesar el Excel. Revise que tenga una hoja por ciclo "
+                        "con los encabezados acordados (ver manual de usuario).")
+                else:
+                    usar_datos(resultado.csv, f"{excel.name} (seudonimizado aquí)", resultado)
+            if "error_excel" in st.session_state:
+                st.error(st.session_state["error_excel"])
+        else:
+            st.session_state.pop("visto_excel", None)
+            st.session_state.pop("error_excel", None)
+            if excel is not None or archivo_clave is not None:
+                st.caption("Se necesitan los dos archivos: el Excel y la clave.")
+        with st.expander("¿LEMAS aún no tiene clave?"):
+            st.caption("Solo la **primera vez**. Si ya existe una clave, úsela siempre: con una "
+                       "clave distinta los seudónimos cambian y las listas anteriores no se "
+                       "pueden cruzar ni identificar.")
+            if st.checkbox("Confirmo que LEMAS todavía no tiene una clave",
+                           key=f"sin_clave_{REINICIO}"):
+                st.session_state.setdefault("clave_nueva", nueva_clave())
+                st.download_button("⬇️ Descargar clave nueva",
+                                   st.session_state["clave_nueva"].encode("utf-8"),
+                                   file_name="clave_lemas.key", mime="text/plain")
+                st.caption("Entréguela al custodio, guarde un respaldo y luego súbala arriba. "
+                           "Nunca la envíe por correo ni la suba a internet.")
+        st.divider()
     if st.button("▶️ Prueba con ejemplo", use_container_width=True,
                  help="Carga la base sintética incluida en el repositorio."):
-        st.session_state["contenido"] = bytes_ejemplo()
-        st.session_state["origen"] = "Ejemplo sintético"
+        usar_datos(bytes_ejemplo(), "Ejemplo sintético")
     archivo = st.file_uploader(
-        "…o suba la base (CSV)", type=["csv"],
+        "…o suba la base (CSV)" if not INSTITUCIONAL else "…o suba base_seud.csv",
+        type=["csv"], key=f"csv_{REINICIO}",
         help="Estructura de base_seud.csv (ver manual). Sin cédulas, nombres ni códigos.")
-    if archivo is not None:
-        st.session_state["contenido"] = archivo.getvalue()
-        st.session_state["origen"] = archivo.name
+    if archivo is None:
+        st.session_state.pop("visto_csv", None)
+    else:
+        firma_csv = hashlib.sha256(archivo.getvalue()).hexdigest()
+        if st.session_state.get("visto_csv") != firma_csv:   # archivo nuevo: usarlo
+            st.session_state["visto_csv"] = firma_csv
+            usar_datos(archivo.getvalue(), archivo.name)
     if "contenido" in st.session_state:
         st.success(f"Datos: {st.session_state['origen']}")
+    if INSTITUCIONAL:
+        st.button("🧹 Borrar datos de la sesión", on_click=borrar_sesion,
+                  use_container_width=True,
+                  help="Descarta de la memoria el Excel, la clave, los nombres y los "
+                       "resultados. Úselo al terminar.")
 
 contenido = st.session_state.get("contenido")
 if contenido is None:
     st.markdown("### ¿Cómo empezar?")
-    st.markdown(
-        "1. Pulse **▶️ Prueba con ejemplo** en la barra lateral (o suba una base).\n"
-        "2. Elija el ciclo y revise el número de familias a contactar por sede (k).\n"
-        "3. Pulse **Generar lista** y descargue el resultado.\n\n"
-        "La pestaña **Acerca de** resume cómo se validó el sistema y sus limitaciones.")
+    if INSTITUCIONAL and LOCAL:
+        st.markdown(
+            "1. En la barra lateral suba el **Excel de LEMAS** y la **clave del custodio**. "
+            "La aplicación lo seudonimiza en este equipo.\n"
+            "2. Elija el ciclo y revise el número de familias a contactar por sede (k).\n"
+            "3. Pulse **Generar lista**.\n"
+            "4. Abra la pestaña **Lista con nombres** para ver a quién contactar.\n"
+            "5. Al terminar, pulse **Borrar datos de la sesión** y cierre la aplicación.\n\n"
+            "Para practicar sin datos reales use **▶️ Prueba con ejemplo**.")
+    else:
+        st.markdown(
+            "1. Pulse **▶️ Prueba con ejemplo** en la barra lateral (o suba una base).\n"
+            "2. Elija el ciclo y revise el número de familias a contactar por sede (k).\n"
+            "3. Pulse **Generar lista** y descargue el resultado.\n\n"
+            "La pestaña **Acerca de** resume cómo se validó el sistema y sus limitaciones.")
     st.stop()
 
 try:
@@ -128,6 +242,31 @@ except Exception:   # mensaje amable, sin detalles técnicos para el usuario fin
     st.error("El archivo no tiene la estructura esperada. Revise el manual de usuario "
              "(columnas obligatorias y formato de fechas) e intente de nuevo.")
     st.stop()
+
+DATOS_INSTITUCIONALES = st.session_state.get("institucional") if INSTITUCIONAL and LOCAL else None
+if DATOS_INSTITUCIONALES is not None:
+    cifras = DATOS_INSTITUCIONALES.resumen
+    with st.expander(f"🔐 Excel seudonimizado en este equipo · {cifras['filas']:,} filas · "
+                     f"huella de la clave {cifras['huella_clave']}".replace(",", ".")):
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("Hojas (ciclos)", len(cifras["hojas"]))
+        m2.metric("Estudiantes", f"{cifras['estudiantes']:,}".replace(",", "."))
+        m3.metric("Representantes", f"{cifras['familias']:,}".replace(",", "."))
+        m4.metric("Huella de la clave", cifras["huella_clave"],
+                  help="Debe ser la misma cada año. Si cambia, se usó otra clave.")
+        st.markdown("✅ Verificado: la base de trabajo **no contiene nombres ni cédulas**. "
+                    f"Columnas eliminadas: {', '.join(cifras['columnas_eliminadas'])}.")
+        if cifras["sin_cedula_estudiante"] or cifras["sin_cedula_representante"]:
+            st.warning(f"{cifras['sin_cedula_estudiante']} filas sin cédula de estudiante y "
+                       f"{cifras['sin_cedula_representante']} sin cédula de representante. "
+                       "Las filas sin cédula de estudiante no entran al análisis.")
+        d1, d2 = st.columns(2)
+        d1.download_button("⬇️ base_seud.csv (seudónimos)", DATOS_INSTITUCIONALES.csv,
+                           file_name="base_seud.csv", mime="text/csv",
+                           help="La misma base que genera el cuaderno 00a.")
+        d2.download_button("⬇️ Acta de extracción", json.dumps(
+            DATOS_INSTITUCIONALES.acta, indent=2, ensure_ascii=False).encode("utf-8"),
+            file_name="base_seud.acta.json", mime="application/json")
 
 with st.sidebar:
     st.header("2 · Parámetros")
@@ -151,8 +290,14 @@ with st.sidebar:
                    "no equivale a una predicción nueva.", icon="🕰️")
     st.caption(SISTEMA.descripcion)
 
-tab_lista, tab_proy, tab_estudiante, tab_acerca = st.tabs(
-    ["📋 Lista de contactos", "📈 Proyección", "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
+if INSTITUCIONAL:   # la pestaña con nombres no existe en la versión pública
+    tab_lista, tab_nombres, tab_proy, tab_estudiante, tab_acerca = st.tabs(
+        ["📋 Lista de contactos", "🪪 Lista con nombres", "📈 Proyección",
+         "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
+else:
+    tab_nombres = None
+    tab_lista, tab_proy, tab_estudiante, tab_acerca = st.tabs(
+        ["📋 Lista de contactos", "📈 Proyección", "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
 
 # --------------------------------------------------------------------------- #
 # Lista de contactos
@@ -206,6 +351,43 @@ with tab_lista:
         st.caption("La lista es un apoyo: Secretaría revisa y decide a quién contactar. La "
                    "aplicación no contacta familias ni toma decisiones.")
         st.session_state["puntuados"] = puntuados
+        st.session_state["lista"] = lista
+
+# --------------------------------------------------------------------------- #
+# Lista con nombres (solo modo institucional, en el mismo equipo)
+# --------------------------------------------------------------------------- #
+if tab_nombres is not None:
+    with tab_nombres:
+        lista_actual = st.session_state.get("lista")
+        if not LOCAL:
+            st.error("Disponible solo en el computador donde se ejecuta la aplicación.")
+        elif DATOS_INSTITUCIONALES is None:
+            st.info("Para ver nombres, suba en la barra lateral el **Excel de LEMAS** y la "
+                    "**clave del custodio**. Con `base_seud.csv` o con el ejemplo no es "
+                    "posible, porque esos archivos no contienen nombres.")
+        elif lista_actual is None or lista_actual.empty:
+            st.info("Primero genere la lista en la pestaña **Lista de contactos**.")
+        else:
+            st.warning("**Datos personales · uso interno de LEMAS.** Esta lista sirve para "
+                       "ofrecer apoyo a las familias. No se usa para negar cupos, becas ni "
+                       "servicios, y no debe salir de la institución.", icon="🪪")
+            if st.checkbox("Soy personal autorizado y deseo ver los nombres",
+                           key=f"ver_nombres_{REINICIO}"):
+                nombres = lista_con_nombres(lista_actual, DATOS_INSTITUCIONALES.padron, anio)
+                st.dataframe(
+                    nombres.drop(columns=["id_familia"]).rename(columns={
+                        "puesto": "Puesto", "sede": "Sede", "representante": "Representante",
+                        "cedula_representante": "Cédula del representante",
+                        "estudiantes": "Estudiantes (curso)", "motivo": "Motivo",
+                        "prob_max": "Prob. no matrícula", "observacion": "Observación"}),
+                    use_container_width=True, hide_index=True)
+                st.download_button(
+                    "⬇️ Descargar lista con nombres (CSV para Excel)",
+                    nombres.to_csv(index=False).encode("utf-8-sig"),
+                    file_name=f"lista_contactos_con_nombres_{anio}.csv", mime="text/csv")
+                st.caption("El archivo descargado contiene datos personales: guárdelo solo en "
+                           "carpetas autorizadas y elimínelo al terminar la campaña. Al "
+                           "finalizar, pulse **Borrar datos de la sesión**.")
 
 # --------------------------------------------------------------------------- #
 # Proyección
@@ -310,8 +492,11 @@ no superaron a esta regla con los datos disponibles; el aprendizaje automático 
 
 ### Privacidad
 - **Modo demo (público):** solo datos sintéticos; rechaza archivos con cédulas o nombres.
-- **Modo institucional:** solo dentro de LEMAS; procesa en memoria y no guarda nada.
-- La reidentificación de seudónimos la hace únicamente el custodio de datos de LEMAS.
+- **Modo institucional:** solo dentro de LEMAS y en el mismo equipo. El Excel se
+  seudonimiza en memoria con la clave del custodio, el sistema trabaja con seudónimos y
+  nada se guarda en disco.
+- Los nombres solo se muestran en el modo institucional, a personal autorizado de LEMAS;
+  la versión pública no tiene esa función.
 
 Proyecto final · Maestría en Inteligencia Artificial (UEES) · Guillermo Granizo y José Ulloa.
 Código: [github.com/ggranizo2507/prediccion-matricula-lemas](https://github.com/ggranizo2507/prediccion-matricula-lemas)

@@ -13,7 +13,16 @@ LEMAS entrega un Excel con **una hoja por ciclo lectivo** y una fila por estudia
 - el desempeño del ciclo (notas y atrasos en pensiones);
 - la reserva para el ciclo siguiente.
 
+### Encabezados del Excel institucional
+Los acordados con LEMAS el 30-sep-2026, iguales en todas las hojas:
+
+`anoa`, `anos`, `Sede`, `Orden`, `Nombre Completo`, `CI`, `Codigo`, `Nivel`, `Paralelo`, `cedulap`, `Nombres completos padre de familia`, `P.Académico`, `P.Conducta`, `saldo`, `deuda`, `statusp`, `fecha_pago`, `Reserva`, `RColegio`, `Fecha Reserva`, `Tiempo`, `beca`, `# meses caído`.
+
+Son obligatorios para seudonimizar: `CI`, `cedulap` y `Codigo`. Las columnas con datos personales o financieros (`Orden`, `Nombre Completo`, `CI`, `Codigo`, `cedulap`, `Nombres completos padre de familia`, `saldo`, `deuda`, `statusp`) se eliminan al seudonimizar (`seudonimizacion` en `config.yaml`).
+
 ## Flujo de preparación (dentro de LEMAS)
+En el uso anual, el modo institucional de la aplicación hace el paso 1 en el propio equipo: se suben el Excel y la clave (ver `docs/manual_usuario.md`). Los pasos siguientes describen el flujo académico con cuadernos.
+
 1. `tools/seudonimizar.py` (o el notebook `00a`) une las hojas y deriva `anio_ingreso` de los dos primeros dígitos del código interno. Luego reemplaza la **cédula del estudiante** por `id_seudonimo` y la cédula del representante por `id_familia_seudonimo` (HMAC-SHA256 con clave custodiada). Por último, elimina el código, los nombres, las cédulas y las columnas internas (`Orden`, `saldo`, `deuda`, `statusp`) y genera un acta con la huella SHA-256 del archivo.
    - Se enlaza por cédula porque el código interno puede cambiar si el estudiante reingresa o se cambia de sede. Enlazar por código haría aparecer como "no matriculado" a quien sí se matriculó.
 2. `notebooks/00b_perfil_datos.ipynb` produce `perfil_lemas.json`, que contiene solo agregados y suprime las celdas con menos de 5 casos.
