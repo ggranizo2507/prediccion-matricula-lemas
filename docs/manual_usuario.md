@@ -54,7 +54,10 @@ No se necesita Colab ni escribir comandos. Todo ocurre en un computador de LEMAS
 **Responsables:** responsable de datos (paso 1), Admisiones junto con el custodio (pasos 2–7).
 
 ### 5.1 Preparación del equipo (una sola vez)
-1. Instale **Python 3.11 o superior** desde python.org y marque la opción *Add python.exe to PATH*.
+1. Instale **Python** (3.11 o superior; se recomienda 3.12):
+   - Entre a [python.org/downloads/windows](https://www.python.org/downloads/windows/) y descargue el instalador de Windows de 64 bits.
+   - En la primera pantalla marque **Add python.exe to PATH** y pulse **Install Now**.
+   - No use la versión de la tienda de Microsoft. Windows trae un acceso llamado `python` que solo abre la tienda: si aparece el mensaje *Python was not found*, es que falta este paso.
 2. Descargue el repositorio (botón **Code → Download ZIP** en GitHub) y descomprímalo en una carpeta del equipo.
 3. Haga doble clic en **`iniciar_lemas.bat`**. La primera vez instala lo necesario (requiere internet y tarda unos minutos). En macOS o Linux use `bash iniciar_lemas.sh`.
 
@@ -107,6 +110,9 @@ El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma 
 | "No se pudo leer el Excel" | Verifique que sea `.xlsx`, sin contraseña y que no esté abierto en Excel |
 | "Al Excel le faltan columnas obligatorias" | Revise los encabezados `CI`, `cedulap` y `Codigo` (`data/README.md`) |
 | "Por seguridad no se continúa: … aún hay columnas con nombres o cédulas" | El Excel tiene una columna extra con datos personales. Elimínela y vuelva a subirlo |
+| "Este equipo no tiene Python 3.11 o superior" o *Python was not found* (ventana negra) | Instale Python desde python.org marcando **Add python.exe to PATH** (sección 5.1) y vuelva a abrir `iniciar_lemas.bat` |
+| "No se pudieron instalar los componentes" (ventana negra) | Revise la conexión a internet. Si continúa, borre la carpeta `.venv` y vuelva a abrir `iniciar_lemas.bat` |
+| "No se encuentra la aplicación junto a este archivo" (ventana negra) | Descomprima la carpeta completa del proyecto; no abra el archivo desde dentro del `.zip` |
 | "Modo institucional abierto desde otro equipo" | Abra la aplicación en el mismo computador, con `iniciar_lemas.bat` |
 | "Se necesitan los dos archivos: el Excel y la clave" | Suba el archivo que falta |
 | "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
