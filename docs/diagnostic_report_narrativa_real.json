@@ -1,0 +1,66 @@
+{
+  "_nota": "Análisis redactado por el equipo a partir de los resultados reales (results/metrics/*_real.*). Lo usa tools/generar_reporte_diagnostico.py --fuente real. La prueba test_narrativa_real_coincide_con_los_datos comprueba que cada cifra citada exista en los resultados.",
+  "hallazgos": [
+    "Ninguno de los tres modelos de la Fase 2 tiene un ajuste adecuado. El gradient boosting sobreajusta: su PR-AUC cae de 0,245 en entrenamiento a 0,103 en C4, una pérdida del 58 %. La regresión logística y la logística híbrida subajustan: son estables, pero en C4 solo alcanzan 1,28 y 1,41 veces el azar.",
+    "Lo que más nos llamó la atención fue la curva de pérdida del gradient boosting. En C4 la pérdida es mínima en la primera iteración (0,694) y desde ahí solo sube, hasta 0,792 en las 359 iteraciones que usamos en la Fase 2.",
+    "De las seis estrategias, dos mejoraron la PR-AUC en C4 (E1 y E4), una la empeoró (E2) y tres no la cambiaron de forma apreciable. Las tres estrategias contra el sobreajuste redujeron la brecha, pero ninguna sacó al gradient boosting del sobreajuste.",
+    "La única mejora que consideramos útil vino de la ingeniería de variables (E4). Al pasar de la regresión logística a la logística híbrida, la PR-AUC subió de 0,113 a 0,125 y el Lift@k de 1,40 a 1,53, sin brecha entre entrenamiento y validación.",
+    "Tener más datos del mismo tipo no parece la solución. Entre la mitad y el total del entrenamiento la validación casi no cambia, y la diferencia es menor que la variación entre submuestras en los tres modelos."
+  ],
+  "significado": "Este diagnóstico respalda la decisión que tomamos en la Fase 2. El mejor modelo después de todas las estrategias es la logística híbrida, con un Lift@k de 1,53 en C4, por debajo del 1,93 que obtuvo la regla D2 en esa misma cohorte. Por eso mantenemos la regla D2 para priorizar el contacto. Lo que observamos en C4 son indicios y no pruebas: C4 ya se usó para seleccionar y calibrar, y solo tiene 122 eventos.",
+  "diagnostico": [
+    "El gradient boosting es el caso más claro. En entrenamiento ordena 3,22 veces mejor que el azar y en C4 solo 1,17 veces, así que casi todo lo que aprendió es particular de C2 y C3. Por la tabla de la Fase 2 esperábamos sobreajuste, pero no que la validación quedara tan cerca del azar.",
+    "Las dos regresiones logísticas tienen el problema contrario. La híbrida prácticamente no tiene brecha (0,126 frente a 0,125) y la regresión logística pierde un 19 %, menos que nuestro umbral del 30 %. Son modelos estables, pero ninguno llega a 1,5 veces el azar en C4 y por eso la regla los clasifica como subajuste. Creemos que no les falta capacidad sino señal. La exploración del cuaderno apunta en la misma dirección: la señal más fuerte, haber pagado tarde la matrícula anterior (21,9 % de no matrícula frente a 6,3 % de quienes pagaron en plazo), solo aparece en 32 estudiantes del entrenamiento.",
+    "Los dos modelos de control se comportaron como esperábamos. Los árboles sin regularizar memorizan el entrenamiento (0,998) y en C4 quedan en el azar (0,088). La logística con penalización L1 extrema anula sus coeficientes y obtiene la tasa de eventos en ambos conjuntos. Esto nos da confianza en la regla para los casos claros. No dice nada de los casos cercanos a los umbrales, como la logística híbrida, que con 1,41 queda cerca del 1,5."
+  ],
+  "curva_a": [
+    "En el gradient boosting la pérdida de entrenamiento baja sin parar (de 0,691 en la primera iteración a 0,559 en la 359 y a 0,523 en la 718), mientras la de validación sube desde el primer árbol: 0,694, 0,792 y 0,842 en esas mismas iteraciones. Es el patrón de sobreajuste que describe la actividad, con una particularidad: la validación nunca llega a mejorar. Como este modelo se entrena con clases balanceadas, 0,693 es la pérdida de asignar probabilidad 0,5 a todos los estudiantes. En C4 sus probabilidades no son mejores que no predecir nada.",
+    "El control exagera el mismo patrón: su pérdida de validación pasa de 0,696 a 2,871.",
+    "Las regresiones logísticas muestran la otra forma típica. Las dos curvas se aplanan casi de inmediato y quedan paralelas. La regresión logística converge en 273 iteraciones, pero desde la sexta la pérdida de validación se queda entre 0,306 y 0,307, después de haber tocado 0,305 en la cuarta. La híbrida converge en 15, con 0,689 en validación y 0,668 en entrenamiento. También aquí la validación queda apenas por debajo de 0,693."
+  ],
+  "curva_b": [
+    "En PR-AUC el gradient boosting sigue subiendo en entrenamiento (0,245 en la iteración 359 y 0,288 en la 718), pero en validación llega pronto a 0,10 y se queda ahí: 0,100 en la iteración 50, 0,103 en la 359 y un máximo de 0,112 en la 526. La brecha crece con cada árbol que se añade.",
+    "Aquí encontramos algo que no esperábamos: la pérdida y la PR-AUC no cuentan la misma historia. Según la pérdida, lo mejor en C4 sería quedarse en la primera iteración. Según la PR-AUC, el orden mejora un poco hasta la iteración 526. La pérdida castiga las probabilidades mal calibradas y la PR-AUC solo mira el orden, que es lo que nos interesa para priorizar familias.",
+    "En las logísticas las dos curvas terminan juntas. La regresión logística queda en 0,140 y 0,113, y la híbrida en 0,126 y 0,125, con un máximo de validación de 0,128 en la tercera iteración. Ninguna se separa del azar (0,089) más de cuatro centésimas."
+  ],
+  "curva_c": [
+    "Con 508 estudiantes la validación ya está casi donde termina con 2.541: 0,112 frente a 0,113 en la regresión logística, 0,105 frente a 0,103 en el gradient boosting y 0,120 frente a 0,125 en la híbrida. Entre la mitad y el total del entrenamiento el cambio es de +0,004, +0,007 y +0,002, siempre menor que la variación entre submuestras (±0,013, ±0,007 y ±0,014). Con estos datos no podemos afirmar que más datos ayuden.",
+    "Lo que sí cambia con el tamaño es el entrenamiento. Con pocos datos todos los modelos memorizan más (el gradient boosting llega a 0,30 con 508 estudiantes) y la brecha se cierra al añadir datos. En el gradient boosting no termina de cerrarse: con todos los datos sigue en 0,141.",
+    "Nuestra lectura es que el límite no está en la cantidad de datos. Otro año de registros con las mismas variables probablemente dejaría las curvas donde están. Para subirlas haría falta información distinta."
+  ],
+  "curva_d": [
+    "En la regresión logística, con C menor o igual a 0,01 el modelo queda anulado (0,089 en C4, igual al azar). La validación sube hasta C = 1 (0,113) y desde ahí no cambia. El valor de la Fase 2, 2,75, está en esa zona plana, así que quitar regularización no ayuda.",
+    "En el gradient boosting la tasa de aprendizaje controla cuánto memoriza el modelo. Al subirla de 0,005 a 0,5 el entrenamiento pasa de 0,18 a 0,51, y la validación se mueve entre 0,099 y 0,110 sin una tendencia clara. El máximo está en una tasa de 0,089, no muy lejos del 0,035 de la Fase 2.",
+    "La logística híbrida es la más estable. Sus dos curvas van juntas en todo el rango y la validación sube despacio hasta 0,125 en C = 10, junto al valor de la Fase 2 (9,01).",
+    "En los tres casos el valor que eligió Optuna está cerca del máximo de validación. El problema de estos modelos no es una mala elección de hiperparámetros."
+  ],
+  "estrategias": [
+    "Contra el sobreajuste probamos tres estrategias. E1 muestra lo que ya había logrado la búsqueda de la Fase 2: del control sin regularizar al gradient boosting ajustado, la brecha baja de 0,910 a 0,141 y la PR-AUC en C4 sube de 0,088 a 0,103. Es la mayor reducción de brecha, aunque el modelo sigue sobreajustado.",
+    "E2 fue la sorpresa. La parada temprana, elegida por pérdida en la validación interna (C2 → C3), recortó el entrenamiento de 359 a 20 iteraciones. La brecha bajó a 0,080, pero la PR-AUC en C4 cayó a 0,095 y el Lift@k a 0,80, peor que el azar. La explicación está en la curva A: la pérdida de validación empieza a subir casi de inmediato, así que el criterio se detiene antes de que el modelo aprenda a ordenar. Aprendimos que elegir la parada por pérdida no es buena idea cuando el objetivo es ordenar familias.",
+    "E3, el modelo más simple con las mismas iteraciones, redujo la brecha a 0,087 sin cambiar la PR-AUC de forma apreciable (de 0,103 a 0,107). El Lift@k bajó de 1,06 a 0,93.",
+    "Contra el subajuste, E4 fue la única estrategia que mejoró todo a la vez: de la regresión logística a la logística híbrida la PR-AUC pasa de 0,113 a 0,125, la brecha desaparece y el Lift@k sube de 1,40 a 1,53. Hay que leerlo con cuidado. E4 cambia las variables y también los hiperparámetros, y la híbrida usa las señales de la regla D2, es decir, conocimiento del negocio y no más capacidad del modelo.",
+    "E5 no cambió nada (0,113 antes y después). Multiplicar C por diez, de 2,75 a 27,5, no tiene efecto porque el modelo ya estaba en la zona plana de la curva D. E6 la incluimos como contraprueba: duplicar las iteraciones de un modelo que ya sobreajusta dejó la PR-AUC casi igual (0,105), subió la brecha a 0,183 y bajó el Lift@k a 0,86.",
+    "Ninguna estrategia cambió el diagnóstico de su modelo."
+  ],
+  "conclusiones": [
+    "Los tres modelos de la Fase 2 tienen problemas de ajuste: el gradient boosting sobreajusta y las dos regresiones logísticas subajustan.",
+    "Reducir el sobreajuste no mejoró la validación. Las tres estrategias cerraron parte de la brecha, pero la PR-AUC en C4 quedó entre 0,095 y 0,107. Regularizar quita lo que el modelo memorizó, pero no le agrega señal.",
+    "La mejora que sí funcionó vino de las variables y no del modelo: la logística híbrida, que codifica las señales de la regla D2.",
+    "Los hiperparámetros de la Fase 2 estaban bien elegidos. Las curvas de validación muestran que en los tres modelos el valor elegido está cerca del máximo.",
+    "La decisión del proyecto no cambia. El mejor modelo llega a un Lift@k de 1,53 en C4 y la regla D2 a 1,93. C5 no intervino en este análisis."
+  ],
+  "aprendizaje": "Antes de esta actividad leíamos el sobreajuste como un solo número, la diferencia entre entrenamiento y validación. Las curvas nos mostraron más: cuándo empieza, si la validación llega a mejorar en algún momento y si el problema es de capacidad o de señal. También aprendimos a no confiar en una sola métrica. En el gradient boosting la pérdida y la PR-AUC llevan a decisiones distintas, y la parada temprana elegida por pérdida empeoró justo lo que queríamos mejorar.",
+  "limitaciones": [
+    "Comparamos las estrategias en C4, que ya habíamos usado para seleccionar y calibrar en la Fase 2. Una diferencia pequeña puede ser ruido.",
+    "C4 tiene 122 eventos. Diferencias de pocas milésimas de PR-AUC no son concluyentes, y por eso solo hablamos de mejora cuando el cambio es de al menos 0,005.",
+    "Validamos con una sola cohorte. Las tasas cambian entre ciclos (9,1 % en C2 y 6,2 % en C3), así que el resultado puede no repetirse el año siguiente.",
+    "Los umbrales de diagnóstico son reglas prácticas y los fijamos cuando ya conocíamos los resultados de la Fase 2.",
+    "E4 no es una comparación limpia, porque cambia las variables y también los hiperparámetros."
+  ],
+  "recomendaciones": [
+    "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y evaluar la logística híbrida en esa cohorte nueva.",
+    "Si volvemos a entrenar un gradient boosting, elegir el número de iteraciones con la métrica de ordenamiento (PR-AUC o Lift@k) en la validación interna, y no con la pérdida.",
+    "Buscar información nueva antes que modelos más complejos. Por ejemplo, registrar una señal temprana de la intención de la familia y medir con estas mismas curvas si sube la validación.",
+    "Mantener la regla D2 para priorizar mientras ningún modelo la supere en una cohorte que no haya participado en las decisiones."
+  ]
+}

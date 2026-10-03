@@ -58,7 +58,7 @@ La regla se definió con conocimiento del negocio y se evaluó con la misma disc
 Con Optuna (TPE, semilla 42), 60 pruebas por modelo, 180 en total, maximizando PR-AUC entrenando en C2 y evaluando en C3. Ejemplo: la logística pasó de 0,062 a 0,106 de PR-AUC entre la peor y la mejor prueba.
 
 **16. ¿Hubo sobreajuste o subajuste?**
-El gradient boosting se sobreajustó: PR-AUC 0,245 en entrenamiento y 0,104 en C4. La logística mostró subajuste leve (0,140 frente a 0,113), porque las señales son débiles. La híbrida fue estable (0,126 frente a 0,125) pero con poca capacidad.
+El gradient boosting se sobreajustó: PR-AUC 0,245 en entrenamiento y 0,103 en C4. La logística mostró subajuste leve (0,140 frente a 0,113), porque las señales son débiles. La híbrida fue estable (0,126 frente a 0,125) pero con poca capacidad.
 
 **17. ¿Por qué el mejor modelo en C3 no fue el mejor en C4?**
 Con unos 200 casos positivos por año y tasas que cambian, las diferencias pequeñas en C3 no se repiten. Por eso la selección final se hizo en C4 frente a reglas simples, no solo por el ranking de Optuna.

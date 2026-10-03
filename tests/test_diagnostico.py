@@ -1,5 +1,9 @@
 """Pruebas del diagnóstico de sobreajuste y subajuste (actividad de la semana 3)."""
 
+import json
+import re
+from pathlib import Path
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -16,6 +20,7 @@ from src.modeling import NOMBRES  # noqa: E402
 from src.synthetic import generar  # noqa: E402
 from src.utils import cargar_config  # noqa: E402
 
+RAIZ = Path(__file__).resolve().parents[1]
 COHORTES = ["C2", "C3"]
 SEMILLA = 42
 PARAMETROS = {
@@ -394,6 +399,92 @@ def test_reporte_pdf_se_genera_con_los_resultados_guardados(tmp_path):
                     "6. Conclusiones y recomendaciones futuras", "7. Referencias técnicas"):
         assert seccion in texto, seccion
     assert "datos sintéticos" in texto          # la versión preliminar queda marcada
+
+
+def test_reporte_real_usa_el_analisis_del_equipo(tmp_path):
+    """Con datos reales el reporte lleva el análisis redactado por el equipo."""
+    pytest.importorskip("reportlab")
+    PdfReader = pytest.importorskip("pypdf").PdfReader  # noqa: N806
+
+    from tools.generar_reporte_diagnostico import construir
+
+    ruta = construir("real", tmp_path / "reporte.pdf")
+    texto = "\n".join(pagina.extract_text() for pagina in PdfReader(str(ruta)).pages)
+    assert "Qué aprendimos" in texto and "datos sintéticos" not in texto
+    assert "C5 no intervino" in texto
+
+
+# Cifras del análisis que no salen de los archivos de resultados, con su origen.
+CIFRAS_PERMITIDAS = {
+    "0,693": "ln 2: pérdida de asignar 0,5 con clases balanceadas",
+    "0,5": "probabilidad 0,5 y tasa de aprendizaje máxima de la rejilla",
+    "21,9": "exploración del cuaderno (pago tardío)",
+    "6,3": "exploración del cuaderno (pago en plazo)",
+    "32": "exploración del cuaderno (estudiantes con pago tardío)",
+    "0,10": "redondeo de la validación del gradient boosting",
+    "0,306": "pérdida de validación de la regresión logística desde la iteración 6",
+    "0,01": "valor de C en la rejilla",
+    "1,5": "umbral de subajuste", "30": "umbral de sobreajuste",
+    "2": "Fase 2", "3": "C3", "4": "C4", "5": "C5",
+}
+
+
+def _cifras_de_resultados(fuente: str) -> list[float]:
+    """Todos los números de los resultados guardados, con signo, valor absoluto y porcentaje."""
+    carpeta = RAIZ / "results" / "metrics"
+    valores: list[float] = []
+
+    def agregar(dato):
+        if isinstance(dato, bool):
+            return
+        if isinstance(dato, (int, float)):
+            if not np.isnan(dato):
+                valores.extend([float(dato), abs(float(dato)), 100 * float(dato),
+                                100 * abs(float(dato))])
+        elif isinstance(dato, dict):
+            for valor in dato.values():
+                agregar(valor)
+        elif isinstance(dato, list):
+            for valor in dato:
+                agregar(valor)
+
+    for nombre in ("diagnostico_modelos", "estrategias_mejora", "curvas_hiperparametros",
+                   "curvas_tamano", "curvas_seguimiento", "seleccion_C4"):
+        tabla = pd.read_csv(carpeta / f"{nombre}_{fuente}.csv")
+        for columna in tabla.select_dtypes("number"):
+            agregar(tabla[columna].dropna().tolist())
+    resumen = json.loads((carpeta / f"diagnostico_semana3_{fuente}.json").read_text("utf-8"))
+    agregar(resumen)
+    for particion in resumen["particiones"]:                # tasas de evento por partición
+        agregar(particion["eventos_entrenamiento"] / particion["n_entrenamiento"])
+        agregar(particion["eventos_validacion"] / particion["n_validacion"])
+    return valores
+
+
+def test_narrativa_real_coincide_con_los_datos():
+    """Cada cifra citada en el análisis escrito existe en los resultados guardados."""
+    narrativa = json.loads(
+        (RAIZ / "docs" / "diagnostic_report_narrativa_real.json").read_text("utf-8"))
+    valores = np.array(_cifras_de_resultados("real"))
+    sin_respaldo = []
+    for clave, contenido in narrativa.items():
+        if clave.startswith("_"):
+            continue
+        for texto in [contenido] if isinstance(contenido, str) else contenido:
+            limpio = re.sub(r"\b[CE]\d\b|Fase 2|D2|L1|@k", "", texto)
+            for cifra in re.findall(r"(?<![\w,.])[+−±-]?\d+(?:[.,]\d+)?(?![\w])", limpio):
+                sin_signo = cifra.lstrip("+−±-")
+                if sin_signo in CIFRAS_PERMITIDAS:
+                    continue
+                if "." in sin_signo and "," not in sin_signo:      # separador de miles: 2.541
+                    numero, decimales = float(sin_signo.replace(".", "")), 0
+                else:
+                    numero = float(sin_signo.replace(",", "."))
+                    decimales = len(sin_signo.split(",")[1]) if "," in sin_signo else 0
+                tolerancia = 0.5 * 10 ** -decimales + 1e-9
+                if not (np.abs(valores - numero) <= tolerancia).any():
+                    sin_respaldo.append((clave, cifra, texto[:60]))
+    assert not sin_respaldo, sin_respaldo
 
 
 # --------------------------------------------------------------------------- #
