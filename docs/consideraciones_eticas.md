@@ -45,8 +45,8 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D49, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
-| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 138 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D50, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 162 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
 ## 3. Dilemas éticos del proyecto
@@ -57,7 +57,7 @@ No todas las decisiones tenían una respuesta correcta. Varios de estos dilemas 
 |---|---|---|---|
 | **Usar o no las señales de pago** | Son las únicas señales que mostraron capacidad de ordenar a las familias (sección 7), pero reflejan la situación económica | Usarlas, con el uso limitado a contacto de apoyo y la decisión en manos de una persona | Las familias con atrasos de pago aparecen más en la lista |
 | **Privacidad frente a utilidad** | Secretaría necesita nombres y teléfonos para llamar; el modelo no | El modelo solo ve seudónimos. Los nombres aparecen únicamente en el modo institucional, en un equipo de LEMAS, y la app no los guarda (D45) | Más personas pueden ver datos personales que si solo reidentificara el custodio, y la lista con nombres se puede descargar |
-| **Capacidad limitada** | Con k contactos, priorizar a unas familias es dejar de priorizar a otras | k proporcional al historial de cada sede y editable; Secretaría mantiene su atención habitual a todas | La lista alcanza cerca del 30 % de los casos y no llega al 70 % restante |
+| **A cuántas familias llamar** | Con k contactos, priorizar a unas familias es dejar de priorizar a otras. Pero k fue una decisión (el doble del promedio histórico de casos), no una medida de lo que el personal puede hacer | k proporcional al historial de cada sede y editable; Secretaría mantiene su atención habitual a todas | La lista alcanza cerca del 30 % de los casos. Como tiene más cupos que casos, el 70 % restante es un límite de señal y no de capacidad ([alcance_lista.md](alcance_lista.md)) |
 | **Informar a las familias** | Las familias tienen derecho a saber cómo se usan sus datos; el análisis académico se hizo sin consultarlas | Reconocerlo como limitación y dejar listo un texto de aviso (anexo A) | El estudio académico se hizo solo con autorización institucional |
 | **Cédula genérica de familias extranjeras** | Marcar esos casos mejoraría la calidad de los datos, pero usarlo como predictor equivale a usar la nacionalidad | Se trata como problema de calidad de datos; nunca es predictor (D33) | No se pudo evaluar la equidad de ese grupo en C5 |
 | **Etiquetar a una familia** | Una etiqueta de "riesgo" puede estigmatizar y condicionar el trato | La app habla de *prioridad de contacto*, la lista es confidencial y cada familia lleva su motivo | La etiqueta sigue existiendo para quien usa la lista. Para no añadirle un número, las listas no muestran la probabilidad estimada (D49) |
@@ -198,7 +198,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 | Una familia que no se matricula no estaba en la lista | Ninguna adicional: recibe la atención habitual | Secretaría | La lista no reemplaza la atención a todas las familias |
 | Una familia listada sí pensaba matricularse | Una llamada innecesaria | Secretaría | Contacto breve y de apoyo; se registra el resultado |
 | La regla deja de ordenar mejor que el azar | Esfuerzo mal dirigido | Equipo técnico y Dirección | Revalidación anual; se suspende si no supera al azar (9.4) |
-| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 138 pruebas automáticas |
+| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 162 pruebas automáticas |
 | Uso indebido (cobro, exclusión) | Daño a la familia y a la confianza | Dirección | Uso prohibido documentado; revisión anual por Dirección |
 | Fuga de datos personales | Daño a los titulares | LEMAS como responsable del tratamiento; custodio | Protocolo de incidentes (9.5) |
 
@@ -208,7 +208,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D49; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D50; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
