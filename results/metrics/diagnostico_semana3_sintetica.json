@@ -1,0 +1,227 @@
+{
+  "fuente": "sintetica",
+  "cohortes_entrenamiento": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "validacion": "C4",
+  "particiones": [
+    {
+      "particion": "diagnostico",
+      "entrenamiento": "C1+C2+C3",
+      "validacion": "C4",
+      "n_entrenamiento": 3401,
+      "eventos_entrenamiento": 291,
+      "n_validacion": 1134,
+      "eventos_validacion": 100,
+      "tasa_validacion": 0.0882
+    },
+    {
+      "particion": "interna",
+      "entrenamiento": "C1+C2",
+      "validacion": "C3",
+      "n_entrenamiento": 2242,
+      "eventos_entrenamiento": 206,
+      "n_validacion": 1159,
+      "eventos_validacion": 85,
+      "tasa_validacion": 0.0733
+    }
+  ],
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "tasa_validacion": 0.08818342151675485,
+  "umbrales": {
+    "brecha_relativa_max": 0.3,
+    "mejora_minima_sobre_azar": 1.5,
+    "tolerancia_perdida": 0.01,
+    "cambio_minimo": 0.005
+  },
+  "repeticiones": 5,
+  "comprobacion_fase2": {
+    "realizada": true,
+    "coincide": true,
+    "diferencia_maxima": 4.705626007678321e-05
+  },
+  "parametros_fase2": {
+    "logistica": {
+      "conjunto": "reducido",
+      "balanceado": false,
+      "C": 0.0241894814918739,
+      "l1_ratio": 0.6094520625358265
+    },
+    "arboles": {
+      "conjunto": "reducido",
+      "balanceado": true,
+      "learning_rate": 0.0157772320785603,
+      "max_depth": 2,
+      "max_leaf_nodes": 7,
+      "min_samples_leaf": 59,
+      "l2_regularization": 1.9392422417274635,
+      "max_iter": 72
+    },
+    "hibrido": {
+      "balanceado": false,
+      "C": 0.0013892527363885
+    }
+  },
+  "controles": {
+    "Control: árboles sin regularizar": {
+      "conjunto": "completo",
+      "balanceado": true,
+      "learning_rate": 0.1,
+      "max_depth": null,
+      "max_leaf_nodes": 31,
+      "min_samples_leaf": 5,
+      "l2_regularization": 0.0,
+      "max_iter": 300
+    },
+    "Control: logística sobrerregularizada": {
+      "conjunto": "reducido",
+      "balanceado": false,
+      "C": 0.001,
+      "l1_ratio": 1.0
+    }
+  },
+  "resumen_seguimiento": {
+    "Gradient boosting (Fase 2)": {
+      "iteraciones": 400,
+      "iteracion_optima": 139,
+      "minimo_en_el_limite": false,
+      "perdida_validacion_minima": 0.67963167234035,
+      "perdida_validacion_final": 0.6817659313121874,
+      "deterioro_perdida": 0.0021342589718373883,
+      "validacion_empeora": false,
+      "brecha_perdida_en_optimo": 0.026731390647680486,
+      "brecha_perdida_final": 0.046006042198857955,
+      "brecha_crece": true,
+      "iteracion_mejor_puntaje": 377,
+      "mejor_puntaje_validacion": 0.17341779758017478,
+      "brecha_puntaje_final": 0.03070020856235814,
+      "entrenamiento_sigue_bajando": true,
+      "por_optimizador": false,
+      "iteracion_fase2": 72,
+      "perdida_validacion_fase2": 0.6808803563836089,
+      "puntaje_validacion_fase2": 0.14885294373992322
+    },
+    "Control: árboles sin regularizar": {
+      "iteraciones": 300,
+      "iteracion_optima": 5,
+      "minimo_en_el_limite": false,
+      "perdida_validacion_minima": 0.6856832890509711,
+      "perdida_validacion_final": 1.5547713516312178,
+      "deterioro_perdida": 0.8690880625802467,
+      "validacion_empeora": true,
+      "brecha_perdida_en_optimo": 0.04750453608034744,
+      "brecha_perdida_final": 1.4580255511389444,
+      "brecha_crece": true,
+      "iteracion_mejor_puntaje": 17,
+      "mejor_puntaje_validacion": 0.17227628065212788,
+      "brecha_puntaje_final": 0.853002351895169,
+      "entrenamiento_sigue_bajando": true,
+      "por_optimizador": false
+    },
+    "Regresión logística (Fase 2)": {
+      "iteraciones": 14,
+      "iteracion_optima": 3,
+      "minimo_en_el_limite": false,
+      "perdida_validacion_minima": 0.2918048804143231,
+      "perdida_validacion_final": 0.2926929690940963,
+      "deterioro_perdida": 0.0008880886797731913,
+      "validacion_empeora": false,
+      "brecha_perdida_en_optimo": 0.010736949670129559,
+      "brecha_perdida_final": 0.011477330212620984,
+      "brecha_crece": false,
+      "iteracion_mejor_puntaje": 3,
+      "mejor_puntaje_validacion": 0.1667426076646119,
+      "brecha_puntaje_final": -0.004104015146497331,
+      "entrenamiento_sigue_bajando": false,
+      "por_optimizador": true
+    },
+    "Logística híbrida (Fase 2)": {
+      "iteraciones": 8,
+      "iteracion_optima": 4,
+      "minimo_en_el_limite": false,
+      "perdida_validacion_minima": 0.2960325655171824,
+      "perdida_validacion_final": 0.29669243902992865,
+      "deterioro_perdida": 0.0006598735127462674,
+      "validacion_empeora": false,
+      "brecha_perdida_en_optimo": 0.006633372834703999,
+      "brecha_perdida_final": 0.0066702647358359846,
+      "brecha_crece": false,
+      "iteracion_mejor_puntaje": 8,
+      "mejor_puntaje_validacion": 0.14329208706595384,
+      "brecha_puntaje_final": -0.01076317838951249,
+      "entrenamiento_sigue_bajando": false,
+      "por_optimizador": true
+    }
+  },
+  "ganancia_por_datos": [
+    {
+      "modelo": "Regresión logística",
+      "n_mitad": 1768,
+      "n_todo": 3401,
+      "validacion_mitad": 0.15284997777808082,
+      "validacion_todo": 0.1657106475829414,
+      "ganancia": 0.012860669804860586,
+      "variacion_entre_submuestras": 0.01387302501071249,
+      "concluyente": false,
+      "brecha_con_todo": -0.004104015146497331
+    },
+    {
+      "modelo": "Gradient boosting",
+      "n_mitad": 1768,
+      "n_todo": 3401,
+      "validacion_mitad": 0.1426103910607155,
+      "validacion_todo": 0.14885294373992322,
+      "ganancia": 0.00624255267920773,
+      "variacion_entre_submuestras": 0.02229191524737941,
+      "concluyente": false,
+      "brecha_con_todo": 0.01876230874776924
+    },
+    {
+      "modelo": "Logística híbrida",
+      "n_mitad": 1768,
+      "n_todo": 3401,
+      "validacion_mitad": 0.13938777308432748,
+      "validacion_todo": 0.14329208706595384,
+      "ganancia": 0.003904313981626356,
+      "variacion_entre_submuestras": 0.0033008320074627098,
+      "concluyente": false,
+      "brecha_con_todo": -0.01076317838951249
+    }
+  ],
+  "conclusiones": {
+    "modelos": [
+      "Regresión logística: ajuste adecuado (rinde de forma parecida en ambos conjuntos y supera al azar). PR-AUC de 0,162 en entrenamiento y 0,166 en C4; la validación supera al entrenamiento en 0,004 (no hay brecha de sobreajuste); 1,88 veces el azar en C4.",
+      "Gradient boosting: ajuste adecuado (rinde de forma parecida en ambos conjuntos y supera al azar). PR-AUC de 0,168 en entrenamiento y 0,149 en C4; brecha de 0,019 (11 % del entrenamiento); 1,69 veces el azar en C4.",
+      "Logística híbrida: ajuste adecuado (rinde de forma parecida en ambos conjuntos y supera al azar). PR-AUC de 0,133 en entrenamiento y 0,143 en C4; la validación supera al entrenamiento en 0,011 (no hay brecha de sobreajuste); 1,62 veces el azar en C4."
+    ],
+    "controles": [
+      "Control: árboles sin regularizar: sobreajuste (memoriza el entrenamiento y pierde rendimiento con datos nuevos). PR-AUC de 0,994 en entrenamiento y 0,141 en C4; brecha de 0,853 (86 % del entrenamiento); 1,60 veces el azar en C4.",
+      "Control: logística sobrerregularizada: subajuste (no capta señal suficiente: rinde poco en ambos conjuntos). PR-AUC de 0,086 en entrenamiento y 0,088 en C4; la validación supera al entrenamiento en 0,003 (no hay brecha de sobreajuste); 1,00 veces el azar en C4."
+    ],
+    "curvas": [
+      "Gradient boosting (Fase 2): la pérdida de validación es mínima en el paso 139 de 400 (0,680). Después cambia solo +0,002: la validación se estanca, no se deteriora. La Fase 2 usó 72 iteraciones (pérdida de validación 0,681).",
+      "Control: árboles sin regularizar: la pérdida de validación es mínima en el paso 5 de 300 (0,686). Después sube 0,869 mientras el entrenamiento sigue bajando: es el patrón de sobreajuste.",
+      "Regresión logística (Fase 2): la pérdida de validación es mínima en el paso 3 de 14 (0,292). Después cambia solo +0,001: la validación se estanca, no se deteriora.",
+      "Logística híbrida (Fase 2): la pérdida de validación es mínima en el paso 4 de 8 (0,296). Después cambia solo +0,001: la validación se estanca, no se deteriora."
+    ],
+    "estrategias": [
+      "E1 · Regularización y menor complejidad: PR-AUC en C4 de 0,141 a 0,149 (+0,008: la PR-AUC mejora); brecha de +0,853 a +0,019 (se reduce); Lift@k de 1,51 a 1,40, en sentido contrario a la PR-AUC. El diagnóstico pasa de sobreajuste a ajuste adecuado.",
+      "E2 · Parada temprana: no modifica el modelo en esta ejecución (no recorta: en la validación interna la pérdida sigue bajando hasta la iteración 72).",
+      "E3 · Modelo más simple: PR-AUC en C4 de 0,149 a 0,130 (−0,019: la PR-AUC empeora); brecha de +0,019 a +0,030 (aumenta); Lift@k de 1,40 a 1,40. El modelo de partida no presentaba sobreajuste (ajuste adecuado), así que sirve como comprobación. El diagnóstico pasa de ajuste adecuado a subajuste.",
+      "E4 · Ingeniería de variables: PR-AUC en C4 de 0,166 a 0,143 (−0,022: la PR-AUC empeora); brecha de −0,004 a −0,011 (aumenta); Lift@k de 1,34 a 1,51, en sentido contrario a la PR-AUC. El modelo de partida no presentaba subajuste (ajuste adecuado), así que sirve como comprobación.",
+      "E5 · Menos regularización: PR-AUC en C4 de 0,166 a 0,160 (−0,006: la PR-AUC empeora); brecha de −0,004 a +0,004 (sin cambio apreciable); Lift@k de 1,34 a 1,46, en sentido contrario a la PR-AUC. El modelo de partida no presentaba subajuste (ajuste adecuado), así que sirve como comprobación.",
+      "E6 · Más entrenamiento: PR-AUC en C4 de 0,149 a 0,166 (+0,017: la PR-AUC mejora); brecha de +0,019 a +0,014 (se reduce); Lift@k de 1,40 a 1,57. El modelo de partida no presentaba subajuste (ajuste adecuado), así que sirve como comprobación."
+    ],
+    "balance": [
+      "Modelos de la Fase 2 por diagnóstico: 3 con ajuste adecuado.",
+      "Efecto de las 6 estrategias sobre la PR-AUC en C4: mejora en 2, empeora en 3 y no cambia de forma apreciable en 0; E2 no modificó el modelo.",
+      "Estrategias contra el sobreajuste que reducen la brecha: 1 de 3.",
+      "Este análisis usa solo las cohortes de entrenamiento y C4. C5 ya se evaluó una vez y no interviene, así que estas estrategias no cambian la decisión final del proyecto (priorizar con la regla D2)."
+    ]
+  }
+}

@@ -75,7 +75,23 @@ Archivo completo de los 180 trials: `results/metrics/optuna_historial_real.csv`.
 - **Las decisiones quedaron registradas.** Se probó un solo intento adicional, registrado antes de verlo (D39). Así se evitó probar variantes hasta que alguna gane por azar sobre C4.
 - **Se confirmó la regla fuera de muestra.** En C5, D2 obtuvo Lift@k = 1,97 [1,24; 2,56], y el mejor modelo, 0,98.
 
-## 5. Trabajo futuro
+## 5. Diagnóstico detallado de sobreajuste y subajuste (actividad de la semana 3)
+El análisis completo está en el cuaderno [`overfitting_analysis.ipynb`](../notebooks/overfitting_analysis.ipynb) y en el reporte [`diagnostic_report.pdf`](diagnostic_report.pdf). Amplía la tabla de ajuste de la sección 2 con:
+
+| Componente | Qué se hizo | Código |
+|---|---|---|
+| Seguimiento de métricas | Pérdida y PR-AUC de entrenamiento y validación en cada iteración del gradient boosting y en cada iteración del optimizador de las regresiones logísticas; `learning_curve` y `validation_curve` de scikit-learn para los tres modelos | `src/diagnostico.py` |
+| Curvas de aprendizaje | A (pérdida) y B (PR-AUC) durante el entrenamiento; C por tamaño del entrenamiento; D por hiperparámetro. 300 DPI, con anotaciones | `src/graficos_diagnostico.py` |
+| Diagnóstico cuantitativo | Brecha relativa de PR-AUC (sobreajuste si supera 30 %) y mejora sobre el azar (subajuste si no llega a 1,5 veces). Umbrales en `config.yaml` | `diagnosticar`, `resumen_seguimiento` |
+| Estrategias con antes/después | Contra el sobreajuste: E1 regularización y menor complejidad, E2 parada temprana, E3 modelo más simple. Contra el subajuste: E4 ingeniería de variables, E5 menos regularización, E6 más entrenamiento. Un cambio de PR-AUC menor que 0,005 se informa como «sin cambio apreciable» | `evaluar_estrategias` |
+
+Reglas del análisis: **C5 no interviene**, las particiones respetan el orden temporal y lo que una estrategia debe elegir (las iteraciones de la parada temprana) se decide en la validación interna, no en C4. Dos modelos de control, uno que sobreajusta y otro que subajusta, comprueban que las reglas reconocen los casos claros. Este análisis no cambia la decisión final (regla D2).
+
+Los umbrales son reglas prácticas, no pruebas estadísticas. Se fijaron el 02-oct-2026, antes de ejecutar el cuaderno con datos reales, pero cuando ya se conocían las PR-AUC de entrenamiento y de C4 de la Fase 2. Esta regla es más completa que la de la tabla de la sección 2 (brecha absoluta mayor que 0,10; entrenamiento menor que 0,15) y puede diferir de ella en casos límite.
+
+El reporte se regenera con `python tools/generar_reporte_diagnostico.py --fuente real` después de ejecutar el cuaderno.
+
+## 6. Trabajo futuro
 - **Validación cruzada temporal con más cohortes** (2027 en adelante): con cada ciclo nuevo habrá más eventos para optimizar con menos ruido.
 - **Variables nuevas** con más señal: interacción con Secretaría, puntualidad mes a mes y motivos de no matrícula (con consentimiento).
 - **Optimizar directamente Lift@k** con varias ventanas temporales cuando haya al menos 3 cohortes de validación.

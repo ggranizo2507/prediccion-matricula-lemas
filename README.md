@@ -87,6 +87,7 @@ Cada notebook trae una celda **0 · Preparar el entorno**. Esa celda clona el re
 | `03_modelado` | Optuna (regresión logística y gradient boosting), selección en C4 frente a las reglas D/D2, calibración, SHAP, congelamiento y prueba final única en C5 con IC bootstrap, equidad y proyección | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/03_modelado.ipynb) |
 | `04_optimizacion` | Análisis de la búsqueda con Optuna (180 trials), efecto de hiperparámetros, paso de C3 a C4 y diagnóstico de ajuste. Lee resultados guardados; no reentrena | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/04_optimizacion.ipynb) |
 | `05_evaluacion` | Resultados de la prueba única en C5: IC 95 %, Brier frente a R/B0/B1, criterios del Canvas, explicabilidad, equidad y proyección. Lee resultados guardados | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/05_evaluacion.ipynb) |
+| `overfitting_analysis` | **Actividad de la semana 3:** seguimiento de métricas, curvas de aprendizaje (pérdida y PR-AUC por iteración, por tamaño de datos y por hiperparámetro), diagnóstico de sobreajuste y subajuste, y seis estrategias con antes/después. No usa C5. Se guarda ejecutado, con sus salidas | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/overfitting_analysis.ipynb) |
 
 En los notebooks 01, 02 y 03, el parámetro `FUENTE` elige entre `sintetica` (cualquier persona) y `real` (solo en el entorno autorizado de LEMAS). Los notebooks 04 y 05 leen los **agregados reales ya publicados** en `results/` (autorizados por LEMAS), así que cualquier persona puede ejecutarlos.
 
@@ -132,7 +133,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 102 pruebas: datos, métricas, modelado, interfaz y modo institucional |
+| `tests/` | 133 pruebas: datos, métricas, modelado, diagnóstico de ajuste, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -140,10 +141,11 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D45 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D46 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
+| [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Privacidad, sesgos, impacto social, mitigaciones y limitaciones |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |

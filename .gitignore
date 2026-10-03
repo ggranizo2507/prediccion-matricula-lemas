@@ -38,3 +38,7 @@ figuras_*.zip
 figuras_*/
 fase2_*/
 fase2_*.zip
+
+# Paquete descargable del diagnóstico de la semana 3
+/diagnostico_*/
+diagnostico_*.zip

@@ -29,12 +29,13 @@ flowchart LR
 | `src/auditoria.py` | Conteo de eventos, EPV, diferencias estandarizadas, decisión sobre C1, tabla 6.3 del v5 y sensibilidad |
 | `src/evaluate.py` | Consolidación por representante, k por sede y Precision/Recall/Lift@k familiar |
 | `src/modeling.py` | Candidatos, optimización con Optuna, selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
+| `src/diagnostico.py` · `src/graficos_diagnostico.py` | Actividad de la semana 3: seguimiento de métricas por iteración, curvas de aprendizaje de scikit-learn, diagnóstico cuantitativo de sobreajuste y subajuste, estrategias con antes/después y sus figuras |
 | `src/inferencia.py` | Lógica de la aplicación (validación, población del ciclo, puntuación, lista, proyección y formulario), separada de Streamlit para poder probarla |
 | `src/institucional.py` | Modo institucional (D45): seudonimiza el Excel en memoria, verifica que no queden identificadores, arma el acta y construye la lista con nombres. Comprueba que la app se use en el mismo equipo |
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 102 pruebas: reglas del estudio, métricas, modelado, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 133 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -124,7 +125,7 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` y registro de decisiones D01–D45.
+- **Configuración central** en `config.yaml` y registro de decisiones D01–D46.
 - **Versiones exactas** en `requirements-lock.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
