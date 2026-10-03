@@ -33,11 +33,11 @@ Duración total: **5:00**. Presentación en línea (10 diapositivas), con las no
 
 **7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. En términos prácticos: llamando al 15 % de las familias, LEMAS llega al 30 % de las que no completarán la matrícula a tiempo. Superamos la meta de 1,20 que nos pusimos.
 
-**8 · Alcance (Guillermo, 3:40–4:00).** La regla funciona cuando hay señales de pago o una reserva extraordinaria; en Preparatoria acierta en 38 % de la lista. No alcanza al 70 % restante de los casos: con los datos que tenemos no sabemos anticiparlos. Y siendo honestos: los modelos de IA no superaron a la regla. La IA nos sirvió para descubrirla, validarla y medir su incertidumbre.
+**8 · Alcance (Guillermo, 3:40–4:00).** La regla supera al azar en los cuatro ciclos, con un Lift de 1,4 a 2,0: el 1,97 es el valor alto. No alcanza al 70 % de los casos: el 20 de febrero los datos no los distinguen. Y los modelos de IA no superaron a la regla: la IA sirvió para descubrirla, validarla y medir su incertidumbre.
 
 **9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores, así que la ética guió el diseño. Sesgos: los atrasos reflejan la situación económica y la regla detecta menos casos entre familias becadas. Impacto: bien usada, la lista lleva ayuda a tiempo; usada para cobrar, dañaría a quienes más la necesitan, y por eso ese uso está prohibido. Mitigaciones: seudónimos con clave custodiada, una app pública que solo acepta datos sintéticos, la nacionalidad nunca se usa y siempre decide una persona. Limitaciones: las familias aún no fueron informadas, y es un requisito pendiente antes de usarla en la práctica; hay pocos casos por grupo y no medimos si la llamada cambia la decisión.
 
-**10 · Cierre (Guillermo, 4:45–5:00).** Nuestro logro: una regla validada con datos reales que LEMAS puede usar cada 20 de febrero, dentro de una app segura. Lo siguiente es validarla con usuarios y revalidarla cada año. Aquí están el repositorio y la aplicación. ¡Gracias!
+**10 · Cierre (Guillermo, 4:45–5:00).** Nuestro logro: una regla validada con datos reales que LEMAS puede usar cada 20 de febrero. Lo siguiente: una segunda etapa a mitad de campaña con las familias que sigan sin pagar, por probar en 2027. Aquí están el repositorio y la aplicación. ¡Gracias!
 
 ## 2. Guion de la grabación de pantalla (60 s)
 
@@ -98,7 +98,7 @@ Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que 
 | Poco texto y cifras grandes | Frases cortas en pantalla y las cifras clave en grande; el detalle va en las notas del orador | Hecho |
 | Contar una historia | Problema, datos, lo que probamos, lo que funcionó, lo que no y lo que sigue | Hecho |
 | Mostrar la solución real | Grabación de la app desplegada con tres casos y un error controlado | Por grabar |
-| Ser honestos con las limitaciones | Diapositivas 8 y 9: la IA no superó a la regla; la lista no alcanza al 70 % de los casos | Hecho |
+| Ser honestos con las limitaciones | Diapositivas 8 y 9: la IA no superó a la regla; la lista no alcanza al 70 % de los casos; el Lift fue de 1,4 a 2,0 según el ciclo | Hecho |
 | Cubrir los cuatro puntos de ética que pide la guía | Sesgos, impacto social, mitigaciones y limitaciones en la diapositiva 9 | Hecho |
 | Hablar para una audiencia no experta | "Lift" se explica como "cuántas veces más casos que al azar"; sin siglas sin explicar | Revisar en el ensayo |
 | Ensayar y cronometrar | Dos ensayos completos; si un bloque se pasa, recortar ejemplos y no cifras | Por hacer |

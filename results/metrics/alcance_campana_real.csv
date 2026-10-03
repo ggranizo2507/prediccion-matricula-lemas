@@ -1,0 +1,21 @@
+cohorte,estrategia,descripcion,cupos,llamadas,cupos_sin_usar,aciertos,eventos,recall,recall_min,recall_max,precision,aciertos_primera_mitad,recall_primera_mitad,margen_medio_dias
+C2,fija_inicio_d2,"Lista fija, toda en la semana 1 · regla D2",165,165.0,0.0,23.0,96,0.2396,0.2292,0.2604,0.1394,23.0,0.2396,69.0
+C3,fija_inicio_d2,"Lista fija, toda en la semana 1 · regla D2",165,165.0,0.0,17.0,69,0.2464,0.2319,0.2899,0.103,17.0,0.2464,70.0
+C4,fija_inicio_d2,"Lista fija, toda en la semana 1 · regla D2",165,165.0,0.0,29.0,95,0.3053,0.2421,0.3158,0.1758,29.0,0.3053,69.0
+Todas,fija_inicio_d2,"Lista fija, toda en la semana 1 · regla D2",495,495.0,0.0,69.0,260,0.2654,0.2462,0.2808,0.1394,69.0,0.2654,69.2
+C2,fija_repartida_d2,"Lista fija, repartida en la campaña · regla D2",165,88.0,77.0,23.0,96,0.2396,0.2292,0.2604,0.2614,15.0,0.1562,43.4
+C3,fija_repartida_d2,"Lista fija, repartida en la campaña · regla D2",165,76.0,89.0,17.0,69,0.2464,0.2319,0.2899,0.2237,9.0,0.1304,39.1
+C4,fija_repartida_d2,"Lista fija, repartida en la campaña · regla D2",165,75.0,90.0,29.0,95,0.3053,0.2421,0.3158,0.3867,21.0,0.2211,42.9
+Todas,fija_repartida_d2,"Lista fija, repartida en la campaña · regla D2",495,239.0,256.0,69.0,260,0.2654,0.2462,0.2808,0.2887,45.0,0.1731,42.2
+C2,semanal_d2,Lista semanal · regla D2,165,,oculto,69.0,96,0.7188,0.6667,0.7396,,20.0,0.2083,26.5
+C3,semanal_d2,Lista semanal · regla D2,165,,<5,61.0,69,0.8841,0.8696,0.913,,16.0,0.2319,26.0
+C4,semanal_d2,Lista semanal · regla D2,165,165.0,0.0,84.0,95,0.8842,0.8526,0.8947,0.5091,28.0,0.2947,28.6
+Todas,semanal_d2,Lista semanal · regla D2,495,,<5,214.0,260,0.8231,0.8038,0.8308,,64.0,0.2462,27.2
+C2,fija_inicio_azar,"Lista fija, toda en la semana 1 · al azar",165,165.0,0.0,16.4,96,0.1703,0.0938,0.25,0.0991,16.4,0.1703,69.0
+C3,fija_inicio_azar,"Lista fija, toda en la semana 1 · al azar",165,165.0,0.0,11.0,69,0.1591,0.058,0.2319,0.0665,11.0,0.1591,70.0
+C4,fija_inicio_azar,"Lista fija, toda en la semana 1 · al azar",165,165.0,0.0,15.4,95,0.1616,0.0842,0.2526,0.093,15.4,0.1616,69.0
+Todas,fija_inicio_azar,"Lista fija, toda en la semana 1 · al azar",495,495.0,0.0,42.7,260,0.1642,0.1115,0.2115,0.0862,42.7,0.1642,69.3
+C2,semanal_azar,Lista semanal · al azar,165,165.0,0.0,67.4,96,0.7022,0.5938,0.8021,0.4086,14.5,0.1506,25.0
+C3,semanal_azar,Lista semanal · al azar,165,164.0,1.0,61.4,69,0.8891,0.8116,0.9565,0.3742,13.3,0.1933,25.4
+C4,semanal_azar,Lista semanal · al azar,165,164.9,0.1,80.0,95,0.8424,0.7368,0.9368,0.4853,18.9,0.1993,25.9
+Todas,semanal_azar,Lista semanal · al azar,495,493.8,1.2,208.8,260,0.803,0.7462,0.8538,0.4228,46.7,0.1797,25.5

@@ -36,7 +36,7 @@ flowchart LR
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 162 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 175 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -63,6 +63,7 @@ flowchart LR
 2. **Probabilidad individual:** logística híbrida calibrada con Platt en C4. Está bien calibrada, pero no mejora a B1 (Brier 0,0648 frente a 0,0647), por eso la interfaz la presenta junto a la tasa histórica y solo en el formulario individual: las listas de contacto no la muestran (D49).
 3. **Proyección por sede y subnivel:** suma de probabilidades de matrícula, comparada siempre con B1 (MAPE de 2,8 % en ambos casos).
 4. **Capacidad:** k = 2 × el promedio histórico de familias con no matrícula (D32): 118 en Mucho Lote 1 y 47 en Mucho Lote 2.
+5. **Seguimiento (D51):** a una fecha de corte entre el 20 de febrero y el 30 de abril, lista a todas las familias de la población inicial que no registran el pago de la matrícula hasta ese día (`inferencia.seguimiento_al_corte`). No usa el modelo ni aplica k: es un listado para la segunda etapa propuesta en [alcance_lista.md](alcance_lista.md), que aún no se ha validado.
 
 ## 4. Aplicación en dos modos (D42 y D45)
 
@@ -93,7 +94,7 @@ flowchart TB
 | Cómo se activa | Por defecto | `iniciar_lemas.bat`, que fija `LEMAS_MODO=institucional` y limita el servidor a `127.0.0.1` |
 | Datos aceptados | Solo sintéticos (`origen_datos = SINTETICO`) | Excel institucional + clave del custodio (se seudonimiza en el equipo), o `base_seud.csv` ya seudonimizado |
 | Seudonimización | No aplica | En memoria, con la misma técnica del cuaderno 00a; los seudónimos coinciden |
-| Nombres en pantalla | Nunca | Solo en la pestaña *Lista con nombres*, tras confirmar que se es personal autorizado |
+| Nombres en pantalla | Nunca | Solo en las pestañas *Lista con nombres* y *Seguimiento*, tras confirmar que se es personal autorizado |
 | Sistema de predicción | Se reentrena con la base sintética (mismo protocolo y mismos hiperparámetros) | `models/sistema_real.joblib` congelado en la Fase 2; si no está, se reentrena con la base cargada |
 | Salida | Lista ficticia | Lista por seudónimo y, para personal autorizado, lista con nombres |
 
@@ -102,6 +103,8 @@ flowchart TB
 - En modo demo se rechaza todo archivo que no lleve la marca de datos sintéticos (`origen_datos = SINTETICO`). Es una barrera contra errores, no contra un uso deliberado.
 - Procesa en memoria: no escribe en disco ni envía datos a terceros.
 - Muestra mensajes de error en lenguaje simple, sin detalles técnicos.
+
+**Recarga del código (`app/app.py`, ambos modos, D51):** en cada ejecución, `app.py` compara la fecha de los archivos de `src/` y `tools/` con la de los módulos en memoria. Si cambió alguno, los descarta junto con las cachés y los importa de nuevo. Evita que, tras actualizar el repositorio, la aplicación combine `app.py` nuevo con `src/` viejo.
 
 **Controles del modo institucional (`src/institucional.py` y `app/app.py`, D45):**
 - El cargador de Excel, la clave y la pestaña con nombres **no existen** en el modo demo.
@@ -122,11 +125,12 @@ flowchart TB
 | 20 de febrero (t0) | Abrir la app con `iniciar_lemas.bat`, subir el Excel y la clave, y generar la lista por sede | Admisiones, con el custodio |
 | 20 de febrero | Obtener la lista con nombres en la app y borrar los datos de la sesión | Custodio |
 | 20-feb a 30-abr | Contacto de apoyo (planes de pago, información, inquietudes) | Secretaría |
+| Hacia el 20 a 27 de marzo (propuesta para 2027) | Exportar de nuevo el Excel y listar en *Seguimiento* a las familias que siguen sin pagar | Admisiones, con el custodio |
 | Mayo | Comparar la lista con las matrículas reales y actualizar el historial | Datos + Dirección |
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` y registro de decisiones D01–D50.
+- **Configuración central** en `config.yaml` y registro de decisiones D01–D51.
 - **Versiones exactas** en `requirements-lock.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.

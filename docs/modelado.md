@@ -100,7 +100,14 @@ Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además 
 
 ## 7. Lo que la lista no alcanza
 
-En C5 la lista encontró 22 de las 74 familias que no pagaron en plazo (30 %). Tenía 165 cupos, más que casos, así que el 70 % restante es un límite de señal y no de capacidad. El análisis de ese límite (qué hay dentro del evento, qué pasaría con más contactos y con una lista semanal) está en [alcance_lista.md](alcance_lista.md); es descriptivo, no usa C5 y no cambia la regla.
+En C5 la lista encontró 22 de las 74 familias que no pagaron en plazo (30 %). Tenía 165 cupos, más que casos, así que el 70 % restante es un límite de señal y no de capacidad. El análisis de ese límite está en [alcance_lista.md](alcance_lista.md); es descriptivo, usa C2 a C4, no toca C5 y no cambia la regla. Lo principal:
+
+- La regla añade entre 9 y 12 puntos de recall sobre el azar con cualquier tamaño de lista. Su Lift fue 1,38 en C2, 1,49 en C3 y 1,93 en C4.
+- En C4 el resultado depende del sorteo entre familias empatadas: el Lift va de 1,53 a 1,99. El 1,93 con el que se eligió la regla está en la parte alta. En adelante conviene informar el promedio de varios sorteos.
+- El 77 % de las familias paga en las primeras cuatro semanas. Hacia el día 35 quedan unas 200 pendientes por año y el 44 % son casos.
+- Desde la cuarta semana la regla no ordena mejor que el azar entre las familias que siguen sin pagar.
+
+De ahí sale la propuesta de una campaña en dos etapas para 2027: la lista D2 el 20 de febrero y, cuatro o cinco semanas después, todas las familias que siguen sin pagar. La aplicación ya produce ese segundo listado (pestaña *Seguimiento*, D51). La propuesta no está validada.
 
 ## 8. Conclusión de la Fase 2
 

@@ -209,7 +209,7 @@ def figura_campana(estrategias: pd.DataFrame, cohortes: str) -> Figure:
             partes.append(f"{_pct(pronto)} en la primera mitad")
         if not np.isnan(margen):
             partes.append(f"margen medio {numero(margen, 0)} días")
-        if not np.isnan(sin_usar) and sin_usar >= 0.5 and fila.cupos:
+        if not np.isnan(sin_usar) and fila.cupos and sin_usar / fila.cupos >= 0.005:
             partes.append(f"{_pct(sin_usar / fila.cupos)} de cupos sin usar")
         ax.text(recall, y, "  " + " · ".join(partes), va="center", fontsize=8.3, color=TINTA)
     ax.set_yticks(posiciones, total["descripcion"])

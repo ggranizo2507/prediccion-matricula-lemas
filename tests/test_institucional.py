@@ -266,6 +266,37 @@ def test_interfaz_institucional_muestra_nombres_solo_tras_confirmar(monkeypatch,
     assert "contenido" not in app.session_state
 
 
+def test_interfaz_institucional_seguimiento_con_nombres_solo_tras_confirmar(monkeypatch,
+                                                                            resultado):
+    """D51: el listado de familias pendientes también pide confirmación antes de dar nombres."""
+    app = _app(monkeypatch, "institucional")
+    app.session_state["institucional"] = resultado
+    app.session_state["contenido"] = resultado.csv
+    app.session_state["origen"] = "ejemplo_institucional.xlsx (seudonimizado aquí)"
+    app.run()
+    ciclo = app.sidebar.selectbox[0]
+    ciclo.set_value(ciclo.value - 1).run()              # ciclo con pagos del siguiente
+    next(b for b in app.button if b.label == "Generar lista").click().run()
+    assert not app.exception
+    assert "📅 Seguimiento" in [t.label for t in app.tabs]
+
+    def tablas_de_seguimiento_con_nombres():
+        return [d for d in app.dataframe
+                if {"Representante", "En la lista del 20-feb"} <= set(d.value.columns)]
+
+    assert not tablas_de_seguimiento_con_nombres()
+    casillas = [c for c in app.checkbox if "autorizado" in c.label]
+    assert len(casillas) == 2                           # lista inicial y seguimiento
+    casillas[1].check().run()
+    assert not app.exception
+    tabla = tablas_de_seguimiento_con_nombres()[0].value
+    assert tabla["Representante"].str.startswith("Representante").all()
+    assert set(tabla["En la lista del 20-feb"]) <= {"Sí", "No"}
+    pendientes = next(int(str(m.value).replace(".", "")) for m in app.metric
+                      if m.label == "Siguen sin pagar")
+    assert len(tabla) == pendientes
+
+
 def test_interfaz_institucional_sin_excel_no_muestra_nombres(monkeypatch):
     app = _app(monkeypatch, "institucional")
     app.run()

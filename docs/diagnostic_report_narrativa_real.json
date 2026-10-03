@@ -1,5 +1,5 @@
 {
-  "_nota": "Análisis redactado por el equipo a partir de los resultados reales (results/metrics/*_real.*). Lo usa tools/generar_reporte_diagnostico.py --fuente real. La prueba test_narrativa_real_coincide_con_los_datos comprueba que cada cifra citada exista en los resultados.",
+  "_nota": "Análisis redactado por el equipo a partir de los resultados reales (results/metrics/*_real.*). Lo usa tools/generar_reporte_diagnostico.py --fuente real. La prueba test_narrativa_real_coincide_con_los_datos comprueba que cada cifra citada exista en los resultados. La nota posterior usa además results/metrics/alcance_campana_real.csv.",
   "hallazgos": [
     "Ninguno de los tres modelos de la Fase 2 tiene un ajuste adecuado. El gradient boosting sobreajusta: su PR-AUC cae de 0,245 en entrenamiento a 0,103 en C4, una pérdida del 58 %. La regresión logística y la logística híbrida subajustan: son estables, pero en C4 solo alcanzan 1,28 y 1,41 veces el azar.",
     "Lo que más nos llamó la atención fue la curva de pérdida del gradient boosting. En C4 la pérdida es mínima en la primera iteración (0,694) y desde ahí solo sube, hasta 0,792 en las 359 iteraciones que usamos en la Fase 2.",
@@ -7,7 +7,7 @@
     "La única mejora que consideramos útil vino de la ingeniería de variables (E4). Al pasar de la regresión logística a la logística híbrida, la PR-AUC subió de 0,113 a 0,125 y el Lift@k de 1,40 a 1,53, sin brecha entre entrenamiento y validación.",
     "Tener más datos del mismo tipo no parece la solución. Entre la mitad y el total del entrenamiento la validación casi no cambia, y la diferencia es menor que la variación entre submuestras en los tres modelos."
   ],
-  "significado": "Este diagnóstico respalda la decisión que tomamos en la Fase 2. El mejor modelo después de todas las estrategias es la logística híbrida, con un Lift@k de 1,53 en C4, por debajo del 1,93 que obtuvo la regla D2 en esa misma cohorte. Por eso mantenemos la regla D2 para priorizar el contacto. Lo que observamos en C4 son indicios y no pruebas: C4 ya se usó para seleccionar y calibrar, y solo tiene 122 eventos.",
+  "significado": "Este diagnóstico respalda la decisión que tomamos en la Fase 2. El mejor modelo después de todas las estrategias es la logística híbrida, con un Lift@k de 1,53 en C4, por debajo del 1,93 que obtuvo la regla D2 en esa misma cohorte. Por eso mantenemos la regla D2 para priorizar el contacto. Lo que observamos en C4 son indicios y no pruebas: C4 ya se usó para seleccionar y calibrar, solo tiene 122 eventos y, como explicamos en la nota al final de la sección 6, el 1,93 de la regla depende de un sorteo.",
   "diagnostico": [
     "El gradient boosting es el caso más claro. En entrenamiento ordena 3,22 veces mejor que el azar y en C4 solo 1,17 veces, así que casi todo lo que aprendió es particular de C2 y C3. Por la tabla de la Fase 2 esperábamos sobreajuste, pero no que la validación quedara tan cerca del azar.",
     "Las dos regresiones logísticas tienen el problema contrario. La híbrida prácticamente no tiene brecha (0,126 frente a 0,125) y la regresión logística pierde un 19 %, menos que nuestro umbral del 30 %. Son modelos estables, pero ninguno llega a 1,5 veces el azar en C4 y por eso la regla los clasifica como subajuste. Creemos que no les falta capacidad sino señal. La exploración del cuaderno apunta en la misma dirección: la señal más fuerte, haber pagado tarde la matrícula anterior (21,9 % de no matrícula frente a 6,3 % de quienes pagaron en plazo), solo aparece en 32 estudiantes del entrenamiento.",
@@ -47,7 +47,7 @@
     "Reducir el sobreajuste no mejoró la validación. Las tres estrategias cerraron parte de la brecha, pero la PR-AUC en C4 quedó entre 0,095 y 0,107. Regularizar quita lo que el modelo memorizó, pero no le agrega señal.",
     "La mejora que sí funcionó vino de las variables y no del modelo: la logística híbrida, que codifica las señales de la regla D2.",
     "Los hiperparámetros de la Fase 2 estaban bien elegidos. Las curvas de validación muestran que en los tres modelos el valor elegido está cerca del máximo.",
-    "La decisión del proyecto no cambia. El mejor modelo llega a un Lift@k de 1,53 en C4 y la regla D2 a 1,93. C5 no intervino en este análisis."
+    "La decisión del proyecto no cambia. El mejor modelo llega a un Lift@k de 1,53 en C4 y la regla D2 a 1,93 con el sorteo que usamos (ver la nota posterior). C5 no intervino en este análisis."
   ],
   "aprendizaje": "Antes de esta actividad leíamos el sobreajuste como un solo número, la diferencia entre entrenamiento y validación. Las curvas nos mostraron más: cuándo empieza, si la validación llega a mejorar en algún momento y si el problema es de capacidad o de señal. También aprendimos a no confiar en una sola métrica. En el gradient boosting la pérdida y la PR-AUC llevan a decisiones distintas, y la parada temprana elegida por pérdida empeoró justo lo que queríamos mejorar.",
   "limitaciones": [
@@ -55,12 +55,19 @@
     "C4 tiene 122 eventos. Diferencias de pocas milésimas de PR-AUC no son concluyentes, y por eso solo hablamos de mejora cuando el cambio es de al menos 0,005.",
     "Validamos con una sola cohorte. Las tasas cambian entre ciclos (9,1 % en C2 y 6,2 % en C3), así que el resultado puede no repetirse el año siguiente.",
     "Los umbrales de diagnóstico son reglas prácticas y los fijamos cuando ya conocíamos los resultados de la Fase 2.",
-    "E4 no es una comparación limpia, porque cambia las variables y también los hiperparámetros."
+    "E4 no es una comparación limpia, porque cambia las variables y también los hiperparámetros.",
+    "La comparación con la regla D2 usa un solo sorteo entre familias con el mismo puntaje. Con otros sorteos su Lift@k en C4 va de 1,53 a 1,99."
   ],
   "recomendaciones": [
     "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y evaluar la logística híbrida en esa cohorte nueva.",
     "Si volvemos a entrenar un gradient boosting, elegir el número de iteraciones con la métrica de ordenamiento (PR-AUC o Lift@k) en la validación interna, y no con la pérdida.",
-    "Buscar información nueva antes que modelos más complejos. Por ejemplo, registrar una señal temprana de la intención de la familia y medir con estas mismas curvas si sube la validación.",
-    "Mantener la regla D2 para priorizar mientras ningún modelo la supere en una cohorte que no haya participado en las decisiones."
+    "Buscar información nueva antes que modelos más complejos. El análisis de alcance encontró una que ya está en los registros: quién sigue sin pagar a mitad de campaña. Falta probarla en la próxima campaña.",
+    "Mantener la regla D2 para priorizar mientras ningún modelo la supere en una cohorte que no haya participado en las decisiones.",
+    "Informar el Lift@k de una regla con empates como el promedio de varios sorteos, con su mínimo y su máximo, y no con un sorteo solo."
+  ],
+  "nota_posterior": [
+    "El 3 de octubre, al analizar por qué la lista no llega a más familias, revisamos cómo se forma la lista de la regla D2. Muchas familias tienen el mismo puntaje y el corte de la lista cae entre ellas, así que el orden entre empatadas se decide con un sorteo de semilla fija. Repetimos ese sorteo cien veces. En C4, la lista de D2 alcanza entre el 24 % y el 32 % de los casos según cómo caiga, lo que equivale a un Lift@k de 1,53 a 1,99. Con el sorteo que usamos en la Fase 2 fue 31 % y 1,93, cerca del extremo alto.",
+    "En el extremo bajo, la regla iguala a la logística híbrida (24 % de los casos). La ventaja de D2 sobre el mejor modelo en C4 es entonces menos firme de lo que sugiere una sola cifra. Lo que sostiene la decisión es la prueba final en C5, que hicimos una sola vez en la Fase 2 y no repetimos: ahí la regla casi duplicó al azar y la logística híbrida no lo superó.",
+    "Esta nota no cambia ninguna cifra del diagnóstico, que trata de los modelos y no de la regla. El análisis completo está en docs/alcance_lista.md y en el cuaderno 06_alcance_lista."
   ]
 }
