@@ -64,8 +64,11 @@ def verificar_capacidad(k_por_sede: dict[str, int], config: dict) -> pd.DataFram
     return pd.DataFrame(filas)
 
 
-def _top_k(grupo: pd.DataFrame, k: int, semilla: int) -> pd.DataFrame:
-    """Primeras k familias por score; los empates se resuelven con semilla fija."""
+def primeras_k(grupo: pd.DataFrame, k: int, semilla: int) -> pd.DataFrame:
+    """Primeras k familias por score; los empates se resuelven al azar con semilla fija.
+
+    Es el mismo desempate en la validación y en la aplicación (`inferencia.lista_contactos`).
+    """
     desempate = np.random.default_rng(semilla).random(len(grupo))
     ordenado = grupo.assign(_desempate=desempate).sort_values(
         ["score", "_desempate"], ascending=[False, True])
@@ -85,7 +88,7 @@ def precision_at_k_familiar(
         if not k:
             log.warning("Sede sin k definido: %s", sede)
             continue
-        seleccion = _top_k(grupo, k, semilla)
+        seleccion = primeras_k(grupo, k, semilla)
         positivos = int(grupo["evento"].sum())
         aciertos = int(seleccion["evento"].sum())
         filas.append({"cohorte": cohorte, "sede": sede, "familias": len(grupo),

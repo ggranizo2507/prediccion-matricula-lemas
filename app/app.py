@@ -312,7 +312,7 @@ with tab_lista:
                 st.warning("Ese ciclo no tiene estudiantes con reserva aprobada antes del corte.")
                 st.stop()
             puntuados = puntuar(poblacion, SISTEMA)
-            lista = lista_contactos(puntuados, k_editado)
+            lista = lista_contactos(puntuados, k_editado, CONFIG["proyecto"]["semilla"])
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Estudiantes elegibles", f"{resumen['elegibles']:,}".replace(",", "."))
         c2.metric("Familias (representantes)", f"{resumen['representantes']:,}".replace(",", "."))
@@ -321,19 +321,16 @@ with tab_lista:
                   help="Porcentaje de familias elegibles que entra en la lista.")
         st.markdown(
             "**Cómo se ordena:** regla **D2**, primero quien pagó tarde la matrícula anterior, "
-            "luego reserva extraordinaria y luego más pensiones pagadas tarde. Empates: "
-            "mayor probabilidad del modelo. En la validación con datos reales, esta regla "
+            "luego reserva extraordinaria y luego más pensiones pagadas tarde. Los empates "
+            "se resuelven al azar, igual que en la validación. Con datos reales, esta regla "
             "encontró **casi el doble** de familias que no se matricularon que una selección "
             "al azar (Lift = 1,97).")
         st.dataframe(
             lista.drop(columns=["prioridad_d2"]).rename(columns={
                 "puesto": "Puesto", "id_familia": "Familia (seudónimo)", "sede": "Sede",
-                "prob_max": "Prob. no matrícula", "estudiantes": "Estudiantes",
+                "estudiantes": "Estudiantes",
                 "estudiantes_ids": "Estudiantes (seudónimos)", "motivo": "Motivo"}),
-            use_container_width=True, hide_index=True,
-            column_config={"Prob. no matrícula": st.column_config.ProgressColumn(
-                format="%.2f", min_value=0.0, max_value=float(max(lista["prob_max"].max(), 0.3)),
-                help="Probabilidad calibrada; en promedio se parece a la tasa histórica.")})
+            use_container_width=True, hide_index=True)
         st.download_button("⬇️ Descargar lista (CSV)", lista.to_csv(index=False).encode("utf-8"),
                            file_name=f"lista_contactos_{anio}.csv", mime="text/csv")
         col_a, col_b = st.columns(2)
@@ -379,7 +376,7 @@ if tab_nombres is not None:
                         "puesto": "Puesto", "sede": "Sede", "representante": "Representante",
                         "cedula_representante": "Cédula del representante",
                         "estudiantes": "Estudiantes (curso)", "motivo": "Motivo",
-                        "prob_max": "Prob. no matrícula", "observacion": "Observación"}),
+                        "observacion": "Observación"}),
                     use_container_width=True, hide_index=True)
                 st.download_button(
                     "⬇️ Descargar lista con nombres (CSV para Excel)",

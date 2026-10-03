@@ -30,7 +30,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
    - **Familias a contactar (k):** **no cambia al elegir otro ciclo**, porque representa la capacidad de contacto de cada sede y se calcula una sola vez con los ciclos de entrenamiento. Indica cuántas familias puede atender cada sede. El valor sugerido es el aprobado: el doble del promedio histórico de familias que no se matricularon. Puede cambiarlo según el personal disponible.
 4. Vaya a la pestaña **📋 Lista de contactos** y pulse **Generar lista**.
    - Las tarjetas muestran elegibles, familias, familias a contactar y cobertura.
-   - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes, la probabilidad y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
+   - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
    - Pulse **⬇️ Descargar lista (CSV)** para guardarla.
 5. Pestaña **📈 Proyección:** matrículas esperadas por sede y subnivel, según el modelo y según la tasa histórica (B1).
 6. Pestaña **🧑‍🎓 Evaluar un estudiante:** complete el formulario (sede, subnivel, pago anterior, pensiones pagadas tarde, tipo de reserva, promedio y conducta) y pulse **Estimar**. Obtendrá la prioridad D2 (alta, media o baja), la probabilidad y su comparación con la tasa histórica.
@@ -40,8 +40,8 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 
 | Elemento | Significado |
 |---|---|
-| **Orden de la lista (regla D2)** | Primero quien **pagó tarde la matrícula anterior**, luego quien hizo **reserva extraordinaria** y luego quien tuvo **más pensiones pagadas tarde**. Con datos reales, esta regla encontró casi el **doble** de familias que no se matricularon que una selección al azar |
-| **Prob. no matrícula** | Probabilidad calibrada. En promedio coincide con la realidad, pero para una persona concreta **no es más precisa que la tasa histórica**. Úsela como referencia, no como diagnóstico |
+| **Orden de la lista (regla D2)** | Primero quien **pagó tarde la matrícula anterior**, luego quien hizo **reserva extraordinaria** y luego quien tuvo **más pensiones pagadas tarde**. Cuando varias familias tienen el mismo puntaje, el orden entre ellas sale de un sorteo que siempre da el mismo resultado con los mismos datos; la probabilidad no cambia el orden. Con datos reales, esta regla encontró casi el **doble** de familias que no se matricularon que una selección al azar |
+| **Probabilidad estimada** (solo en *Evaluar un estudiante*) | Probabilidad calibrada. En promedio coincide con la realidad, pero para una persona concreta **no es más precisa que la tasa histórica**. Por eso las listas no la muestran: llevan el puesto y el motivo |
 | **Prioridad en el formulario** | *Alta:* pagó tarde la matrícula anterior. *Media:* reserva extraordinaria o 3 o más pensiones tarde. *Baja:* sin esas señales |
 | **Cobertura** | Porcentaje de familias elegibles que entra en la lista. Con k aprobado es alrededor del 15 % y alcanza cerca del 30 % de los casos de no matrícula |
 
@@ -99,6 +99,9 @@ El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma 
 - Presentarse como apoyo: "Queremos saber si necesitan información o facilidades para la matrícula".
 - Ofrecer opciones (fechas, planes de pago y canales de atención); no hablar de deudas ni de la lista.
 - Registrar el resultado del contacto (contactado, sin respuesta, confirmó o no continuará) para evaluar el proceso en mayo.
+- Si la familia pregunta por qué la llaman, responder con la verdad: la institución llama primero a las familias con reserva aprobada que aún no completan la matrícula, según datos administrativos como el tipo de reserva y la puntualidad de pagos anteriores. Ninguna decisión se toma de forma automática y la llamada no afecta el cupo.
+- Si la familia pide ver o corregir sus datos, o no desea ser contactada, registrarlo y derivarlo a quien LEMAS designe para atender esas solicitudes.
+- No usar la lista para medir el desempeño de quien llama ni comentarla con docentes.
 
 ## 7. Mensajes de error frecuentes
 

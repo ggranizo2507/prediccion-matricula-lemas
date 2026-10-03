@@ -35,7 +35,7 @@ flowchart LR
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 135 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 138 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -58,8 +58,8 @@ flowchart LR
 | Gradient boosting | HistGradientBoosting, monotonía en atrasos | 1,06 | Descartada (sobreajuste) |
 
 ### 3.3 Arquitectura de la solución final
-1. **Priorización:** regla **D2**, transparente y validada en C5 (Lift@k = 1,97 [1,24; 2,56]). Cada familia ocupa un solo cupo de contacto. El desempate dentro del mismo puntaje D2 se resuelve con la probabilidad del modelo.
-2. **Probabilidad individual:** logística híbrida calibrada con Platt en C4. Está bien calibrada, pero no mejora a B1 (Brier 0,0648 frente a 0,0647), por eso la interfaz la presenta junto a la tasa histórica.
+1. **Priorización:** regla **D2**, transparente y validada en C5 (Lift@k = 1,97 [1,24; 2,56]). Cada familia ocupa un solo cupo de contacto. Los empates dentro del mismo puntaje D2 se resuelven al azar con semilla fija, con la misma función en la validación y en la aplicación (`evaluate.primeras_k`, D48). La probabilidad del modelo no interviene en el orden.
+2. **Probabilidad individual:** logística híbrida calibrada con Platt en C4. Está bien calibrada, pero no mejora a B1 (Brier 0,0648 frente a 0,0647), por eso la interfaz la presenta junto a la tasa histórica y solo en el formulario individual: las listas de contacto no la muestran (D49).
 3. **Proyección por sede y subnivel:** suma de probabilidades de matrícula, comparada siempre con B1 (MAPE de 2,8 % en ambos casos).
 4. **Capacidad:** k = 2 × el promedio histórico de familias con no matrícula (D32): 118 en Mucho Lote 1 y 47 en Mucho Lote 2.
 
@@ -98,7 +98,7 @@ flowchart TB
 
 **Controles implementados en `src/inferencia.py` (ambos modos):**
 - El modelo y la priorización reciben **solo la base seudonimizada**. Un CSV con columnas de identificadores directos (cédula, nombres, código interno, teléfono, correo, dirección) se rechaza.
-- En modo demo se rechaza todo archivo que no sea sintético.
+- En modo demo se rechaza todo archivo que no lleve la marca de datos sintéticos (`origen_datos = SINTETICO`). Es una barrera contra errores, no contra un uso deliberado.
 - Procesa en memoria: no escribe en disco ni envía datos a terceros.
 - Muestra mensajes de error en lenguaje simple, sin detalles técnicos.
 
@@ -125,7 +125,7 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` y registro de decisiones D01–D46.
+- **Configuración central** en `config.yaml` y registro de decisiones D01–D49.
 - **Versiones exactas** en `requirements-lock.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.

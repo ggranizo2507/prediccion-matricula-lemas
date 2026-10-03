@@ -36,7 +36,7 @@ from src.data_processing import (
     es_curso_terminal,
     limpiar_base,
 )
-from src.evaluate import calcular_k_por_sede, consolidar_familias
+from src.evaluate import calcular_k_por_sede, consolidar_familias, primeras_k
 from src.modeling import calibrar, construir_modelo, puntajes_reglas
 
 MODOS = ("demo", "institucional")
@@ -188,29 +188,33 @@ def _motivo(fila: pd.Series) -> str:
     return "; ".join(partes) if partes else "sin señales administrativas"
 
 
-def lista_contactos(puntuados: pd.DataFrame, k_por_sede: dict) -> pd.DataFrame:
+def lista_contactos(puntuados: pd.DataFrame, k_por_sede: dict, semilla: int = 42) -> pd.DataFrame:
     """Top-k representantes por sede según D2 (un contacto por representante).
 
-    Desempate dentro del mismo puntaje D2: mayor probabilidad del modelo.
+    Los empates dentro del mismo puntaje D2 se resuelven al azar con semilla fija, con la
+    misma función que la validación (`evaluate.primeras_k`) (D48). La probabilidad del modelo
+    no interviene en el orden ni aparece en la lista (D49): no mejora a la tasa histórica y
+    junto a una familia puede leerse como un juicio. Las familias se ordenan antes por su
+    seudónimo, para que la lista no dependa del orden de las filas del archivo.
     """
-    datos = puntuados.assign(_orden=puntuados["prioridad_d2"] + puntuados["prob_no_matricula"])
-    datos = datos.sort_values("_orden", ascending=False)
+    datos = puntuados.sort_values(["prioridad_d2", "id_estudiante"], ascending=[False, True],
+                                  kind="stable")
     familias = datos.groupby("id_familia", sort=False).agg(
         sede=("sede", "first"), prioridad_d2=("prioridad_d2", "max"),
-        prob_max=("prob_no_matricula", "max"), estudiantes=("id_estudiante", "size"),
+        estudiantes=("id_estudiante", "size"),
         estudiantes_ids=("id_estudiante", lambda s: ", ".join(map(str, s))),
-        motivo=("motivo", "first"), _orden=("_orden", "max")).reset_index()
+        motivo=("motivo", "first")).reset_index()
+    familias = familias.sort_values("id_familia", kind="stable")
     filas = []
     for sede, grupo in familias.groupby("sede"):
         k = int(k_por_sede.get(str(sede), 0))
-        top = grupo.sort_values("_orden", ascending=False).head(k).copy()
+        top = primeras_k(grupo.assign(score=grupo["prioridad_d2"]), k, semilla)
+        top = top.drop(columns="score")
         top.insert(0, "puesto", range(1, len(top) + 1))
         filas.append(top)
     if not filas:
         return pd.DataFrame()
-    lista = pd.concat(filas, ignore_index=True).drop(columns="_orden")
-    lista["prob_max"] = lista["prob_max"].round(3)
-    return lista
+    return pd.concat(filas, ignore_index=True)
 
 
 def proyeccion_actual(puntuados: pd.DataFrame, tasa_historica: float) -> pd.DataFrame:

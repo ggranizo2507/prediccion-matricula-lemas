@@ -190,7 +190,6 @@ def lista_con_nombres(lista: pd.DataFrame, padron: pd.DataFrame, anio: int) -> p
             "cedula_representante": cedulas.iloc[0] if len(cedulas) else pd.NA,
             "estudiantes": "; ".join(nombres),
             "motivo": familia["motivo"],
-            "prob_max": familia["prob_max"],
             "observacion": "; ".join(observacion),
             "id_familia": familia["id_familia"],
         })

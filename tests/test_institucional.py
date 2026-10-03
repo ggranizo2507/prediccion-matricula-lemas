@@ -163,6 +163,8 @@ def test_lista_con_nombres_identifica_a_la_familia_correcta(resultado, lista_y_a
     normales = ~nombres["id_familia"].str.startswith("IND-")
     assert (recalculado[normales] == nombres.loc[normales, "id_familia"]).all()
     assert list(nombres["puesto"]) == list(lista["puesto"])
+    # D49: la lista con nombres no muestra una probabilidad junto a cada familia
+    assert not [c for c in nombres.columns if "prob" in c.lower()]
 
 
 def test_lista_con_nombres_avisa_cedula_compartida(resultado, lista_y_anio):

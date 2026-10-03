@@ -85,6 +85,23 @@ def suprimir_celdas(conteos: pd.Series, minimo: int = 5) -> pd.Series:
     return conteos.astype(object).where(conteos >= minimo, f"<{minimo}")
 
 
+def celda_complementaria(valores: pd.Series, ocultas: pd.Series):
+    """Supresión complementaria: qué otra celda ocultar para proteger a la que ya está oculta.
+
+    Si de un conjunto de celdas solo una está oculta, su valor se deduce restando las demás
+    del total. Devuelve el índice de la celda visible más pequeña (la mayor que cero, si
+    existe) para ocultarla también, o None si no hace falta (ninguna oculta, o dos o más).
+    """
+    ocultas = ocultas.astype(bool)
+    if ocultas.sum() != 1 or ocultas.all():
+        return None
+    visibles = pd.to_numeric(valores[~ocultas], errors="coerce").dropna()
+    if visibles.empty:
+        return None
+    positivas = visibles[visibles > 0]
+    return (positivas if len(positivas) else visibles).idxmin()
+
+
 COLUMNAS_BASE_SEUD = ("anoa", "fecha_pago", "id_seudonimo", "id_familia_seudonimo")
 
 
