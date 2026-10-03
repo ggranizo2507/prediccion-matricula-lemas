@@ -73,6 +73,18 @@ El modelo calibrado da probabilidades correctas en promedio, pero **no mejora a 
 | Brier menor que el predictor histórico (B1) | < 0,0647 | 0,0648 | ❌ (empate) |
 | MAPE por sede y subnivel ≤ 15 % y mejor que B1 | ≤ 15 % y < B1 | 2,8 % frente a 2,8 % | ⚠️ cumple el umbral, no mejora a B1 |
 
+El MAPE se calcula sobre los ocho grupos de sede y subnivel. Esa tabla no se publica, porque al restar elegibles y matrículas deja ver conteos menores que 5 (D53). `proyeccion_C5_real.csv` trae la proyección por subnivel y por sede:
+
+| Grupo | Elegibles | Matrículas observadas | Esperadas (modelo) | Esperadas (B1) | Error modelo | Error B1 |
+|---|---|---|---|---|---|---|
+| Bachillerato | 199 | 194 | 186,8 | 183,9 | 3,7 % | 5,2 % |
+| Educación General Básica | 977 | 901 | 893,9 | 902,8 | 0,8 % | 0,2 % |
+| Inicial | 122 | 116 | 109,5 | 112,7 | 5,6 % | 2,8 % |
+| Preparatoria | 113 | 102 | 102,1 | 104,4 | 0,1 % | 2,4 % |
+| Mucho Lote 1 | 791 | 733 | 722,7 | 730,9 | 1,4 % | 0,3 % |
+| Mucho Lote 2 | 620 | 580 | 569,6 | 572,9 | 1,8 % | 1,2 % |
+
+
 ## 5. Explicabilidad
 
 - **Permutación en la logística híbrida (caída de PR-AUC en C4):** lo que más aporta al ordenamiento es la reserva extraordinaria (0,014 ± 0,006) y los atrasos en pensiones (0,011 ± 0,004). La puntualidad del pago anterior (0,008 ± 0,008), el subnivel y el promedio tienen una variación tan grande como su efecto, y la conducta no aporta. Sede, curso, beca, hermanos y años de permanencia salen en cero porque este modelo no los recibe: la permutación no dice nada de ellos.

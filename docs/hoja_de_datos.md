@@ -62,7 +62,7 @@ Hay dos conjuntos: el **real**, que nunca sale de LEMAS con nombres ni se public
 | Pregunta | Respuesta |
 |---|---|
 | ¿Se distribuye el conjunto real? | No. El `.gitignore` bloquea el Excel, la base seudonimizada, las claves, las actas y los modelos entrenados con datos reales |
-| ¿Qué se publica? | Resultados **agregados**, con las celdas de menos de 5 casos ocultas (en la tabla de proyección aún se puede deducir algún conteo pequeño por diferencia; está pendiente de corregir), y la base **sintética** (`data/synthetic/base_sintetica.csv`): 9.000 filas artificiales con la misma estructura, calibradas con totales agregados y marcadas con `origen_datos = SINTETICO` |
+| ¿Qué se publica? | Resultados **agregados**, con las celdas de menos de 5 casos ocultas y sin tablas que permitan deducirlas por diferencia (D48 y D53), y la base **sintética** (`data/synthetic/base_sintetica.csv`): 9.000 filas artificiales con la misma estructura, calibradas con totales agregados y marcadas con `origen_datos = SINTETICO` |
 | ¿Con qué licencia? | La del repositorio (MIT) para el código y la base sintética |
 
 La base sintética sirve para ejecutar el código y probar la aplicación. No describe a LEMAS: sus fechas de pago son inventadas y sus resultados no deben citarse como hallazgos.

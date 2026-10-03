@@ -1,5 +1,7 @@
 """Pruebas de la Fase 2: modelos, protocolo temporal, IC, equidad y proyección."""
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -16,9 +18,12 @@ from src.modeling import (
     equidad,
     lineas_base_brier,
     proyeccion,
+    proyeccion_publicable,
 )
 from src.synthetic import generar
 from src.utils import cargar_config, celda_complementaria
+
+RAIZ = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope="module")
@@ -160,6 +165,56 @@ def test_lineas_base_y_proyeccion(dataset):
     tabla = proyeccion(c5, np.full(len(c5), 0.1), 0.1)
     assert (tabla["observadas"] >= 10).all()
     assert np.allclose(tabla["esperadas_modelo"], tabla["esperadas_B1"])
+
+
+def _proyeccion_a_mano(sin_matricula: dict) -> pd.DataFrame:
+    """Tabla detallada (sede × subnivel) con 100 elegibles por grupo y los no matriculados dados."""
+    filas = [{"sede": sede, "subnivel": subnivel, "N": 100, "observadas": 100 - faltan,
+              "esperadas_modelo": 95.0, "esperadas_B1": 94.0}
+             for (sede, subnivel), faltan in sin_matricula.items()]
+    return pd.DataFrame(filas)
+
+
+def test_proyeccion_publicable_no_deja_deducir_conteos_pequenos():
+    """D53: por sede y subnivel se veían conteos de 2 a 4; se publica por una dimensión."""
+    detalle = _proyeccion_a_mano({("A", "Inicial"): 2, ("A", "Básica"): 30, ("A", "Bach"): 3,
+                                  ("B", "Inicial"): 4, ("B", "Básica"): 20, ("B", "Bach"): 2})
+    publica = proyeccion_publicable(detalle, minimo=5)
+    assert set(publica["dimension"]) == {"subnivel", "sede"}
+    assert not {"sede", "subnivel"} & set(publica.columns)       # el cruce no se publica
+    visibles = publica[publica["observadas"] != OCULTO]
+    faltan = visibles["N"] - visibles["observadas"].astype(int)
+    assert not ((faltan > 0) & (faltan < 5)).any()
+    # los totales de cada bloque coinciden con el detalle
+    for _, bloque in publica.groupby("dimension"):
+        assert bloque["N"].sum() == detalle["N"].sum()
+    por_sede = publica[publica["dimension"] == "sede"].set_index("grupo")
+    assert por_sede.loc["A", "observadas"] == 300 - 35
+    assert por_sede.loc["B", "observadas"] == 300 - 26
+    basica = publica[publica["grupo"] == "Básica"].iloc[0]
+    assert basica["ape_modelo"] == pytest.approx(abs(190 - 150) / 150, abs=1e-3)
+
+
+def test_proyeccion_publicable_oculta_una_fila_pequena_y_otra_mas():
+    detalle = _proyeccion_a_mano({("A", "Inicial"): 1, ("A", "Básica"): 30, ("A", "Bach"): 6,
+                                  ("B", "Inicial"): 2, ("B", "Básica"): 20, ("B", "Bach"): 8})
+    publica = proyeccion_publicable(detalle, minimo=5).set_index("grupo")
+    assert publica.loc["Inicial", "observadas"] == OCULTO          # 3 sin matrícula
+    assert publica.loc["Bach", "observadas"] == OCULTO             # la visible más pequeña
+    assert publica.loc["Básica", "observadas"] == 150
+    assert np.isnan(publica.loc["Inicial", "ape_modelo"])
+    assert np.isnan(publica.loc["Bach", "ape_B1"])
+    assert (publica.loc[["A", "B"], "observadas"] != OCULTO).all()  # 37 y 30: se publican
+
+
+def test_proyecciones_publicadas_no_tienen_el_cruce_ni_conteos_pequenos():
+    """Los CSV publicados (reales y sintéticos) cumplen la regla de celdas menores que 5."""
+    for fuente in ("real", "sintetica"):
+        tabla = pd.read_csv(RAIZ / "results" / "metrics" / f"proyeccion_C5_{fuente}.csv")
+        assert list(tabla.columns[:2]) == ["dimension", "grupo"]
+        visibles = tabla[tabla["observadas"].astype(str) != OCULTO]
+        faltan = visibles["N"] - visibles["observadas"].astype(int)
+        assert not ((faltan > 0) & (faltan < 5)).any()
 
 
 def test_hibrido_usa_solo_variables_registradas(dataset):
