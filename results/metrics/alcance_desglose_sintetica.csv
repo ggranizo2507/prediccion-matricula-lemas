@@ -1,0 +1,6 @@
+cohorte,familias,eventos,en_lista,aciertos,recall,tardia,aciertos_tardia,recall_tardia,pct_tardia,parcial,aciertos_parcial,recall_parcial,pct_parcial,sin_pago,aciertos_sin_pago,recall_sin_pago,pct_sin_pago,mediana_dias_tarde,pct_tardia_hasta_30_dias
+C1,932,76,188,19,0.25,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
+C2,977,123,188,30,0.2439,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
+C3,1028,84,188,21,0.25,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
+C4,1031,98,188,19,0.1939,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
+Todas,3968,381,752,89,0.2336,54,12,0.2222,0.1417,72,26,0.3611,0.189,255,51,0.2,0.6693,21.5,0.7037

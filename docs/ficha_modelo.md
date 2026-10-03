@@ -89,7 +89,7 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 
 ## 8. Advertencias y recomendaciones
 
-- La lista no alcanza a cerca del 70 % de las familias que no pagan la matrícula en plazo.
+- La lista no alcanza a cerca del 70 % de las familias que no pagan la matrícula en plazo. Tenía más cupos (165) que casos (74), así que es un límite de señal y no de capacidad.
 - El evento incluye a quienes se matriculan después del 30 de abril: parte de lo que la regla detecta son familias que pagan tarde, no familias que se van.
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.

@@ -42,3 +42,5 @@ fase2_*.zip
 # Paquete descargable del diagnóstico de la semana 3
 /diagnostico_*/
 diagnostico_*.zip
+/alcance_*/
+alcance_*.zip

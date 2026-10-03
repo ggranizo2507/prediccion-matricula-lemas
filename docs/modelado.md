@@ -98,7 +98,11 @@ Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además 
 - **Diferencia entre sedes:** se explica porque k es menor en Mucho Lote 2 (47), proporcional a su historial.
 - **Representante con cédula genérica:** no aparece en C5, así que la equidad de ese grupo no se pudo evaluar.
 
-## 7. Conclusión de la Fase 2
+## 7. Lo que la lista no alcanza
+
+En C5 la lista encontró 22 de las 74 familias que no pagaron en plazo (30 %). Tenía 165 cupos, más que casos, así que el 70 % restante es un límite de señal y no de capacidad. El análisis de ese límite (qué hay dentro del evento, qué pasaría con más contactos y con una lista semanal) está en [alcance_lista.md](alcance_lista.md); es descriptivo, no usa C5 y no cambia la regla.
+
+## 8. Conclusión de la Fase 2
 
 1. **Resultado principal:** una regla de priorización derivada del análisis de datos (D2) duplica la efectividad del contacto frente al azar. Se validó fuera de muestra con IC 95 % y cumple las metas técnicas del Canvas.
 2. **Resultado de los modelos:** con alrededor de 200 eventos de entrenamiento y señales débiles, los modelos de aprendizaje automático no superan a la regla. Es un resultado válido y previsto en el v5: la IA sirvió para descubrir, validar y cuantificar la regla, y para medir la incertidumbre de forma honesta.

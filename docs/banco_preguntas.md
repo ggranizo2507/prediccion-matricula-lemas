@@ -13,7 +13,7 @@ Porque la pregunta es de priorización bajo capacidad limitada: con 10 personas 
 `y_no_matricula = 1` cuando un estudiante con reserva aprobada al 20 de febrero (t0) no tiene la matrícula pagada al 30 de abril (H). La unidad de decisión es la familia (representante), porque la llamada se hace al representante.
 
 **3. ¿Qué es k y por qué es 118 y 47?**
-Es el número de familias que cada sede puede contactar en la ventana. Se fijó en el doble del promedio histórico de casos por sede (decisión de la institución): 118 en Mucho Lote 1 y 47 en Mucho Lote 2. Representa capacidad, por eso no cambia al cambiar el ciclo en la app.
+Es el número de familias que cada sede contacta en la ventana. Se fijó en el doble del promedio histórico de casos por sede: 118 en Mucho Lote 1 y 47 en Mucho Lote 2. Fue una decisión, no una medida de la capacidad real: son menos de dos contactos por persona y semana. No cambia al cambiar el ciclo en la app.
 
 **4. Si la regla D2 gana, ¿dónde está la IA del proyecto?**
 En el proceso: preprocesamiento, tres modelos optimizados con Optuna, calibración, SHAP y permutación, bootstrap y prueba única. La explicabilidad mostró que la información útil está en el pago y el tipo de reserva, lo que justifica D2. Además, el modelo híbrido calibrado sigue en uso para las probabilidades y la proyección de matrícula.
@@ -78,7 +78,7 @@ La logística híbrida obtuvo Lift 0,98 [0,47; 1,52], sin diferencia con el azar
 Están bien calibradas en promedio (Brier 0,0648), pero empatan con usar la tasa histórica (0,0647). En la proyección de matrícula por sede y subnivel el MAPE es 2,8 %, igual que la tasa histórica. Lo reportamos tal cual: cumple el umbral de 15 %, pero no mejora a la referencia.
 
 **22. ¿Qué es lo que el sistema no puede detectar?**
-La lista no alcanza a cerca del 70 % de los casos. No sabemos por qué no continúan, porque no tenemos datos de motivos; pueden ser mudanzas, cambios de colegio o decisiones familiares. Para anticiparlos haría falta información nueva, como una encuesta de intención.
+La lista no alcanza a cerca del 70 % de los casos: encontró 22 de 74. Tenía 165 cupos, más que casos, así que el límite es de señal y no de capacidad. No sabemos por qué no continúan esas familias, porque no tenemos datos de motivos. Para anticiparlas haría falta información nueva, como una confirmación de continuidad, o rehacer la lista cada semana con quienes aún no pagan. Dejamos un análisis de esas alternativas en `docs/alcance_lista.md`.
 
 ## F. Ética y aplicación
 
@@ -106,7 +106,7 @@ Cada mayo, cuando se conoce el resultado del ciclo, se compara la lista con las 
 Usar o no las señales de pago. Son lo único que ordena bien a las familias, pero reflejan su situación económica. Decidimos usarlas con una condición: la lista solo sirve para ofrecer apoyo, nunca para cobrar ni excluir, y siempre decide una persona. Fueron las únicas señales que mostraron capacidad de ordenar.
 
 **29. ¿Quién responde si el sistema falla?**
-El sistema no decide, propone un orden. LEMAS responde por el uso de la lista: Secretaría por el contacto, el custodio por los datos y la clave, y Dirección por autorizar y revisar el sistema cada año. Nosotros respondemos por el desarrollo y la validación. Queda registro en cada etapa: decisiones D01 a D49, sistema congelado con SHA-256 y acta de seudonimización.
+El sistema no decide, propone un orden. LEMAS responde por el uso de la lista: Secretaría por el contacto, el custodio por los datos y la clave, y Dirección por autorizar y revisar el sistema cada año. Nosotros respondemos por el desarrollo y la validación. Queda registro en cada etapa: decisiones D01 a D50, sistema congelado con SHA-256 y acta de seudonimización.
 
 **30. ¿Qué normativa aplica y la cumplen?**
 Aplica la Ley Orgánica de Protección de Datos Personales del Ecuador y la norma de la Superintendencia sobre IA y datos personales, expedida en febrero de 2026. Implementamos medidas de seguridad, protección desde el diseño y decisión humana. Quedan pendientes para LEMAS antes de un uso operativo: confirmar la base legal para datos de menores, informar a las familias, hacer la evaluación de impacto y registrar el tratamiento. El RGPD y la CCPA no son directamente aplicables; los usamos como referencia.

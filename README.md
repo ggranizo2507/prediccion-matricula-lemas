@@ -88,6 +88,7 @@ Cada notebook trae una celda **0 · Preparar el entorno**. Esa celda clona el re
 | `04_optimizacion` | Análisis de la búsqueda con Optuna (180 trials), efecto de hiperparámetros, paso de C3 a C4 y diagnóstico de ajuste. Lee resultados guardados; no reentrena | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/04_optimizacion.ipynb) |
 | `05_evaluacion` | Resultados de la prueba única en C5: IC 95 %, Brier frente a R/B0/B1, criterios del Canvas, explicabilidad, equidad y proyección. Lee resultados guardados | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/05_evaluacion.ipynb) |
 | `overfitting_analysis` | **Actividad de la semana 3:** seguimiento de métricas, curvas de aprendizaje (pérdida y PR-AUC por iteración, por tamaño de datos y por hiperparámetro), diagnóstico de sobreajuste y subajuste, y seis estrategias con antes/después. No usa C5. Se guarda ejecutado, con sus salidas | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/overfitting_analysis.ipynb) |
+| `06_alcance_lista` | Por qué la lista no llega a más familias: qué hay dentro del evento (paga tarde, paga en parte o no registra ningún pago), alcance según el número de contactos y lista fija frente a lista semanal. Descriptivo; no usa C5 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/06_alcance_lista.ipynb) |
 
 En los notebooks 01, 02 y 03, el parámetro `FUENTE` elige entre `sintetica` (cualquier persona) y `real` (solo en el entorno autorizado de LEMAS). Los notebooks 04 y 05 leen los **agregados reales ya publicados** en `results/` (autorizados por LEMAS), así que cualquier persona puede ejecutarlos.
 
@@ -133,7 +134,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 138 pruebas: datos, métricas, modelado, diagnóstico de ajuste, interfaz y modo institucional |
+| `tests/` | 162 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -141,12 +142,13 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D49 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D50 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
 | [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
+| [`docs/alcance_lista.md`](docs/alcance_lista.md) | El 70 % que la lista no encuentra: crítica del diseño, método de análisis y decisiones que puede informar |
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Principios y dilemas, sesgos, equidad, privacidad, explicabilidad, impacto social, responsabilidad, mal uso y cumplimiento normativo |
 | [`docs/ficha_modelo.md`](docs/ficha_modelo.md) | Ficha del modelo (*model card*): uso previsto, métricas, resultados por grupo y límites |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
@@ -163,7 +165,7 @@ El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni beca
 - **Honestidad:** se informa que los modelos de ML no superaron a la regla y se reporta la incertidumbre.
 
 **Limitaciones conocidas**
-- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante.
+- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante. La lista tenía más cupos (165) que casos (74): es un límite de señal, no de capacidad. El análisis está en [`docs/alcance_lista.md`](docs/alcance_lista.md).
 - Con pocos eventos por grupo, la equidad no puede afirmarse con certeza.
 - No se midió si la llamada cambia la decisión de la familia.
 - Las familias aún no fueron informadas de este uso de sus datos. Antes de un uso operativo, LEMAS debe hacerlo, confirmar con su asesor la base legal para datos de menores y completar los pendientes de la ley ecuatoriana de protección de datos (LOPDP).
