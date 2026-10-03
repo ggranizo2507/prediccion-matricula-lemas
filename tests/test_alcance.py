@@ -172,6 +172,32 @@ def test_desglose_suma_y_protege_celdas_pequenas(familias, k):
     assert (estricta["eventos"] == tabla["eventos"]).all()      # los totales ya son públicos
 
 
+def test_desglose_total_oculta_solo_lo_necesario():
+    """En «Todas» se oculta la celda pequeña y una más, no todo el desglose."""
+    # 3 familias pagan tarde, 20 pagan en parte y 100 no registran pago; 400 pagan en plazo
+    tipos = ["tardia"] * 3 + ["parcial"] * 20 + ["sin_pago"] * 100 + ["en_plazo"] * 400
+    rng = np.random.default_rng(0)
+    evento = [0 if t == "en_plazo" else 1 for t in tipos]
+    familias = _a_mano(rng.integers(0, 5, len(tipos)), evento, [np.nan] * len(tipos))
+    familias["tipo"] = tipos
+    familias["dias_tarde"] = [10.0 if t == "tardia" else np.nan for t in tipos]
+    total = al.desglose_evento(familias, {SEDE: 150}, SEMILLA).set_index("cohorte").loc[al.TODAS]
+    assert total["tardia"] == "<5" and total["parcial"] == OCULTO      # la pequeña y otra más
+    assert total["sin_pago"] == 100                                    # el resto se publica
+    assert total["aciertos_tardia"] == OCULTO and total["aciertos_parcial"] == OCULTO
+    assert isinstance(total["aciertos_sin_pago"], (int, np.integer))
+    assert 0 < total["recall_sin_pago"] < 1 and np.isnan(total["recall_tardia"])
+    assert np.isnan(total["pct_tardia"]) and np.isnan(total["mediana_dias_tarde"])
+    assert total["pct_sin_pago"] == pytest.approx(100 / 123, abs=1e-4)
+    # y las frases solo usan lo publicable
+    textos = al.conclusiones(
+        al.desglose_evento(familias, {SEDE: 150}, SEMILLA),
+        al.alcance_por_k(familias, {SEDE: 150}, SEMILLA),
+        al.foto_semanal(familias, {SEDE: 150}, SEMILLA),
+        al.campana(familias, {SEDE: 150}, SEMILLA, repeticiones=3))
+    assert _sin_basura(textos)
+
+
 def test_supresion_complementaria_entre_cohortes():
     """Una sola cohorte oculta se deduciría restando las demás de «Todas»."""
     tabla = pd.DataFrame({"cohorte": ["C2", "C3", "C4", al.TODAS], "aciertos": [3, 12, 9, 24],

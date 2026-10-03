@@ -112,9 +112,9 @@ Aplicación **Streamlit** en español (`app/app.py`), con **dos modos** (decisio
 | **Demo** (por defecto) | Streamlit Community Cloud | Solo **sintéticos**; rechaza archivos con identificadores o sin la marca de datos sintéticos |
 | **Institucional** | Computador de LEMAS, solo `localhost` (doble clic en `iniciar_lemas.bat`) | El **Excel de LEMAS + la clave del custodio**: se seudonimiza en el propio equipo. También acepta `base_seud.csv`. Nada se guarda |
 
-**Funciones:** botón *Prueba con ejemplo*; carga validada de CSV (rechaza cédulas o nombres); lista de contactos por sede con k editable, motivo de cada prioridad y descarga CSV; proyección por sede y subnivel frente a B1; formulario para evaluar a un estudiante; sección *Acerca de* con métricas, limitaciones y privacidad.
+**Funciones:** botón *Prueba con ejemplo*; carga validada de CSV (rechaza cédulas o nombres); lista de contactos por sede con k editable, motivo de cada prioridad y descarga CSV; proyección por sede y subnivel frente a B1; pestaña *Seguimiento*, que a una fecha de corte lista a las familias que siguen sin pagar (D51; es un listado, no una predicción); formulario para evaluar a un estudiante; sección *Acerca de* con métricas, limitaciones y privacidad.
 
-**Solo en modo institucional (D45):** carga del Excel institucional y de la clave, seudonimización en memoria con verificación automática, descarga de `base_seud.csv` y del acta, pestaña **Lista con nombres** para personal autorizado y botón **Borrar datos de la sesión**. Así el personal de LEMAS no necesita Colab ni línea de comandos. La versión pública no tiene ninguna de estas funciones.
+**Solo en modo institucional (D45):** carga del Excel institucional y de la clave, seudonimización en memoria con verificación automática, descarga de `base_seud.csv` y del acta, pestaña **Lista con nombres** para personal autorizado (los nombres también se pueden ver en *Seguimiento*, con la misma confirmación) y botón **Borrar datos de la sesión**. Así el personal de LEMAS no necesita Colab ni línea de comandos. La versión pública no tiene ninguna de estas funciones.
 
 ```bash
 pip install -r app/requirements.txt
@@ -134,7 +134,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 162 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
+| `tests/` | 175 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -142,7 +142,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D50 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D51 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
@@ -165,7 +165,7 @@ El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni beca
 - **Honestidad:** se informa que los modelos de ML no superaron a la regla y se reporta la incertidumbre.
 
 **Limitaciones conocidas**
-- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante. La lista tenía más cupos (165) que casos (74): es un límite de señal, no de capacidad. El análisis está en [`docs/alcance_lista.md`](docs/alcance_lista.md).
+- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante. La lista tenía más cupos (165) que casos (74): es un límite de señal, no de capacidad. El análisis con C2 a C4 ([`docs/alcance_lista.md`](docs/alcance_lista.md)) muestra que la regla solo ayuda las tres primeras semanas, que su Lift va de 1,4 a 2,0 según la cohorte y que hacia el día 35 quedan unas 200 familias pendientes por año, de las que el 44 % son casos.
 - Con pocos eventos por grupo, la equidad no puede afirmarse con certeza.
 - No se midió si la llamada cambia la decisión de la familia.
 - Las familias aún no fueron informadas de este uso de sus datos. Antes de un uso operativo, LEMAS debe hacerlo, confirmar con su asesor la base legal para datos de menores y completar los pendientes de la ley ecuatoriana de protección de datos (LOPDP).

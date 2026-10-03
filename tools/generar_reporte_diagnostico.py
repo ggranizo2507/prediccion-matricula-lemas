@@ -569,6 +569,10 @@ def construir(fuente: str, salida: Path) -> Path:
         "cohorte que no haya participado en las decisiones.",
     ], e)
 
+    if nar.get("nota_posterior"):       # hallazgos posteriores que afectan la lectura
+        h.append(Paragraph("Nota posterior: el sorteo entre familias empatadas", e["h2"]))
+        h += _parrafos(nar["nota_posterior"], e)
+
     # ---- Referencias ---------------------------------------------------------------
     h.append(Paragraph("7. Referencias técnicas", e["h1"]))
     referencias = [

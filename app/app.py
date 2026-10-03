@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -27,6 +28,73 @@ import streamlit as st
 RAIZ = Path(__file__).resolve().parents[1]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
+
+PAQUETES_PROPIOS = ("src", "tools")
+MARCA = "_lemas_fecha_archivo"
+
+
+def _inicio_del_proceso() -> float | None:
+    """Hora en que arrancó el proceso (solo Linux, que es donde corre la versión pública)."""
+    try:
+        campos = Path(f"/proc/{os.getpid()}/stat").read_text().rsplit(")", 1)[1].split()
+        arranque = next(int(linea.split()[1])
+                        for linea in Path("/proc/stat").read_text().splitlines()
+                        if linea.startswith("btime"))
+        return arranque + int(campos[19]) / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError, StopIteration, AttributeError):
+        return None
+
+
+def descartar_modulos_viejos() -> bool:
+    """Si el código de `src/` o `tools/` cambió en disco, obliga a importarlo de nuevo.
+
+    Streamlit vuelve a leer este archivo en cada ejecución, pero conserva en memoria los
+    módulos importados. Tras una actualización del repositorio, la aplicación podía quedar
+    con `app.py` nuevo y `src/` viejo, y fallar al llamar una función con otros argumentos
+    (03-oct-2026). Cada módulo cargado lleva anotada la fecha de su archivo; si no coincide
+    con la del disco, se descartan todos los módulos propios y las cachés.
+    """
+    cargados = {nombre: modulo for nombre, modulo in list(sys.modules.items())
+                if nombre.split(".")[0] in PAQUETES_PROPIOS}
+    viejo = False
+    for modulo in cargados.values():
+        ruta = getattr(modulo, "__file__", None)
+        if not ruta:
+            continue
+        try:
+            en_disco = Path(ruta).stat().st_mtime_ns
+        except OSError:
+            viejo = True
+            break
+        anotada = getattr(modulo, MARCA, None)
+        if anotada is None:     # cargado antes de existir esta revisión
+            inicio = _inicio_del_proceso()
+            if inicio is not None and en_disco / 1e9 > inicio:
+                viejo = True
+                break
+        elif anotada != en_disco:
+            viejo = True
+            break
+    if viejo:
+        for nombre in cargados:
+            sys.modules.pop(nombre, None)
+        st.cache_data.clear()
+        st.cache_resource.clear()
+    return viejo
+
+
+def anotar_modulos() -> None:
+    """Anota en cada módulo propio la fecha del archivo con que se cargó."""
+    for nombre, modulo in list(sys.modules.items()):
+        ruta = getattr(modulo, "__file__", None)
+        if nombre.split(".")[0] in PAQUETES_PROPIOS and ruta and not hasattr(modulo, MARCA):
+            try:
+                setattr(modulo, MARCA, Path(ruta).stat().st_mtime_ns)
+            except OSError:
+                pass
+
+
+descartar_modulos_viejos()
 
 from src.inferencia import (  # noqa: E402
     RUTA_SISTEMA_REAL,
@@ -41,6 +109,7 @@ from src.inferencia import (  # noqa: E402
     preparar_base,
     proyeccion_actual,
     puntuar,
+    seguimiento_al_corte,
     validar_entrada,
 )
 from src.institucional import (  # noqa: E402
@@ -51,6 +120,8 @@ from src.institucional import (  # noqa: E402
     seudonimizar_excel,
 )
 from src.utils import cargar_config  # noqa: E402
+
+anotar_modulos()
 
 COLOR = "#8B1E3F"
 COLOR_SUAVE = "#9DB4C9"
@@ -132,8 +203,8 @@ if MODO == "demo":
 elif LOCAL:
     st.warning("**Modo institucional.** Todo se procesa **en este equipo** y nada se guarda: "
                "el Excel se convierte aquí en la base seudonimizada y el sistema trabaja solo "
-               "con seudónimos. Los nombres aparecen únicamente en la pestaña **Lista con "
-               "nombres**, para uso interno de LEMAS.", icon="🔒")
+               "con seudónimos. Los nombres aparecen únicamente en las pestañas **Lista con "
+               "nombres** y **Seguimiento**, tras confirmar, para uso interno de LEMAS.", icon="🔒")
 else:
     st.error("**Modo institucional abierto desde otro equipo.** Por seguridad, la carga del "
              "Excel con cédulas y la lista con nombres solo funcionan en el mismo computador "
@@ -291,13 +362,14 @@ with st.sidebar:
     st.caption(SISTEMA.descripcion)
 
 if INSTITUCIONAL:   # la pestaña con nombres no existe en la versión pública
-    tab_lista, tab_nombres, tab_proy, tab_estudiante, tab_acerca = st.tabs(
-        ["📋 Lista de contactos", "🪪 Lista con nombres", "📈 Proyección",
+    tab_lista, tab_nombres, tab_seguimiento, tab_proy, tab_estudiante, tab_acerca = st.tabs(
+        ["📋 Lista de contactos", "🪪 Lista con nombres", "📅 Seguimiento", "📈 Proyección",
          "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
 else:
     tab_nombres = None
-    tab_lista, tab_proy, tab_estudiante, tab_acerca = st.tabs(
-        ["📋 Lista de contactos", "📈 Proyección", "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
+    tab_lista, tab_seguimiento, tab_proy, tab_estudiante, tab_acerca = st.tabs(
+        ["📋 Lista de contactos", "📅 Seguimiento", "📈 Proyección",
+         "🧑‍🎓 Evaluar un estudiante", "ℹ️ Acerca de"])
 
 # --------------------------------------------------------------------------- #
 # Lista de contactos
@@ -385,6 +457,115 @@ if tab_nombres is not None:
                 st.caption("El archivo descargado contiene datos personales: guárdelo solo en "
                            "carpetas autorizadas y elimínelo al terminar la campaña. Al "
                            "finalizar, pulse **Borrar datos de la sesión**.")
+
+# --------------------------------------------------------------------------- #
+# Seguimiento: familias que siguen sin pagar a una fecha de corte (D51)
+# --------------------------------------------------------------------------- #
+with tab_seguimiento:
+    puntuados = st.session_state.get("puntuados")
+    if puntuados is None:
+        st.info("Primero genere la lista en la pestaña **Lista de contactos**.")
+    else:
+        calendario = CONFIG["calendario"]
+        t0 = pd.Timestamp(year=anio + 1, month=calendario["t0_mes_dia"][0],
+                          day=calendario["t0_mes_dia"][1])
+        cierre = pd.Timestamp(year=anio + 1, month=calendario["h_mes_dia"][0],
+                              day=calendario["h_mes_dia"][1])
+        st.markdown(
+            "**Segunda etapa de la campaña.** La lista del 20 de febrero llega a cerca de "
+            "un tercio de las familias que no se matriculan. Unas semanas después, la "
+            "mayoría ya pagó y basta mirar quién sigue pendiente. Esta pestaña muestra a "
+            "**todas las familias que siguen sin pagar** a la fecha que usted elija. Es un "
+            "**listado**, no una predicción.")
+        corte = st.date_input(
+            "Fecha de corte", value=(t0 + pd.Timedelta(days=28)).date(),
+            min_value=t0.date(), max_value=cierre.date(), format="DD/MM/YYYY",
+            help="Entre el 20 de febrero y el 30 de abril. Sugerido: cuatro o cinco semanas "
+                 "después del 20 de febrero. Use la fecha del archivo: se cuentan los pagos "
+                 "registrados hasta ese día, inclusive.")
+        seguimiento, cifras = seguimiento_al_corte(
+            BASE, puntuados, anio, corte, k_editado, CONFIG, CONFIG["proyecto"]["semilla"])
+        sin_pagos = cifras["dias_desde_t0"] > 0 and cifras["pagos_desde_t0"] == 0
+        if sin_pagos:
+            st.warning(
+                f"El archivo no registra pagos de matrícula del ciclo {anio + 1}-{anio + 2} "
+                "entre el 20 de febrero y la fecha de corte, así que no se puede saber quién "
+                "sigue pendiente. Cargue el archivo actualizado a esa fecha. Con el ejemplo, "
+                "elija un ciclo anterior en la barra lateral.", icon="📂")
+        else:
+            s1, s2, s3, s4 = st.columns(4)
+            s1.metric("Familias al 20 de febrero", f"{cifras['familias_t0']:,}".replace(",", "."))
+            s2.metric("Ya pagaron", f"{cifras['familias_pagaron']:,}".replace(",", "."))
+            s3.metric("Siguen sin pagar", f"{cifras['familias_pendientes']:,}".replace(",", "."),
+                      help="Familias con al menos un estudiante sin pago de matrícula.")
+            s4.metric("No estaban en la lista inicial",
+                      f"{cifras['pendientes_fuera_de_lista_inicial']:,}".replace(",", "."),
+                      help="Familias pendientes que no entraron en la lista del 20 de febrero.")
+            ultimo = cifras["ultimo_pago_registrado"]
+            st.caption(
+                f"Quedan {cifras['dias_hasta_cierre']} días hasta el 30 de abril. El listado "
+                "solo es correcto si el archivo está actualizado a la fecha de corte"
+                + (f" (último pago registrado: {pd.Timestamp(ultimo):%d-%m-%Y})." if ultimo
+                   else "."))
+            if cifras["pendientes_sin_representante"]:
+                st.warning(f"{cifras['pendientes_sin_representante']} estudiantes sin pago no "
+                           "tienen cédula de representante en el archivo y no aparecen en "
+                           "el listado. Revíselos aparte.")
+            solo_nuevas = st.checkbox(
+                "Ocultar las familias de la lista del 20 de febrero (ya contactadas)",
+                key=f"solo_nuevas_{REINICIO}",
+                help="La marca se recalcula con el archivo y la k de hoy. Use la misma k "
+                     "que el 20 de febrero; si guardó la lista de ese día, esa es la "
+                     "referencia.")
+            visible = seguimiento
+            if solo_nuevas:
+                visible = seguimiento[~seguimiento["en_lista_inicial"]]
+                visible = visible.assign(puesto=visible.groupby("sede").cumcount() + 1)
+            tabla = visible.assign(
+                en_lista_inicial=visible["en_lista_inicial"].map({True: "Sí", False: "No"}))
+            columnas = ["puesto", "id_familia", "sede", "en_lista_inicial", "estudiantes",
+                        "estudiantes_ids", "motivo"]
+            st.dataframe(
+                tabla[columnas].rename(columns={
+                    "puesto": "N.º", "id_familia": "Familia (seudónimo)", "sede": "Sede",
+                    "en_lista_inicial": "En la lista del 20-feb",
+                    "estudiantes": "Estudiantes sin pago",
+                    "estudiantes_ids": "Estudiantes sin pago (seudónimos)",
+                    "motivo": "Señales al 20 de febrero"}),
+                use_container_width=True, hide_index=True)
+            st.download_button(
+                "⬇️ Descargar seguimiento (CSV)",
+                tabla[columnas].to_csv(index=False).encode("utf-8"),
+                file_name=f"seguimiento_{anio}_{cifras['fecha_corte']}.csv", mime="text/csv")
+            st.caption(
+                "El orden de la tabla es el de la regla del 20 de febrero y solo sirve para "
+                "presentarla: a mitad de campaña esa regla ya no distingue mejor que el azar, "
+                "por eso se listan todas las familias pendientes. Contactar en dos etapas es "
+                "una propuesta para la campaña de 2027 que todavía no se ha probado.")
+            if DATOS_INSTITUCIONALES is not None and not visible.empty:
+                st.warning("**Datos personales · uso interno de LEMAS.** Igual que la lista "
+                           "inicial, este listado sirve para ofrecer apoyo, no para negar "
+                           "cupos, becas ni servicios.", icon="🪪")
+                if st.checkbox("Soy personal autorizado y deseo ver los nombres",
+                               key=f"ver_nombres_seguimiento_{REINICIO}"):
+                    con_nombres = lista_con_nombres(visible, DATOS_INSTITUCIONALES.padron, anio)
+                    con_nombres = con_nombres.merge(
+                        tabla[["id_familia", "en_lista_inicial"]], on="id_familia", how="left")
+                    st.dataframe(
+                        con_nombres.drop(columns=["id_familia"]).rename(columns={
+                            "puesto": "N.º", "sede": "Sede", "representante": "Representante",
+                            "cedula_representante": "Cédula del representante",
+                            "estudiantes": "Estudiantes sin pago (curso)",
+                            "motivo": "Señales al 20 de febrero", "observacion": "Observación",
+                            "en_lista_inicial": "En la lista del 20-feb"}),
+                        use_container_width=True, hide_index=True)
+                    st.download_button(
+                        "⬇️ Descargar seguimiento con nombres (CSV para Excel)",
+                        con_nombres.to_csv(index=False).encode("utf-8-sig"),
+                        file_name=f"seguimiento_con_nombres_{anio}_{cifras['fecha_corte']}.csv",
+                        mime="text/csv")
+                    st.caption("El archivo descargado contiene datos personales: guárdelo solo "
+                               "en carpetas autorizadas y elimínelo al terminar la campaña.")
 
 # --------------------------------------------------------------------------- #
 # Proyección
@@ -482,6 +663,9 @@ no superaron a esta regla con los datos disponibles; el aprendizaje automático 
 ### Limitaciones y advertencias
 - Las probabilidades individuales están calibradas pero **no mejoran a la tasa histórica**
   (Brier 0,0648 frente a 0,0647). Úselas como orientación, no como diagnóstico.
+- La lista del 20 de febrero **no alcanza a cerca del 70 %** de los casos: ese día los datos
+  no los distinguen. La pestaña **Seguimiento** lista a las familias que siguen sin pagar
+  unas semanas después. Es una propuesta para la campaña de 2027, todavía sin probar.
 - Solo cubre estudiantes **antiguos con reserva aprobada**; no predice nuevos ingresos.
 - {RESULTADOS['equidad']} Se recomienda revisar también a familias becadas con atrasos.
 - La lista es un **apoyo a la decisión humana**: no se usa para negar cupos, becas ni

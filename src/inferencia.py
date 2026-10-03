@@ -9,6 +9,8 @@ la hoja del ciclo actual y, de preferencia, la del ciclo anterior. La aplicació
 2. Prioriza representantes con la regla **D2** (decisión D40/D41).
 3. Estima la probabilidad de no matrícula con el modelo calibrado (referencia: B1).
 4. Proyecta matrículas esperadas por sede y subnivel.
+5. Opcional (D51): a una fecha de corte posterior, lista a las familias que siguen sin
+   pagar. Es un listado para la segunda etapa de la campaña, no una predicción.
 
 Todo ocurre en memoria. Nada se guarda en disco ni se envía a terceros.
 
@@ -215,6 +217,70 @@ def lista_contactos(puntuados: pd.DataFrame, k_por_sede: dict, semilla: int = 42
     if not filas:
         return pd.DataFrame()
     return pd.concat(filas, ignore_index=True)
+
+
+def seguimiento_al_corte(base_limpia: pd.DataFrame, puntuados: pd.DataFrame, anio_origen: int,
+                         fecha_corte, k_por_sede: dict, config: dict,
+                         semilla: int = 42) -> tuple[pd.DataFrame, dict]:
+    """Segunda etapa de la campaña (D51): familias que siguen sin pagar a una fecha de corte.
+
+    Es un **listado**, no una predicción: toma la población del 20 de febrero y deja a las
+    familias con al menos un estudiante sin pago de matrícula registrado hasta `fecha_corte`
+    (inclusive, como en la etiqueta: un pago del 30 de abril está en plazo). No se aplica k:
+    se listan todas. El orden es el de la regla D2 del 20 de febrero, con el
+    mismo desempate que `lista_contactos`, y sirve solo para presentar la tabla: a mitad de
+    campaña la regla ya no ordena mejor que el azar (`docs/alcance_lista.md`, sección 6.3).
+
+    `en_lista_inicial` indica si la familia estaba entre las k del 20 de febrero, para no
+    contactarla dos veces. Se recalcula con el archivo y la k de hoy: solo coincide con la
+    lista entregada ese día si se usa la misma k y los datos de origen no cambiaron.
+    """
+    calendario = config["calendario"]
+    t0 = pd.Timestamp(year=anio_origen + 1, month=calendario["t0_mes_dia"][0],
+                      day=calendario["t0_mes_dia"][1])
+    cierre = pd.Timestamp(year=anio_origen + 1, month=calendario["h_mes_dia"][0],
+                          day=calendario["h_mes_dia"][1])
+    corte = pd.Timestamp(fecha_corte).normalize()
+    if not t0 <= corte <= cierre:
+        raise ErrorEntrada(
+            f"La fecha de corte debe estar entre el {t0:%d-%m-%Y} y el {cierre:%d-%m-%Y}.")
+
+    destino = base_limpia[base_limpia["anio_origen"] == anio_origen + 1]
+    pagos = destino.set_index("id_estudiante")["fecha_pago"]
+    if destino.empty:       # aún no existe la hoja del ciclo siguiente: nadie ha pagado
+        fecha_pago = pd.Series(pd.NaT, index=puntuados.index, dtype="datetime64[ns]")
+    else:
+        fecha_pago = puntuados["id_estudiante"].map(pagos)
+    pendiente = ~(fecha_pago <= corte).fillna(False).to_numpy()
+    sin_pagar = puntuados[pendiente]
+
+    todas = {str(sede): len(puntuados) for sede in puntuados["sede"].unique()}
+    orden = lista_contactos(puntuados, todas, semilla)      # todas las familias, en orden D2
+    por_familia = sin_pagar.sort_values("id_estudiante").groupby("id_familia")["id_estudiante"]
+    orden["en_lista_inicial"] = orden["puesto"] <= orden["sede"].map(
+        lambda sede: int(k_por_sede.get(str(sede), 0)))
+    lista = orden[orden["id_familia"].isin(sin_pagar["id_familia"])].copy()
+    lista["estudiantes"] = lista["id_familia"].map(por_familia.size())
+    lista["estudiantes_ids"] = lista["id_familia"].map(
+        por_familia.agg(lambda ids: ", ".join(map(str, ids))))
+    lista = lista.rename(columns={"puesto": "puesto_inicial"})
+    lista.insert(0, "puesto", lista.groupby("sede").cumcount() + 1)
+
+    en_ventana = fecha_pago[(fecha_pago >= t0) & (fecha_pago <= corte)]
+    resumen = {
+        "fecha_corte": corte.date().isoformat(),
+        "dias_desde_t0": int((corte - t0).days),
+        "dias_hasta_cierre": int((cierre - corte).days),
+        "familias_t0": int(len(orden)),
+        "familias_pendientes": int(len(lista)),
+        "familias_pagaron": int(len(orden) - len(lista)),
+        "pendientes_fuera_de_lista_inicial": int((~lista["en_lista_inicial"]).sum()),
+        "pagos_desde_t0": int(len(en_ventana)),
+        "pendientes_sin_representante": int(sin_pagar["id_familia"].isna().sum()),
+        "ultimo_pago_registrado": (None if pagos.dropna().empty
+                                   else pagos.max().date().isoformat()),
+    }
+    return lista.reset_index(drop=True), resumen
 
 
 def proyeccion_actual(puntuados: pd.DataFrame, tasa_historica: float) -> pd.DataFrame:

@@ -45,8 +45,8 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D50, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
-| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 162 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D51, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 175 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
 ## 3. Dilemas éticos del proyecto
@@ -198,7 +198,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 | Una familia que no se matricula no estaba en la lista | Ninguna adicional: recibe la atención habitual | Secretaría | La lista no reemplaza la atención a todas las familias |
 | Una familia listada sí pensaba matricularse | Una llamada innecesaria | Secretaría | Contacto breve y de apoyo; se registra el resultado |
 | La regla deja de ordenar mejor que el azar | Esfuerzo mal dirigido | Equipo técnico y Dirección | Revalidación anual; se suspende si no supera al azar (9.4) |
-| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 162 pruebas automáticas |
+| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 175 pruebas automáticas |
 | Uso indebido (cobro, exclusión) | Daño a la familia y a la confianza | Dirección | Uso prohibido documentado; revisión anual por Dirección |
 | Fuga de datos personales | Daño a los titulares | LEMAS como responsable del tratamiento; custodio | Protocolo de incidentes (9.5) |
 
@@ -208,7 +208,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D50; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D51; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
@@ -274,6 +274,7 @@ El sistema no tiene un uso malicioso evidente fuera de la institución, pero den
 | Mal uso posible | Daño | Salvaguarda técnica | Salvaguarda organizativa |
 |---|---|---|---|
 | **Cobranza:** usar la lista para presionar pagos | Estigma y presión sobre familias con dificultades | La lista muestra el motivo (por ejemplo, pago tardío) pero ningún monto; saldo y deuda se eliminan al seudonimizar | Uso prohibido; protocolo de contacto de apoyo |
+| **Seguimiento como lista de morosos:** tratar a las familias que siguen sin pagar a mitad de campaña como deudoras (D51) | Presión sobre familias que están dentro del plazo | El listado no muestra montos ni saldos y advierte que no es una predicción; los nombres piden la misma confirmación | El plazo vence el 30 de abril: no hay mora. Mismo uso prohibido y mismo protocolo de apoyo |
 | **Exclusión:** negar o condicionar cupos, reservas o becas | Afecta el acceso a la educación | La app no tiene ninguna función de decisión sobre cupos | Uso prohibido; decisión humana; revisión por Dirección |
 | **Perfilado:** cruzar la lista con otros datos o compartirla con terceros | Pérdida de privacidad | Seudónimos; nombres solo en el equipo de LEMAS | Finalidad limitada; la lista con nombres se elimina al cerrar la campaña |
 | **Reidentificación** de la base seudonimizada por un tercero | Exposición de datos de menores | HMAC con clave secreta; la base real nunca se publica | La clave la guarda el custodio y no se envía por correo |
@@ -358,6 +359,7 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 - Las probabilidades individuales **no mejoran a la tasa histórica** (Brier 0,0648 frente a 0,0647): la app lo advierte.
 - Las métricas se reportan con **intervalos de confianza** y en una cohorte nunca usada para ajustar.
 - El sistema **no predice** estudiantes nuevos, reservas pendientes ni abandono durante el año.
+- El Lift de la regla **no es un número fijo**: fue 1,38, 1,49, 1,93 y 1,97 en cuatro cohortes, y en C4 cambia de 1,53 a 1,99 según el sorteo entre familias empatadas. La regla ayuda al inicio de la campaña y deja de hacerlo hacia la cuarta semana ([alcance_lista.md](alcance_lista.md)).
 
 ## 14. Limitaciones éticas reconocidas
 1. **Las familias no fueron consultadas ni informadas** sobre el uso de sus datos para este análisis. El estudio se hizo con autorización de LEMAS y con datos seudonimizados. Antes de un uso operativo, LEMAS debe informar a las familias y confirmar con su asesor la base legal para tratar datos de menores con este fin.

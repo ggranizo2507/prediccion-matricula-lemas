@@ -7,6 +7,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 1. **A qué familias contactar primero**, por sede, porque podrían no pagar la matrícula hasta el 30 de abril.
 2. **Cuántas matrículas se esperan** por sede y subnivel.
 3. La **probabilidad estimada** de no matrícula de un estudiante cualquiera (formulario).
+4. Unas semanas después, **qué familias siguen sin pagar** (pestaña *Seguimiento*). Es un listado, no una predicción.
 
 > La lista es un **apoyo**. Secretaría decide a quién llamar y cómo. La aplicación no contacta a nadie ni decide sobre cupos, becas o servicios.
 
@@ -16,7 +17,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 |---|---|---|
 | Dónde | En el navegador, con el enlace del README | En un computador de LEMAS (doble clic en `iniciar_lemas.bat`) |
 | Datos | Sintéticos (ficticios), ya incluidos | El Excel de LEMAS y la clave del custodio |
-| Nombres | Nunca | Solo en la pestaña **Lista con nombres**, para personal autorizado |
+| Nombres | Nunca | Solo en las pestañas **Lista con nombres** y **Seguimiento**, para personal autorizado y tras confirmar |
 | Para qué | Conocer la herramienta, el video y la evaluación académica | Uso real cada 20 de febrero |
 
 **Importante:** nunca suba datos reales a la versión pública. La aplicación los rechaza, pero el archivo alcanza a viajar por internet. El Excel y la clave solo se usan en el modo institucional.
@@ -32,9 +33,10 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
    - Las tarjetas muestran elegibles, familias, familias a contactar y cobertura.
    - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
    - Pulse **⬇️ Descargar lista (CSV)** para guardarla.
-5. Pestaña **📈 Proyección:** matrículas esperadas por sede y subnivel, según el modelo y según la tasa histórica (B1).
-6. Pestaña **🧑‍🎓 Evaluar un estudiante:** complete el formulario (sede, subnivel, pago anterior, pensiones pagadas tarde, tipo de reserva, promedio y conducta) y pulse **Estimar**. Obtendrá la prioridad D2 (alta, media o baja), la probabilidad y su comparación con la tasa histórica.
-7. Pestaña **ℹ️ Acerca de:** cómo se validó el sistema, sus resultados y sus limitaciones.
+5. Pestaña **📅 Seguimiento:** elija una **fecha de corte** entre el 20 de febrero y el 30 de abril. Verá cuántas familias ya pagaron, cuántas siguen sin pagar y cuáles no estaban en la lista inicial. Con el ejemplo, elija antes un ciclo anterior en la barra lateral: el más reciente todavía no tiene pagos del ciclo siguiente.
+6. Pestaña **📈 Proyección:** matrículas esperadas por sede y subnivel, según el modelo y según la tasa histórica (B1).
+7. Pestaña **🧑‍🎓 Evaluar un estudiante:** complete el formulario (sede, subnivel, pago anterior, pensiones pagadas tarde, tipo de reserva, promedio y conducta) y pulse **Estimar**. Obtendrá la prioridad D2 (alta, media o baja), la probabilidad y su comparación con la tasa histórica.
+8. Pestaña **ℹ️ Acerca de:** cómo se validó el sistema, sus resultados y sus limitaciones.
 
 ## 4. Cómo interpretar los resultados
 
@@ -44,6 +46,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 | **Probabilidad estimada** (solo en *Evaluar un estudiante*) | Probabilidad calibrada. En promedio coincide con la realidad, pero para una persona concreta **no es más precisa que la tasa histórica**. Por eso las listas no la muestran: llevan el puesto y el motivo |
 | **Prioridad en el formulario** | *Alta:* pagó tarde la matrícula anterior. *Media:* reserva extraordinaria o 3 o más pensiones tarde. *Baja:* sin esas señales |
 | **Cobertura** | Porcentaje de familias elegibles que entra en la lista. Con k aprobado es alrededor del 15 % y alcanza cerca del 30 % de los casos de no matrícula |
+| **Seguimiento** | Todas las familias del 20 de febrero que no registran el pago de la matrícula hasta la fecha de corte. No lleva puntaje ni probabilidad. El orden de la tabla es el del 20 de febrero y solo sirve para presentarla: a mitad de campaña la regla ya no distingue mejor que el azar |
 
 **Recomendación de equidad:** la regla detecta menos casos entre familias **becadas**. Revise también a las becadas con atrasos aunque no estén en la lista.
 
@@ -95,6 +98,20 @@ El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma 
 
 **Nunca:** suba el Excel, `base_seud.csv` o la lista con nombres a la versión pública, a GitHub, al correo o a chats; ni comparta la clave.
 
+### 5.6 Segunda etapa: seguimiento a mitad de campaña (opcional)
+La lista del 20 de febrero llega a cerca de un tercio de las familias que no se matriculan. Con los datos de 2023 a 2025, tres de cada cuatro familias pagan en las primeras cuatro semanas, y de las que siguen pendientes hacia el día 35 casi la mitad no pagará en plazo. Por eso proponemos una segunda ronda. **Es una propuesta para 2027 que todavía no se ha probado.**
+
+1. Cuatro o cinco semanas después del 20 de febrero, **exporte de nuevo el Excel**, con los pagos de matrícula al día.
+2. Abra la aplicación como en la sección 5.2, suba el Excel y la clave, y pulse **Generar lista**.
+3. Abra la pestaña **📅 Seguimiento** y elija la **fecha de corte**: la fecha del Excel. Se cuentan los pagos registrados hasta ese día, inclusive.
+   - Use **la misma k** que el 20 de febrero. La marca «En la lista del 20-feb» se recalcula con el archivo de hoy; si guardó la lista de ese día, esa es la referencia.
+4. Revise las cifras. Si aparece el aviso de que el archivo no registra pagos, el Excel no está actualizado.
+5. Marque **Ocultar las familias de la lista del 20 de febrero** si ya las contactó.
+6. Marque **Soy personal autorizado y deseo ver los nombres** y descargue el listado.
+7. Pulse **🧹 Borrar datos de la sesión** al terminar.
+
+Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto sigue el protocolo de apoyo de la sección 6 y no es una gestión de cobro.
+
 ## 6. Protocolo sugerido para el contacto
 - Presentarse como apoyo: "Queremos saber si necesitan información o facilidades para la matrícula".
 - Ofrecer opciones (fechas, planes de pago y canales de atención); no hablar de deudas ni de la lista.
@@ -121,6 +138,8 @@ El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma 
 | "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
 | "La base no tiene suficientes ciclos para entrenar" | Incluya en el Excel las hojas de los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
 | "Ese ciclo no tiene estudiantes con reserva aprobada" | Elija otro ciclo: el actual aún no tiene reservas aprobadas o no está en el archivo |
+| "El archivo no registra pagos de matrícula del ciclo … entre el 20 de febrero y la fecha de corte" (pestaña *Seguimiento*) | El Excel no tiene la hoja del ciclo siguiente o no está actualizado. Expórtelo de nuevo. Con el ejemplo, elija un ciclo anterior |
+| `TypeError` en `lista_contactos` u otro error en rojo justo después de actualizar el repositorio (versión pública) | Streamlit quedó con código viejo en memoria. En share.streamlit.io abra la app y elija **⋮ → Reboot app**. Desde D51 la aplicación lo corrige sola |
 | "El archivo no tiene la estructura esperada" | Verifique que sea un CSV generado por `00a`, con fechas en formato día/mes/año o año-mes-día |
 
 ## 8. Preguntas frecuentes
@@ -130,4 +149,5 @@ El cuaderno `00a_seudonimizacion` produce el mismo `base_seud.csv` con la misma 
 - **¿Necesito Colab?** No. En el modo institucional la app convierte el Excel directamente.
 - **¿Qué pasa si se pierde la clave?** Las listas ya descargadas con nombres siguen sirviendo. Para trabajar de nuevo puede crear otra clave, pero los seudónimos cambiarán y no coincidirán con los archivos anteriores.
 - **¿Pueden ver la app desde otro computador?** No. El arranque solo permite abrirla en el mismo equipo.
+- **¿Para qué sirve la pestaña Seguimiento?** Para la segunda ronda de contactos: lista a todas las familias que siguen sin pagar a la fecha que usted elija. No predice nada, solo lee los pagos del archivo.
 - **¿Sirve para estudiantes nuevos?** No. Solo para estudiantes antiguos con reserva aprobada.

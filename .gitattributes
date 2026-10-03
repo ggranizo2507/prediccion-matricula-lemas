@@ -1,0 +1,3 @@
+# Finales de línea: el arranque de Windows necesita CRLF aunque se descargue como ZIP desde GitHub
+*.bat text eol=crlf
+*.sh  text eol=lf

@@ -455,6 +455,17 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
             agregar(tabla[columna].dropna().tolist())
     resumen = json.loads((carpeta / f"diagnostico_semana3_{fuente}.json").read_text("utf-8"))
     agregar(resumen)
+    campana = carpeta / f"alcance_campana_{fuente}.csv"     # nota posterior: sorteo en D2
+    if campana.exists():
+        fija = pd.read_csv(campana).query("estrategia == 'fija_inicio_d2'")
+        seleccion = pd.read_csv(carpeta / f"seleccion_C4_{fuente}.csv")
+        es_d2 = seleccion["candidato"].str.startswith("D2")
+        lift_d2 = float(seleccion.loc[es_d2, "lift_k"].iloc[0])
+        for fila in fija.itertuples():
+            agregar([fila.recall, fila.recall_min, fila.recall_max])
+            if fila.cohorte == resumen["validacion"]:       # Lift@k equivalente de cada sorteo
+                agregar([lift_d2 * fila.recall_min / fila.recall,
+                         lift_d2 * fila.recall_max / fila.recall])
     for particion in resumen["particiones"]:                # tasas de evento por partición
         agregar(particion["eventos_entrenamiento"] / particion["n_entrenamiento"])
         agregar(particion["eventos_validacion"] / particion["n_validacion"])
