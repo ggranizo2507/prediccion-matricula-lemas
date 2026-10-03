@@ -142,7 +142,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D51 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D52 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
@@ -151,6 +151,8 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/alcance_lista.md`](docs/alcance_lista.md) | El 70 % que la lista no encuentra: crítica del diseño, método de análisis y decisiones que puede informar |
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Principios y dilemas, sesgos, equidad, privacidad, explicabilidad, impacto social, responsabilidad, mal uso y cumplimiento normativo |
 | [`docs/ficha_modelo.md`](docs/ficha_modelo.md) | Ficha del modelo (*model card*): uso previsto, métricas, resultados por grupo y límites |
+| [`docs/hoja_de_datos.md`](docs/hoja_de_datos.md) | Hoja de datos (*datasheet*): origen, composición, recolección, limpieza, usos y distribución del conjunto de datos |
+| [`docs/impacto_social_responsabilidad.md`](docs/impacto_social_responsabilidad.md) | Workshop de la semana 4: stakeholders, impacto social, riesgos éticos con su mitigación, responsabilidad, cumplimiento y compromiso del equipo. Versión entregada: [`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx`](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx) |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
 | [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
 | [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 35 preguntas probables de la defensa con sus respuestas |
@@ -176,7 +178,7 @@ El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni beca
 - No usar con estudiantes nuevos, en otros colegios ni en otros procesos sin volver a validar.
 - No subir datos reales a la versión pública, a GitHub ni a servicios externos.
 
-Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) y resumen en la [ficha del modelo](docs/ficha_modelo.md).
+Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md), resumen en la [ficha del modelo](docs/ficha_modelo.md) y en la [hoja de datos](docs/hoja_de_datos.md), y análisis de impacto social con el compromiso del equipo en [`docs/impacto_social_responsabilidad.md`](docs/impacto_social_responsabilidad.md).
 
 ## Autores y contribuciones
 | Integrante | Rol |
