@@ -49,7 +49,7 @@
 | Logística híbrida (calibrada) | 0,067 [0,030; 0,103] | 0,98 [0,47; 1,52] | 0,15 [0,07; 0,23] | 0,088 |
 | A · selección al azar de k familias | 0,073 | 1,08 | 0,16 | 0,074 |
 
-- **D2 se confirma fuera de muestra.** Contactando al 15 % de los representantes se llega al **30 % de las familias que no se matricularán**, casi el doble que al azar. El IC de Lift@k no incluye el 1.
+- **D2 se confirma fuera de muestra.** Contactando al 15 % de los representantes se llega al **30 % de las familias que no pagan la matrícula en plazo**, casi el doble que al azar. Los empates dentro de un mismo puntaje se resolvieron al azar con semilla fija; la aplicación usa el mismo desempate (D48). El IC de Lift@k no incluye el 1.
 - **La logística híbrida no supera al azar en C5.** Esto confirma que la decisión tomada en C4 fue correcta.
 
 **Calibración (Brier por estudiante en C5; menor es mejor):**
@@ -75,9 +75,9 @@ El modelo calibrado da probabilidades correctas en promedio, pero **no mejora a 
 
 ## 5. Explicabilidad
 
-- **Permutación (caída de PR-AUC en C4):** lo que más aporta al ordenamiento es la reserva extraordinaria (0,014), los atrasos en pensiones (0,011) y la puntualidad del pago anterior (0,008). Promedio y subnivel aportan muy poco; sede, beca, hermanos, años de permanencia y conducta no aportan nada.
+- **Permutación en la logística híbrida (caída de PR-AUC en C4):** lo que más aporta al ordenamiento es la reserva extraordinaria (0,014 ± 0,006) y los atrasos en pensiones (0,011 ± 0,004). La puntualidad del pago anterior (0,008 ± 0,008), el subnivel y el promedio tienen una variación tan grande como su efecto, y la conducta no aporta. Sede, curso, beca, hermanos y años de permanencia salen en cero porque este modelo no los recibe: la permutación no dice nada de ellos.
 - **SHAP (logística híbrida):** promedio, es_nuevo y subnivel mueven mucho la probabilidad, pero la permutación muestra que **no mejoran el orden**. Un efecto grande en la probabilidad no equivale a capacidad predictiva.
-- **Conclusión:** la información útil está en el **comportamiento de pago y el tipo de reserva**, que es justo lo que resume D2.
+- **Conclusión:** la permutación es coherente con D2 (tipo de reserva y atrasos). D2 se eligió por su Lift@k en C4, no por estos análisis.
 
 ## 6. Equidad de la priorización D2 en C5 (por representante)
 
@@ -88,9 +88,11 @@ El modelo calibrado da probabilidades correctas en promedio, pero **no mejora a 
 | Sin beca | 930 | 63 | 15,9 % | 0,14 | 0,32 |
 | Con beca | 163 | 11 | 10,4 % | 0,12 | **0,18** |
 | Educación General Básica | 743 | 55 | 16,4 % | 0,12 | 0,27 |
-| Inicial | 115 | 6 | 8,7 % | 0,20 | 0,33 |
+| Inicial | 115 | oculto | 8,7 % | — | — |
 | Preparatoria | 113 | 12 | 11,5 % | 0,38 | 0,42 |
 | Bachillerato | 122 | <5 | 16,4 % | — | — |
+
+Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además para que la de Bachillerato no pueda deducirse por diferencia (D48).
 
 - **Recall menor en familias becadas** (18 % frente a 32 %). Solo hay 11 eventos, así que la diferencia es incierta. Aun así, se recomienda que Secretaría revise también a las familias becadas con atrasos.
 - **Diferencia entre sedes:** se explica porque k es menor en Mucho Lote 2 (47), proporcional a su historial.

@@ -41,6 +41,7 @@ from src.data_processing import (
     construir_preprocesador,
 )
 from src.evaluate import consolidar_familias, precision_at_k_familiar
+from src.utils import celda_complementaria
 
 log = logging.getLogger("lemas.modelado")
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -351,7 +352,8 @@ def equidad(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: 
             grupos: list[str], minimo: int = 5) -> pd.DataFrame:
     """Por grupo: familias, eventos, tasa de selección, precisión y recall dentro del top-k.
 
-    Se calcula por representante (unidad de contacto). Grupos < `minimo` se ocultan.
+    Se calcula por representante (unidad de contacto). Los grupos y los conteos de eventos
+    menores que `minimo` se ocultan, y se aplica supresión complementaria (D48).
     """
     familias = consolidar_familias(datos, riesgo)
     propios = [g for g in grupos if g != "sede"]   # la sede ya viene de la consolidación
@@ -378,7 +380,35 @@ def equidad(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: 
                 fila.update(familias=f"<{minimo}" if len(g) < minimo else len(g),
                             eventos=f"<{minimo}", precision_k=np.nan, recall_k=np.nan)
             filas.append(fila)
-    return pd.DataFrame(filas)
+    return completar_supresion(pd.DataFrame(filas), minimo)
+
+
+OCULTO = "oculto"
+
+
+def completar_supresion(tabla: pd.DataFrame, minimo: int = 5) -> pd.DataFrame:
+    """Supresión complementaria en la tabla de equidad.
+
+    Dentro de cada variable, si solo una celda de `familias` o de `eventos` está oculta, su
+    valor se deduce restando las demás del total. En ese caso se oculta también la celda
+    visible más pequeña (marcada «oculto»), junto con su precisión y su recall.
+    """
+    if tabla.empty:
+        return tabla
+    salida = tabla.copy()
+    salida[["familias", "eventos"]] = salida[["familias", "eventos"]].astype(object)
+    marcas = {f"<{minimo}", OCULTO}
+    for _, bloque in salida.groupby("variable", sort=False):
+        for columna in ("familias", "eventos"):
+            valores = salida.loc[bloque.index, columna]
+            otra = celda_complementaria(valores, valores.astype(str).isin(marcas))
+            if otra is None:
+                continue
+            salida.loc[otra, "eventos"] = OCULTO
+            if columna == "familias":
+                salida.loc[otra, "familias"] = OCULTO
+            salida.loc[otra, ["precision_k", "recall_k"]] = np.nan
+    return salida
 
 
 def proyeccion(datos: pd.DataFrame, riesgo_calibrado: np.ndarray, tasa_b1: float,

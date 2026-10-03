@@ -108,7 +108,7 @@ Aplicación **Streamlit** en español (`app/app.py`), con **dos modos** (decisio
 
 | Modo | Dónde | Datos |
 |---|---|---|
-| **Demo** (por defecto) | Streamlit Community Cloud | Solo **sintéticos**; rechaza cualquier otro archivo |
+| **Demo** (por defecto) | Streamlit Community Cloud | Solo **sintéticos**; rechaza archivos con identificadores o sin la marca de datos sintéticos |
 | **Institucional** | Computador de LEMAS, solo `localhost` (doble clic en `iniciar_lemas.bat`) | El **Excel de LEMAS + la clave del custodio**: se seudonimiza en el propio equipo. También acepta `base_seud.csv`. Nada se guarda |
 
 **Funciones:** botón *Prueba con ejemplo*; carga validada de CSV (rechaza cédulas o nombres); lista de contactos por sede con k editable, motivo de cada prioridad y descarga CSV; proyección por sede y subnivel frente a B1; formulario para evaluar a un estudiante; sección *Acerca de* con métricas, limitaciones y privacidad.
@@ -133,7 +133,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 135 pruebas: datos, métricas, modelado, diagnóstico de ajuste, interfaz y modo institucional |
+| `tests/` | 138 pruebas: datos, métricas, modelado, diagnóstico de ajuste, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -141,25 +141,40 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D46 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D49 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
 | [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
-| [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Privacidad, sesgos, impacto social, mitigaciones y limitaciones |
+| [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Principios y dilemas, sesgos, equidad, privacidad, explicabilidad, impacto social, responsabilidad, mal uso y cumplimiento normativo |
+| [`docs/ficha_modelo.md`](docs/ficha_modelo.md) | Ficha del modelo (*model card*): uso previsto, métricas, resultados por grupo y límites |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
 | [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
-| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 28 preguntas probables de la defensa con sus respuestas |
+| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 35 preguntas probables de la defensa con sus respuestas |
 | [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
 
 ## Consideraciones éticas
 El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni becas**, y la decisión final es siempre humana.
 - **Privacidad:** seudonimización HMAC-SHA256 con clave custodiada, celdas menores a 5 suprimidas, app pública solo con datos sintéticos y repositorio sin datos reales.
 - **Sesgos:** los atrasos son un proxy socioeconómico; la detección es menor en familias becadas; la cédula genérica de familias extranjeras no se usa como predictor.
+- **Explicabilidad:** la regla D2 cabe en una frase y cada familia de la lista lleva su motivo. La importancia por permutación es coherente con la regla, y SHAP mostró que las variables académicas mueven la probabilidad sin mejorar el orden.
+- **Responsabilidad:** LEMAS responde por el uso de la lista; el documento de ética define la cadena de responsabilidad, el plan de monitoreo y qué hacer ante un incidente.
 - **Honestidad:** se informa que los modelos de ML no superaron a la regla y se reporta la incertidumbre.
 
-Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md).
+**Limitaciones conocidas**
+- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante.
+- Con pocos eventos por grupo, la equidad no puede afirmarse con certeza.
+- No se midió si la llamada cambia la decisión de la familia.
+- Las familias aún no fueron informadas de este uso de sus datos. Antes de un uso operativo, LEMAS debe hacerlo, confirmar con su asesor la base legal para datos de menores y completar los pendientes de la ley ecuatoriana de protección de datos (LOPDP).
+- Entre familias con el mismo puntaje, la lista se completa con un sorteo de semilla fija, igual que en la validación.
+
+**Advertencias de uso**
+- No usar para negar o condicionar cupos, reservas, becas o servicios, ni para cobranza.
+- No usar con estudiantes nuevos, en otros colegios ni en otros procesos sin volver a validar.
+- No subir datos reales a la versión pública, a GitHub ni a servicios externos.
+
+Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) y resumen en la [ficha del modelo](docs/ficha_modelo.md).
 
 ## Autores y contribuciones
 | Integrante | Rol |

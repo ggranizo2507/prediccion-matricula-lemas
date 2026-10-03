@@ -31,11 +31,11 @@ Duración total: **5:00**. Presentación en línea (10 diapositivas), con las no
 
 **6 · Demo (Guillermo, 2:15–3:15).** Se reproduce la grabación de pantalla (ver sección 2). Narración sugerida: "Esta es la aplicación pública, que solo trabaja con datos sintéticos. Con un clic genera la lista de familias por sede, cada una con su motivo. En Proyección vemos las matrículas esperadas frente a la tasa histórica. Aquí evaluamos un estudiante con pago tardío y reserva extraordinaria: prioridad alta; y otro sin señales: prioridad baja. Si alguien intenta subir un archivo con cédulas, la aplicación lo rechaza."
 
-**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. En términos prácticos: llamando al 15 % de las familias, LEMAS llega al 30 % de las que no se matricularán. Superamos la meta de 1,20 que nos pusimos.
+**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. En términos prácticos: llamando al 15 % de las familias, LEMAS llega al 30 % de las que no completarán la matrícula a tiempo. Superamos la meta de 1,20 que nos pusimos.
 
-**8 · Alcance (Guillermo, 3:40–4:00).** La regla funciona cuando hay señales de pago o una reserva extraordinaria; en Preparatoria acierta en 38 % de la lista. No funciona con el 70 % de los casos que no dejan señales en los datos, como una mudanza. Y siendo honestos: los modelos de IA no superaron a la regla. La IA nos sirvió para descubrirla, validarla y medir su incertidumbre.
+**8 · Alcance (Guillermo, 3:40–4:00).** La regla funciona cuando hay señales de pago o una reserva extraordinaria; en Preparatoria acierta en 38 % de la lista. No alcanza al 70 % restante de los casos: con los datos que tenemos no sabemos anticiparlos. Y siendo honestos: los modelos de IA no superaron a la regla. La IA nos sirvió para descubrirla, validarla y medir su incertidumbre.
 
-**9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores, así que la ética guió el diseño. Sesgos: los atrasos reflejan la situación económica, la regla detecta menos casos entre familias becadas, y había familias extranjeras con una cédula genérica. Mitigaciones: seudónimos con clave custodiada, una app pública que solo acepta datos sintéticos, la nacionalidad nunca se usa y la decisión siempre la toma una persona; la lista es para ofrecer apoyo, no para presionar ni excluir. Limitaciones: las familias no fueron consultadas, hay pocos casos por grupo y no medimos el efecto de la llamada.
+**9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores, así que la ética guió el diseño. Sesgos: los atrasos reflejan la situación económica y la regla detecta menos casos entre familias becadas. Impacto: bien usada, la lista lleva ayuda a tiempo; usada para cobrar, dañaría a quienes más la necesitan, y por eso ese uso está prohibido. Mitigaciones: seudónimos con clave custodiada, una app pública que solo acepta datos sintéticos, la nacionalidad nunca se usa y siempre decide una persona. Limitaciones: las familias aún no fueron informadas, y es un requisito pendiente antes de usarla en la práctica; hay pocos casos por grupo y no medimos si la llamada cambia la decisión.
 
 **10 · Cierre (Guillermo, 4:45–5:00).** Nuestro logro: una regla validada con datos reales que LEMAS puede usar cada 20 de febrero, dentro de una app segura. Lo siguiente es validarla con usuarios y revalidarla cada año. Aquí están el repositorio y la aplicación. ¡Gracias!
 
@@ -86,3 +86,25 @@ Preparación previa:
 - [ ] Los QR del cierre se ven nítidos y abren el repositorio y la app.
 - [ ] Hablan los dos integrantes.
 - [ ] Video en 720p o más, MP4 o YouTube no listado.
+
+## 4. Presentación efectiva: comprobación
+
+Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que ya está resuelto y lo que falta hacer al grabar.
+
+| Recomendación | Cómo se aplica | Estado |
+|---|---|---|
+| Empezar por el problema, no por la técnica | Las diapositivas 1 y 2 presentan a quién llamar primero con 10 personas y 69 días | Hecho |
+| Un mensaje por diapositiva | La mayoría de los títulos enuncia la conclusión («Optimizar no bastó: la señal es débil y cambia entre años»); 10 diapositivas para 5 minutos | Hecho |
+| Poco texto y cifras grandes | Frases cortas en pantalla y las cifras clave en grande; el detalle va en las notas del orador | Hecho |
+| Contar una historia | Problema, datos, lo que probamos, lo que funcionó, lo que no y lo que sigue | Hecho |
+| Mostrar la solución real | Grabación de la app desplegada con tres casos y un error controlado | Por grabar |
+| Ser honestos con las limitaciones | Diapositivas 8 y 9: la IA no superó a la regla; la lista no alcanza al 70 % de los casos | Hecho |
+| Cubrir los cuatro puntos de ética que pide la guía | Sesgos, impacto social, mitigaciones y limitaciones en la diapositiva 9 | Hecho |
+| Hablar para una audiencia no experta | "Lift" se explica como "cuántas veces más casos que al azar"; sin siglas sin explicar | Revisar en el ensayo |
+| Ensayar y cronometrar | Dos ensayos completos; si un bloque se pasa, recortar ejemplos y no cifras | Por hacer |
+| Repartir la palabra | Guillermo: problema, demo, resultados y cierre. José: datos, método, optimización y ética | Hecho |
+| Cerrar con una acción clara | Logro, siguiente paso y los dos QR | Hecho |
+| Preparar las preguntas | [Banco de 35 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
+| Cuidar audio e imagen | Micrófono externo, lugar silencioso, 1080p, zoom del navegador al 110–125 % | Por hacer |
+
+Errores frecuentes que conviene evitar: leer las diapositivas, pasarse de los 5 minutos, mostrar código, dejar la ética para una frase final y presentar el resultado como mejor de lo que es.

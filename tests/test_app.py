@@ -63,11 +63,40 @@ def test_lista_respeta_k_y_un_contacto_por_familia(preparado, config):
     assert lista.groupby("sede").size().to_dict() == k
     assert lista["id_familia"].is_unique
     assert resumen["elegibles"] == len(poblacion)
+    # D49: la lista lleva el motivo, no una probabilidad por familia
+    assert "motivo" in lista.columns
+    assert not [c for c in lista.columns if "prob" in c.lower()]
     # orden D2: nadie fuera de la lista tiene más prioridad que el último de su sede
     for sede, grupo in lista.groupby("sede"):
         fuera = puntuados[(puntuados["sede"] == sede)
                           & ~puntuados["id_familia"].isin(grupo["id_familia"])]
         assert fuera["prioridad_d2"].max() <= grupo["prioridad_d2"].min() + 1e-9
+
+
+def test_desempate_como_en_la_validacion(preparado, config):
+    """D48: los empates se resuelven al azar con semilla fija; la probabilidad no ordena."""
+    base, sistema = preparado
+    poblacion, _ = construir_poblacion(base, ciclo_por_defecto(base), config)
+    puntuados = puntuar(poblacion, sistema)
+    k = {"Mucho Lote 1": 25, "Mucho Lote 2": 15}
+    lista = lista_contactos(puntuados, k)
+    # la probabilidad del modelo no cambia quién entra ni en qué puesto
+    invertida = puntuados.assign(prob_no_matricula=1 - puntuados["prob_no_matricula"])
+    assert lista_contactos(invertida, k)["id_familia"].tolist() == lista["id_familia"].tolist()
+    # tampoco el orden de las filas del archivo
+    barajada = puntuados.sample(frac=1, random_state=7)
+    assert lista_contactos(barajada, k)["id_familia"].tolist() == lista["id_familia"].tolist()
+    # la semilla sí: es un sorteo entre empatados, reproducible
+    assert lista_contactos(puntuados, k, semilla=1)["id_familia"].tolist() != \
+        lista["id_familia"].tolist()
+    # dentro de cada sede el puntaje D2 nunca sube al bajar de puesto
+    for _, grupo in lista.groupby("sede"):
+        assert grupo.sort_values("puesto")["prioridad_d2"].is_monotonic_decreasing
+    # y agrandar k solo añade familias al final
+    mayor = lista_contactos(puntuados, {s: v + 5 for s, v in k.items()})
+    for sede, grupo in lista.groupby("sede"):
+        assert mayor[mayor["sede"] == sede]["id_familia"].tolist()[:len(grupo)] == \
+            grupo["id_familia"].tolist()
 
 
 def test_poblacion_excluye_ultimo_curso_y_no_aprobados(preparado, config):

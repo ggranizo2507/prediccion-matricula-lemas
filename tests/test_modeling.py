@@ -7,8 +7,10 @@ import pytest
 from src.data_processing import construir_dataset, construir_matriz_x, limpiar_base
 from src.evaluate import calcular_k_por_sede, consolidar_familias
 from src.modeling import (
+    OCULTO,
     bootstrap_ic,
     calibrar,
+    completar_supresion,
     construir_modelo,
     entrenar_candidatos,
     equidad,
@@ -16,7 +18,7 @@ from src.modeling import (
     proyeccion,
 )
 from src.synthetic import generar
-from src.utils import cargar_config
+from src.utils import cargar_config, celda_complementaria
 
 
 @pytest.fixture(scope="module")
@@ -114,6 +116,40 @@ def test_equidad_oculta_grupos_pequenos(dataset, k):
     tabla = equidad(c5, np.random.default_rng(0).random(len(c5)), k, 42, ["grupo_raro"])
     raro = tabla[(tabla["variable"] == "grupo_raro") & (tabla["grupo"] == "1")].iloc[0]
     assert raro["familias"] == "<5" and pd.isna(raro["recall_k"])
+
+
+def test_supresion_complementaria_protege_la_celda_oculta():
+    """Con una sola celda oculta, su valor saldría restando las demás del total."""
+    tabla = pd.DataFrame({
+        "variable": ["subnivel"] * 4 + ["sede"] * 2,
+        "grupo": ["A", "B", "C", "D", "S1", "S2"],
+        "familias": [122, 743, 115, 113, 640, 453],
+        "eventos": ["<5", 55, 6, 12, 44, 30],
+        "tasa_seleccion": [0.16, 0.16, 0.09, 0.12, 0.18, 0.10],
+        "precision_k": [np.nan, 0.12, 0.20, 0.38, 0.12, 0.17],
+        "recall_k": [np.nan, 0.27, 0.33, 0.42, 0.32, 0.27]})
+    salida = completar_supresion(tabla, 5)
+    subnivel = salida[salida["variable"] == "subnivel"].set_index("grupo")
+    assert subnivel.loc["C", "eventos"] == OCULTO          # la celda visible más pequeña
+    assert pd.isna(subnivel.loc["C", "recall_k"]) and pd.isna(subnivel.loc["C", "precision_k"])
+    assert subnivel.loc["C", "familias"] == 115            # el tamaño del grupo no se oculta
+    assert subnivel.loc[["B", "D"], "eventos"].tolist() == [55, 12]
+    ocultas = subnivel["eventos"].astype(str).isin({"<5", OCULTO}).sum()
+    assert ocultas == 2                                    # ya no se deduce por diferencia
+    sede = salida[salida["variable"] == "sede"]
+    assert sede["eventos"].tolist() == [44, 30]            # sin celdas ocultas no cambia nada
+    assert completar_supresion(salida, 5).equals(salida)   # aplicarla dos veces no cambia más
+
+
+def test_celda_complementaria():
+    valores = pd.Series([3, 40, 9, 0], index=list("abcd"))
+
+    def ocultas(*marcas):
+        return pd.Series(marcas, index=valores.index)
+
+    assert celda_complementaria(valores, ocultas(True, False, False, False)) == "c"
+    assert celda_complementaria(valores, ocultas(False, False, False, False)) is None
+    assert celda_complementaria(valores, ocultas(True, True, False, False)) is None
 
 
 def test_lineas_base_y_proyeccion(dataset):

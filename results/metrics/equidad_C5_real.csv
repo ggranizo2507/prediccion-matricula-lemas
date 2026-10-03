@@ -5,6 +5,6 @@ beca,0,930,63,0.1591,0.1351,0.3175
 beca,1,163,11,0.1043,0.1176,0.1818
 subnivel,Bachillerato,122,<5,0.1639,,
 subnivel,Educación General Básica,743,55,0.1642,0.123,0.2727
-subnivel,Inicial,115,6,0.087,0.2,0.3333
+subnivel,Inicial,115,oculto,0.087,,
 subnivel,Preparatoria,113,12,0.115,0.3846,0.4167
 representante_atipico,0,1093,74,0.151,0.1333,0.2973
