@@ -2,7 +2,7 @@
 
 El sistema trata datos de **menores de edad y sus familias** y orienta acciones de una institución educativa sobre ellas. Por eso la ética no es un anexo: condicionó el diseño de los datos, del modelo, de la aplicación y de la forma de comunicar los resultados.
 
-Este documento sigue los siete puntos que pide la guía del proyecto (sesgos, equidad, privacidad, transparencia, impacto social, responsabilidad y mal uso) y añade los temas de la semana 4 del curso: principios, dilemas, mapa de actores, cadena de responsabilidad, marcos de referencia y cumplimiento normativo.
+Este documento sigue los siete puntos que pide la guía del proyecto (sesgos, equidad, privacidad, transparencia, impacto social, responsabilidad y mal uso) y añade los temas de la semana 4 del curso: principios, dilemas, mapa de actores, cadena de responsabilidad, marcos de referencia y cumplimiento normativo. El workshop de impacto social y responsabilidad lo resume en ocho partes, con severidad y probabilidad de cada riesgo, una estrategia de mitigación por riesgo y el compromiso ético del equipo: [impacto_social_responsabilidad.md](impacto_social_responsabilidad.md).
 
 > **Alcance de lo que aquí se afirma.** Distinguimos lo que **ya está implementado** en el proyecto de lo que **LEMAS debe completar** antes de un uso permanente. La lectura de las normas es la de un equipo técnico, no una asesoría legal: LEMAS debe confirmarla con su asesor jurídico o su delegado de protección de datos.
 
@@ -45,7 +45,7 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D51, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D52, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
 | Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 176 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
@@ -80,7 +80,7 @@ Son tipos de sesgo descritos en educación (Baker y Hawn, 2022): el proxy socioe
 
 **Sesgos del conjunto de datos.** Todos los registros son de una sola institución privada con dos sedes en Guayaquil, y solo incluyen a estudiantes con reserva aprobada (sesgo de selección). Los resultados no se pueden trasladar a otros colegios ni a estudiantes nuevos.
 
-**Sesgo de la etiqueta.** El evento es *no tener la matrícula pagada al 30 de abril*. Incluye a familias que se matriculan después de esa fecha (D03), y la señal más fuerte de la regla es haber pagado tarde el año anterior. Parte de lo que la regla detecta es, entonces, a familias que pagan tarde y no a familias que se van. Por eso hablamos de *no pagar la matrícula en plazo* y no de abandono. No se usan variables demográficas sensibles (etnia, religión, discapacidad, salud) ni la nacionalidad.
+**Sesgo de la etiqueta.** El evento es *no tener la matrícula pagada al 30 de abril*. Incluye a familias que se matriculan después de esa fecha (D03), y la señal más fuerte de la regla es haber pagado tarde el año anterior. Al desglosar el evento en C2 a C4 ([alcance_lista.md](alcance_lista.md), sección 6.1), el 86 % de los casos son familias que no registran ningún pago, el 9 % paga por unos estudiantes y no por otros y el 5 % paga todo después del 30 de abril. La regla encuentra al 43 % de los dos últimos grupos y solo al 24 % del primero: detecta mejor el retraso que la salida, aunque la mayoría de sus aciertos (53 de 69) son familias sin ningún pago. «No registra ningún pago» tampoco equivale a «se fue», y por eso hablamos de *no pagar la matrícula en plazo* y no de abandono. No se usan variables demográficas sensibles (etnia, religión, discapacidad, salud) ni la nacionalidad.
 
 ## 5. Equidad
 
@@ -208,7 +208,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D51; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D52; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
@@ -227,7 +227,8 @@ En los términos de la norma ecuatoriana sobre IA y datos personales (sección 1
 - Código abierto, resultados agregados publicados y cuadernos que cualquiera puede ejecutar.
 - Pruebas automáticas e integración continua en cada cambio.
 - Motivo visible por cada familia de la lista.
-- [Ficha del modelo](ficha_modelo.md) con uso previsto, métricas, grupos y límites.
+- [Ficha del modelo](ficha_modelo.md) con uso previsto, métricas, grupos y límites, y [hoja de datos](hoja_de_datos.md) con el origen, la composición y los límites del conjunto de datos.
+- Compromiso ético del equipo, que los dos integrantes firman en el documento entregado ([impacto_social_responsabilidad.md](impacto_social_responsabilidad.md), parte 8).
 
 **Propuestos para la operación en LEMAS:**
 - Bitácora por campaña: quién generó la lista, cuándo, con qué k y cuál fue el resultado de cada contacto.
@@ -251,7 +252,20 @@ En los términos de la norma ecuatoriana sobre IA y datos personales (sección 1
 
 El modelo calibrado se reentrena solo con cohortes de resultado cerrado. Cada versión se etiqueta en el repositorio.
 
-### 9.5 Si ocurre un incidente de datos
+### 9.5 Respuesta a incidentes
+
+Cualquier fallo, técnico o de uso, se atiende en cinco pasos.
+
+| Paso | Qué se hace | Incidente del 3-oct-2026 (error en la aplicación pública) |
+|---|---|---|
+| 1. Detección | Pruebas automáticas en cada cambio, avisos de la aplicación al cargar datos, quejas de familias y revisión de mayo | El Product Owner vio un error al generar la lista después de una actualización |
+| 2. Respuesta inmediata | Avisar al custodio y a Dirección; contener; volver al contacto habitual mientras se resuelve | Se reinició la aplicación. No había datos personales: la versión pública solo usa datos sintéticos |
+| 3. Investigación | Qué falló, qué datos y cuántas personas están afectados; reproducir el fallo con una prueba | La plataforma ejecutó el programa nuevo con un módulo antiguo que seguía en memoria |
+| 4. Corrección | Reparar y, si alguien resultó afectado, explicárselo | La aplicación ahora detecta el código que cambió y lo vuelve a cargar |
+| 5. Prevención | Dejar una prueba que reproduzca el fallo y registrar lo ocurrido | Dos pruebas nuevas; registrado como D51 |
+
+**Si el incidente afecta a datos personales:**
+
 1. Avisar de inmediato al custodio y a Dirección.
 2. Contener: retirar el archivo o el acceso y, si la clave se expuso, dejar de usarla y generar otra (los seudónimos anteriores dejan de servir).
 3. Evaluar qué datos y cuántas personas están afectados.
@@ -264,6 +278,7 @@ El modelo calibrado se reentrena solo con cohortes de resultado cerrado. Cada ve
 |---|---|---|
 | NIST AI RMF 1.0 (2023) | Cuatro funciones: gobernar, mapear, medir y gestionar los riesgos | **Gobernar:** roles y cadena de responsabilidad (9.2). **Mapear:** uso permitido, actores e impactos (secciones 1 y 8). **Medir:** prueba única con IC, equidad por grupo, pruebas automáticas. **Gestionar:** monitoreo, umbral de suspensión y protocolo de incidentes (9.4 y 9.5) |
 | Fichas de modelo (Mitchell et al., 2019) | Documentar uso previsto, métricas, grupos y límites | [`docs/ficha_modelo.md`](ficha_modelo.md) |
+| Hojas de datos (Gebru et al., 2021) | Documentar origen, composición, recolección y usos del conjunto de datos | [`docs/hoja_de_datos.md`](hoja_de_datos.md) |
 | Evaluación de equidad por grupos (enfoque de Fairlearn) | Comparar las métricas entre grupos antes de usar un sistema | Sección 5, con código propio |
 | ISO/IEC 42001:2023 | Sistema de gestión de IA para organizaciones | No se implementó. Es la referencia si LEMAS decide formalizar la gestión de sus sistemas de IA |
 
@@ -387,7 +402,8 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 - [x] Explicación por familia (motivo) y regla pública
 - [x] Usos prohibidos y límites de uso documentados
 - [x] Cadena de responsabilidad y plan de monitoreo definidos
-- [x] Ficha del modelo
+- [x] Ficha del modelo y hoja de datos
+- [x] Plan de respuesta a incidentes y compromiso ético del equipo
 - [x] Limitaciones comunicadas en la app, el README y el pitch
 - [ ] Confirmar la base legal para datos de menores (LEMAS)
 - [ ] Informar a las familias (anexo A)
@@ -428,6 +444,7 @@ Usted puede pedir que le expliquemos por qué fue contactado, qué datos se usar
 - ISO/IEC 42001:2023. *Information technology — Artificial intelligence — Management system*.
 - UNICEF Innocenti (2025). *Guidance on AI and children 3.0*. https://www.unicef.org/innocenti/reports/policy-guidance-ai-children
 - Mitchell, M. et al. (2019). Model cards for model reporting. *Proc. FAT\**, 220–229. https://doi.org/10.1145/3287560.3287596
+- Gebru, T. et al. (2021). Datasheets for datasets. *Communications of the ACM*, 64(12), 86–92. https://doi.org/10.1145/3458723
 - Weerts, H. et al. (2023). Fairlearn: Assessing and improving fairness of AI systems. *JMLR*, 24(257).
 
 **Estudios y casos**

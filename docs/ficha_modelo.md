@@ -1,6 +1,6 @@
 # Ficha del modelo
 
-Resumen de una página del sistema de priorización, con el formato de las fichas de modelo (*model cards*) de Mitchell et al. (2019). Sirve para que cualquier persona sepa para qué es, qué tan bien funciona, con quién funciona peor y cuándo no debe usarse. El detalle está en [modelado.md](modelado.md) y en [consideraciones_eticas.md](consideraciones_eticas.md).
+Resumen de una página del sistema de priorización, con el formato de las fichas de modelo (*model cards*) de Mitchell et al. (2019). Sirve para que cualquier persona sepa para qué es, qué tan bien funciona, con quién funciona peor y cuándo no debe usarse. El detalle está en [modelado.md](modelado.md) y en [consideraciones_eticas.md](consideraciones_eticas.md); los datos se describen en la [hoja de datos](hoja_de_datos.md).
 
 ## 1. Datos del sistema
 
@@ -97,5 +97,5 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
 - No se ha medido si la llamada cambia la decisión de la familia.
-- Revalidar cada mayo con la cohorte que cierra. Si el Lift@k baja de 1,20, revisar la regla; si no supera al azar, suspender su uso.
+- Revalidar cada mayo con la cohorte que cierra. Si el Lift@k baja de 1,20, revisar la regla; si no supera al azar dos años seguidos, suspender su uso.
 - Antes de un uso operativo, LEMAS debe informar a las familias, confirmar la base legal para datos de menores y completar los pendientes de cumplimiento descritos en [consideraciones_eticas.md](consideraciones_eticas.md).
