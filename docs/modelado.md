@@ -28,14 +28,14 @@
 | D · más atrasos primero | 0,170 | 1,86 | 0,29 | 0,112 | 0,571 |
 | Logística híbrida | 0,139 | 1,53 | 0,24 | 0,125 | 0,589 |
 | Regresión logística regularizada | 0,127 | 1,40 | 0,22 | 0,113 | 0,534 |
-| Gradient boosting | 0,097 | 1,06 | 0,17 | 0,104 | 0,540 |
+| Gradient boosting | 0,097 | 1,06 | 0,17 | 0,103 | 0,540 |
 
 **Diagnóstico de ajuste (actividad de la semana 3):**
 
 | Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha | Diagnóstico |
 |---|---|---|---|---|
-| Regresión logística | 0,140 | 0,113 | 0,027 | Subajuste: las señales son débiles |
-| Gradient boosting | 0,245 | 0,104 | 0,142 | **Sobreajuste**: aprende particularidades de C2–C3 |
+| Regresión logística | 0,140 | 0,113 | 0,026 | Subajuste: las señales son débiles |
+| Gradient boosting | 0,245 | 0,103 | 0,141 | **Sobreajuste**: aprende particularidades de C2–C3 |
 | Logística híbrida | 0,126 | 0,125 | 0,000 | Estable, pero con poca capacidad |
 
 **Decisión (D40):** ningún modelo supera a D2, así que **la priorización final es la regla D2**. La logística híbrida calibrada se conserva para las probabilidades y la proyección.

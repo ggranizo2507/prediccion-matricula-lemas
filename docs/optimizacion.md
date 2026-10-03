@@ -35,7 +35,7 @@ Los rangos son **conservadores a propósito**: árboles poco profundos, hojas gr
 | Modelo | Antes de optimizar | Después de optimizar | Diagnóstico |
 |---|---|---|---|
 | Regresión logística | **1,53** (base de la Fase 1, valores por defecto) | 1,40 | Subajuste: PR-AUC 0,140 en entrenamiento y 0,113 en C4 |
-| Gradient boosting | — | 1,06 | **Sobreajuste:** PR-AUC 0,245 en entrenamiento y 0,104 en C4 (brecha 0,14) |
+| Gradient boosting | — | 1,06 | **Sobreajuste:** PR-AUC 0,245 en entrenamiento y 0,103 en C4 (brecha 0,14) |
 | Logística híbrida | — | 1,53 | Estable: brecha 0,000 |
 | *Referencia: regla D2* | — | *1,93* | — |
 
@@ -89,7 +89,35 @@ Reglas del análisis: **C5 no interviene**, las particiones respetan el orden te
 
 Los umbrales son reglas prácticas, no pruebas estadísticas. Se fijaron el 02-oct-2026, antes de ejecutar el cuaderno con datos reales, pero cuando ya se conocían las PR-AUC de entrenamiento y de C4 de la Fase 2. Esta regla es más completa que la de la tabla de la sección 2 (brecha absoluta mayor que 0,10; entrenamiento menor que 0,15) y puede diferir de ella en casos límite.
 
-El reporte se regenera con `python tools/generar_reporte_diagnostico.py --fuente real` después de ejecutar el cuaderno.
+### Resultados con datos reales (C2+C3 → C4)
+
+| Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha relativa | Veces el azar en C4 | Lift@k | Diagnóstico |
+|---|---|---|---|---|---|---|
+| Regresión logística | 0,140 | 0,113 | 19 % | 1,28 | 1,40 | Subajuste |
+| Gradient boosting | 0,245 | 0,103 | 58 % | 1,17 | 1,06 | **Sobreajuste** |
+| Logística híbrida | 0,126 | 0,125 | 0 % | 1,41 | 1,53 | Subajuste |
+| Control: árboles sin regularizar | 0,998 | 0,088 | 91 % | 0,99 | 1,00 | Sobreajuste |
+| Control: logística sobrerregularizada | 0,076 | 0,089 | −17 % | 1,00 | 1,06 | Subajuste |
+
+Lo que mostraron las curvas:
+
+- **Gradient boosting.** La pérdida de validación es mínima en la primera iteración (0,694, prácticamente ln 2) y solo sube: 0,792 en las 359 iteraciones de la Fase 2. La PR-AUC de validación se queda cerca de 0,10 (máximo 0,112 en la iteración 526) mientras la de entrenamiento sigue subiendo.
+- **Regresiones logísticas.** Las curvas de entrenamiento y validación se aplanan casi de inmediato y terminan juntas, cerca del azar (0,089).
+- **Más datos.** Entre la mitad y el total del entrenamiento la validación cambia +0,004, +0,007 y +0,002, menos que la variación entre submuestras. Con las mismas variables, más registros no parecen la solución.
+- **Hiperparámetros.** El valor que eligió Optuna queda cerca del máximo de validación en los tres modelos.
+
+| Estrategia | PR-AUC C4 | Brecha | Lift@k | Efecto |
+|---|---|---|---|---|
+| E1 · Regularización y menor complejidad (control → gradient boosting) | 0,088 → 0,103 | 0,910 → 0,141 | 1,00 → 1,06 | Mejora |
+| E2 · Parada temprana (359 → 20 iteraciones) | 0,103 → 0,095 | 0,141 → 0,080 | 1,06 → 0,80 | Empeora |
+| E3 · Modelo más simple | 0,103 → 0,107 | 0,141 → 0,087 | 1,06 → 0,93 | Sin cambio apreciable |
+| E4 · Ingeniería de variables (regresión logística → híbrida) | 0,113 → 0,125 | 0,026 → 0,000 | 1,40 → 1,53 | **Mejora** |
+| E5 · Menos regularización (C 2,75 → 27,5) | 0,113 → 0,113 | 0,026 → 0,027 | 1,40 → 1,46 | Sin cambio apreciable |
+| E6 · Más entrenamiento (359 → 718 iteraciones) | 0,103 → 0,105 | 0,141 → 0,183 | 1,06 → 0,86 | Sin cambio apreciable |
+
+Ninguna estrategia cambió el diagnóstico de su modelo. Las tres estrategias contra el sobreajuste redujeron la brecha sin mejorar la validación, y la única mejora útil vino de las variables (E4). El mejor modelo llega a un Lift@k de 1,53 en C4, por debajo del 1,93 de la regla D2, así que la decisión final no cambia. Estas comparaciones se hacen en C4, que ya se usó para seleccionar y calibrar, y por eso son indicios y no pruebas.
+
+El reporte se regenera con `python tools/generar_reporte_diagnostico.py --fuente real` después de ejecutar el cuaderno. Las tablas y figuras salen de los resultados guardados y el análisis escrito está en `docs/diagnostic_report_narrativa_real.json`; una prueba automática comprueba que cada cifra citada en ese análisis exista en los resultados.
 
 ## 6. Trabajo futuro
 - **Validación cruzada temporal con más cohortes** (2027 en adelante): con cada ciclo nuevo habrá más eventos para optimizar con menos ruido.

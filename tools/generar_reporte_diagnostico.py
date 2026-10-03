@@ -8,6 +8,10 @@ siempre coinciden con la última ejecución:
     python tools/generar_reporte_diagnostico.py --fuente real
     python tools/generar_reporte_diagnostico.py --fuente sintetica   # versión preliminar
 
+Las tablas y las figuras salen de los resultados. El análisis de cada sección lo redacta el
+equipo en `docs/diagnostic_report_narrativa_<fuente>.json`; si ese archivo no existe, el
+reporte usa frases calculadas con las cifras.
+
 Requiere `reportlab` (pip install reportlab). No usa datos individuales.
 """
 
@@ -16,8 +20,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import date
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import matplotlib
 import pandas as pd
@@ -242,6 +247,16 @@ def _lectura_hiperparametros(hiper: pd.DataFrame) -> list[str]:
 # --------------------------------------------------------------------------- #
 # Documento
 # --------------------------------------------------------------------------- #
+def _narrativa(fuente: str) -> dict:
+    """Análisis redactado por el equipo para esa fuente (si existe)."""
+    ruta = RAIZ / "docs" / f"diagnostic_report_narrativa_{fuente}.json"
+    return json.loads(ruta.read_text("utf-8")) if ruta.exists() else {}
+
+
+def _parrafos(textos: list[str], e: dict) -> list:
+    return [Paragraph(texto, e["texto"]) for texto in textos]
+
+
 def construir(fuente: str, salida: Path) -> Path:
     config = cargar_config(RAIZ / "config.yaml")
     met, fig = RAIZ / config["rutas"]["metricas"], RAIZ / config["rutas"]["figuras"]
@@ -257,13 +272,14 @@ def construir(fuente: str, salida: Path) -> Path:
 
     _fuentes()
     e = _estilos()
+    nar = _narrativa(fuente)          # análisis propio; sin él se usan frases calculadas
     val = resultado["validacion"]
     tr = "+".join(resultado["cohortes_entrenamiento"])
     u = resultado["umbrales"]
     principal, interna = resultado["particiones"]
     c = resultado["conclusiones"]
     ganancia = pd.DataFrame(resultado["ganancia_por_datos"])
-    hoy = date.today()
+    hoy = datetime.now(ZoneInfo("America/Guayaquil")).date()
     fecha = f"{hoy.day} de {MESES[hoy.month - 1]} de {hoy.year}"
     sintetico = fuente != "real"
     n_estrategias = len(estrategias)
@@ -283,23 +299,26 @@ def construir(fuente: str, salida: Path) -> Path:
         h.append(Spacer(1, 6))
     h.append(Paragraph("1. Resumen ejecutivo", e["h1"]))
     h.append(Paragraph(
-        "<b>Qué se hizo.</b> Se diagnosticó si los tres modelos de la Fase 2 (regresión "
-        "logística regularizada, gradient boosting y logística híbrida) memorizan los datos "
-        "de entrenamiento o no aprenden lo suficiente. Para ello se registraron las métricas "
-        "durante el entrenamiento, se generaron cuatro tipos de curvas de aprendizaje, se "
-        f"cuantificó el ajuste con dos reglas prácticas y se evaluaron {n_estrategias} "
-        f"estrategias de mejora con comparación antes y después. Se entrenó con {tr} y se "
-        f"validó con {val}; la cohorte de prueba (C5) no intervino.", e["texto"]))
-    h.append(Paragraph("<b>Qué se encontró.</b>", e["texto"]))
-    h += _vinetas([_por_diagnostico(diag), _controles(diag), *_estrategias(estrategias, val),
-                   _mas_datos(ganancia)], e)
+        "<b>Qué hicimos.</b> En la Fase 2 de nuestro proyecto entrenamos tres modelos para "
+        "anticipar qué estudiantes con reserva aprobada no pagarán la matrícula: una regresión "
+        "logística regularizada, un gradient boosting y una logística híbrida. En esta "
+        "actividad revisamos si esos modelos memorizan los datos de entrenamiento o si no "
+        "aprenden lo suficiente. Registramos las métricas durante el entrenamiento, generamos "
+        "cuatro tipos de curvas de aprendizaje, medimos el ajuste con dos reglas y probamos "
+        f"{n_estrategias} estrategias de mejora con comparación antes y después. Entrenamos "
+        f"con {tr} y validamos con {val}. La cohorte de prueba (C5) no intervino, porque ya "
+        "la habíamos evaluado una sola vez en la Fase 2.", e["texto"]))
+    h.append(Paragraph("<b>Qué encontramos.</b>", e["texto"]))
+    h += _vinetas(nar.get("hallazgos") or [
+        _por_diagnostico(diag), _controles(diag), *_estrategias(estrategias, val),
+        _mas_datos(ganancia)], e)
     h.append(Spacer(1, 4))
     h.append(Paragraph(
-        "<b>Qué significa para el proyecto.</b> Este análisis no cambia la decisión final, "
-        f"que es priorizar el contacto con la regla D2. Las diferencias observadas en {val} "
-        f"son indicios y no pruebas: {val} ya se usó para seleccionar y calibrar en la Fase 2, "
-        f"y solo tiene {principal['eventos_validacion']} eventos. Para confirmar una mejora "
-        "hace falta una cohorte que no haya participado en ninguna decisión.", e["texto"]))
+        "<b>Qué significa para el proyecto.</b> " + (nar.get("significado") or (
+            "Este análisis no cambia la decisión final, que es priorizar el contacto con la "
+            f"regla D2. Las diferencias observadas en {val} son indicios y no pruebas: {val} "
+            "ya se usó para seleccionar y calibrar en la Fase 2, y solo tiene "
+            f"{principal['eventos_validacion']} eventos.")), e["texto"]))
     h.append(Paragraph(
         f"<b>Entregables.</b> Cuaderno {CODIGO.format('overfitting_analysis.ipynb')}, módulos "
         f"{CODIGO.format('src/diagnostico.py')} y {CODIGO.format('src/graficos_diagnostico.py')} "
@@ -310,11 +329,11 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(Paragraph("2. Metodología utilizada", e["h1"]))
     h.append(Paragraph("2.1 Datos y particiones", e["h2"]))
     h.append(Paragraph(
-        "Cada fila es un estudiante con reserva aprobada al 20 de febrero; el evento es no "
-        "pagar la matrícula hasta el 30 de abril. Las particiones respetan el orden temporal: "
-        "se entrena con cohortes anteriores y se valida con la siguiente. No se usan "
-        "particiones al azar entre años, porque filtrarían información del futuro.",
-        e["texto"]))
+        "Trabajamos con los registros seudonimizados de LEMAS. Cada fila es un estudiante con "
+        "reserva aprobada al 20 de febrero y el evento es no pagar la matrícula hasta el 30 "
+        "de abril. Respetamos el orden temporal en todas las particiones: entrenamos con "
+        "cohortes anteriores y validamos con la siguiente. No usamos particiones al azar "
+        "entre años porque filtrarían información del futuro.", e["texto"]))
     h.append(_tabla(
         ["Partición", "Entrena con", "Valida con", "N<br/>entr.", "Eventos<br/>entr.",
          "N<br/>val.", "Eventos<br/>val.", "Uso"],
@@ -330,18 +349,18 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(Spacer(1, 6))
     h.append(Paragraph(
         "<b>Puntaje y pérdida.</b> La actividad pide una curva de exactitud o de puntaje. La "
-        f"tasa de eventos en {val} es {numero(100 * resultado['tasa_validacion'], 1)} %: con "
-        "clases tan desbalanceadas la exactitud no informa, porque un modelo que nunca "
-        "detecta un caso acierta en casi todos. Por eso el puntaje es la <b>PR-AUC</b> "
-        "(precisión promedio), donde un ordenamiento al azar obtiene la tasa de eventos. La "
-        "<b>pérdida</b> es la entropía cruzada; en los modelos entrenados con clases "
-        "balanceadas se pondera igual que durante el entrenamiento, así que la pérdida solo "
-        "se compara entre curvas del mismo modelo.", e["texto"]))
+        f"tasa de eventos en {val} es {numero(100 * resultado['tasa_validacion'], 1)} %, y "
+        "con clases tan desbalanceadas la exactitud no nos sirve: un modelo que nunca detecta "
+        "un caso acierta en casi todos. Por eso usamos como puntaje la <b>PR-AUC</b> "
+        "(precisión promedio), en la que un ordenamiento al azar obtiene la tasa de eventos. "
+        "Como <b>pérdida</b> usamos la entropía cruzada. En los modelos entrenados con clases "
+        "balanceadas la ponderamos igual que en el entrenamiento, así que la pérdida solo se "
+        "puede comparar entre curvas del mismo modelo.", e["texto"]))
 
     h.append(Paragraph("2.2 Seguimiento de métricas", e["h2"]))
     h.append(Paragraph(
-        "Los modelos son de scikit-learn. El seguimiento está en "
-        f"{CODIGO.format('src/diagnostico.py')} y guarda cada medición en un mismo registro "
+        "Nuestros modelos son de scikit-learn. Programamos el seguimiento en "
+        f"{CODIGO.format('src/diagnostico.py')} y guardamos cada medición en un mismo registro "
         f"({CODIGO.format('RegistroMetricas')}: una fila por modelo, paso y conjunto):",
         e["izquierda"]))
     h += _vinetas([
@@ -349,8 +368,8 @@ def construir(fuente: str, salida: Path) -> Path:
         "pérdida y la PR-AUC de entrenamiento y de validación después de cada árbol añadido.",
         f"<b>Regresiones logísticas, por iteración del optimizador.</b> scikit-learn no "
         f"expone su estado intermedio, así que {CODIGO.format('seguir_logistica')} entrena "
-        "con un límite de iteraciones creciente hasta que el optimizador converge; el último "
-        "punto es el modelo final.",
+        "con un límite de iteraciones creciente hasta que el optimizador converge. Cada punto "
+        "es un entrenamiento completo y el último es el modelo final.",
         f"<b>learning_curve</b> de scikit-learn, para el efecto del tamaño del entrenamiento "
         f"({resultado['repeticiones']} submuestras por tamaño).",
         "<b>validation_curve</b> de scikit-learn, para el efecto de un hiperparámetro con el "
@@ -360,19 +379,21 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(Paragraph("2.3 Modelos analizados", e["h2"]))
     comprobacion = resultado.get("comprobacion_fase2", {})
     if not comprobacion.get("realizada"):
-        frase = "No había una tabla de la Fase 2 guardada para comprobar la coincidencia."
+        frase = "No teníamos guardada la tabla de la Fase 2 para comprobar la coincidencia."
     elif comprobacion["coincide"]:
-        frase = ("Al reentrenarlos, su PR-AUC en la validación coincide con la tabla de la "
-                 f"Fase 2 (diferencia máxima {numero(comprobacion['diferencia_maxima'], 4)}).")
+        frase = ("Al reentrenarlos comprobamos que su PR-AUC en la validación coincide con la "
+                 "tabla de la Fase 2 (diferencia máxima "
+                 f"{numero(comprobacion['diferencia_maxima'], 4)}).")
     else:
         frase = ("Atención: al reentrenarlos, su PR-AUC en la validación difiere de la tabla "
                  f"de la Fase 2 en hasta {numero(comprobacion['diferencia_maxima'], 4)}.")
     h.append(Paragraph(
         "Los modelos base son los tres de la Fase 2, con los hiperparámetros que eligió "
-        f"Optuna, leídos del historial guardado. {frase} Se añaden dos modelos de control, "
-        "definidos de antemano, que no son candidatos: un gradient boosting sin regularizar, "
-        "que debe sobreajustar, y una regresión logística con penalización L1 extrema, que "
-        "debe subajustar.", e["texto"]))
+        f"Optuna, que leímos del historial guardado. {frase} Añadimos dos modelos de control "
+        "que no son candidatos y que definimos antes de ver los resultados: un gradient "
+        "boosting sin regularizar, que debería sobreajustar, y una regresión logística con "
+        "penalización L1 extrema, que debería subajustar. Nos sirven para comprobar que las "
+        "reglas reconocen cada problema.", e["texto"]))
 
     h.append(Paragraph("2.4 Reglas de diagnóstico", e["h2"]))
     h.append(_tabla(
@@ -389,19 +410,19 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(Spacer(1, 6))
     h.append(Paragraph(
         "Brecha relativa = (entrenamiento − validación) / entrenamiento. En las curvas "
-        "durante el entrenamiento se mide además el paso con menor pérdida de validación y "
-        "cuánto sube la pérdida después (deterioro, si supera "
-        f"{numero(u['tolerancia_perdida'], 2)}). Una estrategia «mejora» o «empeora» solo si "
-        f"la PR-AUC cambia al menos {numero(u['cambio_minimo'], 3)}.", e["texto"]))
+        "durante el entrenamiento medimos además el paso con menor pérdida de validación y "
+        "cuánto sube la pérdida después (lo contamos como deterioro si supera "
+        f"{numero(u['tolerancia_perdida'], 2)}). Decimos que una estrategia mejora o empeora "
+        f"solo si la PR-AUC cambia al menos {numero(u['cambio_minimo'], 3)}.", e["texto"]))
     h.append(Paragraph(
-        "<b>Alcance de estas reglas.</b> Son reglas prácticas, no pruebas estadísticas. Los "
-        f"umbrales están en {CODIGO.format('config.yaml')} y se fijaron el 2 de octubre de "
-        "2026, antes de ejecutar este análisis con datos reales, pero cuando ya se conocían "
-        "las PR-AUC de entrenamiento y de C4 de la Fase 2. La brecha compara dos conjuntos "
-        "cuya tasa de eventos puede ser distinta, por eso la Tabla 1 muestra también cuántas "
-        "veces supera al azar cada conjunto. La tabla de ajuste de la Fase 2 usó una regla "
-        "más simple (brecha absoluta mayor que 0,10; entrenamiento menor que 0,15), que puede "
-        "diferir de esta en casos límite.", e["texto"]))
+        "<b>Alcance de estas reglas.</b> Son reglas prácticas, no pruebas estadísticas. "
+        f"Fijamos los umbrales en {CODIGO.format('config.yaml')} el 2 de octubre de 2026, "
+        "antes de ejecutar el cuaderno con datos reales, aunque ya conocíamos las PR-AUC de "
+        "entrenamiento y de C4 de la Fase 2. La brecha compara dos conjuntos cuya tasa de "
+        "eventos puede ser distinta, y por eso en la Tabla 1 mostramos también cuántas veces "
+        "supera al azar cada conjunto. En la Fase 2 habíamos usado una regla más simple "
+        "(brecha absoluta mayor que 0,10; entrenamiento menor que 0,15), que puede diferir "
+        "de esta en casos límite.", e["texto"]))
 
     # ---- Resultados del diagnóstico ------------------------------------------------
     h.append(Paragraph("3. Resultados del diagnóstico", e["h1"]))
@@ -414,64 +435,74 @@ def construir(fuente: str, salida: Path) -> Path:
                      f"Veces el azar<br/>({val})", "Diagnóstico"],
                     filas, [3.0, 1.3, 1.45, 1.45, 1.35, 1.45, 1.6, 1.6, 2.4], e))
     h.append(Paragraph(f"Tabla 1. Diagnóstico por modelo ({tr} → {val}).", e["pie"]))
-    h += _vinetas([_por_diagnostico(diag), _controles(diag)], e)
+    if nar.get("diagnostico"):
+        h += _parrafos(nar["diagnostico"], e)
+    else:
+        h += _vinetas([_por_diagnostico(diag), _controles(diag)], e)
 
     # ---- Curvas --------------------------------------------------------------------
     h.append(PageBreak())
     h.append(Paragraph("4. Análisis de curvas de aprendizaje", e["h1"]))
     h.append(Paragraph(
-        "Todas las figuras se generan a 300 DPI. Azul es entrenamiento y rosa con marcadores "
+        "Generamos todas las figuras a 300 DPI. Azul es entrenamiento y rosa con marcadores "
         "redondos es validación. En las regresiones logísticas cada punto es un "
         "entrenamiento completo con ese límite de iteraciones.", e["texto"]))
     h.append(_figura(fig / f"{fuente}_19_curva_perdida.png",
                      "Figura 1. Pérdida de entrenamiento y de validación en cada paso. Cada "
                      "panel tiene su propia escala.", e,
                      "4.1 Curva A: pérdida durante el entrenamiento"))
-    h += _vinetas(c["curvas"], e)
+    h += _parrafos(nar["curva_a"], e) if nar.get("curva_a") else _vinetas(c["curvas"], e)
     h.append(_figura(fig / f"{fuente}_20_curva_puntaje.png",
                      "Figura 2. PR-AUC de entrenamiento y de validación en cada paso.", e,
                      "4.2 Curva B: PR-AUC durante el entrenamiento"))
-    lecturas = []
-    for nombre, r in resultado["resumen_seguimiento"].items():
-        lecturas.append(
-            f"<b>{nombre}</b>: la PR-AUC de validación es máxima en el paso "
-            f"{r['iteracion_mejor_puntaje']} ({numero(r['mejor_puntaje_validacion'])}). Al "
-            f"final (paso {r['iteraciones']}), la brecha de PR-AUC es "
-            f"{numero(r['brecha_puntaje_final'], signo=True)} y la de pérdida "
-            f"{numero(r['brecha_perdida_final'])}"
-            + (", mayor que en el punto óptimo." if r["brecha_crece"] else "."))
-    h += _vinetas(lecturas, e)
+    if nar.get("curva_b"):
+        h += _parrafos(nar["curva_b"], e)
+    else:
+        lecturas = []
+        for nombre, r in resultado["resumen_seguimiento"].items():
+            lecturas.append(
+                f"<b>{nombre}</b>: la PR-AUC de validación es máxima en el paso "
+                f"{r['iteracion_mejor_puntaje']} ({numero(r['mejor_puntaje_validacion'])}). Al "
+                f"final (paso {r['iteraciones']}), la brecha de PR-AUC es "
+                f"{numero(r['brecha_puntaje_final'], signo=True)} y la de pérdida "
+                f"{numero(r['brecha_perdida_final'])}"
+                + (", mayor que en el punto óptimo." if r["brecha_crece"] else "."))
+        h += _vinetas(lecturas, e)
 
     h.append(_figura(fig / f"{fuente}_21_curva_tamano.png",
                      "Figura 3. PR-AUC según el número de estudiantes en el entrenamiento. "
                      "La banda es ±1 desviación entre submuestras.", e,
                      "4.3 Curva C: tamaño del entrenamiento (opcional)"))
-    h += _vinetas([
-        f"<b>{g.modelo}</b>: la validación pasa de {numero(g.validacion_mitad)} con "
-        f"{g.n_mitad} estudiantes a {numero(g.validacion_todo)} con {g.n_todo} "
-        f"({numero(g.ganancia, signo=True)}; variación entre submuestras "
-        f"±{numero(g.variacion_entre_submuestras)}). "
-        + ("La diferencia supera el doble de esa variación." if g.concluyente
-           else "La diferencia no llega al doble de esa variación: no es concluyente.")
-        for g in ganancia.itertuples()], e)
+    if nar.get("curva_c"):
+        h += _parrafos(nar["curva_c"], e)
+    else:
+        h += _vinetas([
+            f"<b>{g.modelo}</b>: la validación pasa de {numero(g.validacion_mitad)} con "
+            f"{g.n_mitad} estudiantes a {numero(g.validacion_todo)} con {g.n_todo} "
+            f"({numero(g.ganancia, signo=True)}; variación entre submuestras "
+            f"±{numero(g.variacion_entre_submuestras)}). "
+            + ("La diferencia supera el doble de esa variación." if g.concluyente
+               else "La diferencia no llega al doble de esa variación: no es concluyente.")
+            for g in ganancia.itertuples()], e)
 
     h.append(_figura(fig / f"{fuente}_22_curva_hiperparametros.png",
                      "Figura 4. PR-AUC al variar un hiperparámetro; la línea discontinua "
                      "marca el valor de la Fase 2.", e,
                      "4.4 Curva D: hiperparámetros (opcional)"))
-    h += _vinetas(_lectura_hiperparametros(hiper), e)
+    h += (_parrafos(nar["curva_d"], e) if nar.get("curva_d")
+          else _vinetas(_lectura_hiperparametros(hiper), e))
 
     # ---- Estrategias ---------------------------------------------------------------
     h.append(Paragraph("5. Estrategias implementadas y resultados", e["h1"]))
     h.append(Paragraph(
-        f"Se implementaron {n_estrategias} estrategias (la actividad pide al menos dos), "
-        "todas medidas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
+        f"Implementamos {n_estrategias} estrategias (la actividad pide al menos dos) y las "
+        "medimos todas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
         "ajusta a la vez los hiperparámetros de complejidad), con dos excepciones: E1 parte "
         "de un modelo de control y no de un candidato, y E4 cambia las variables y también "
-        "los hiperparámetros. La parada temprana elige "
-        f"sus iteraciones por menor pérdida en la validación interna "
-        f"({interna['entrenamiento']} → {interna['validacion']}) y solo puede recortar el "
-        "entrenamiento.", e["texto"]))
+        "los hiperparámetros. En la parada temprana elegimos las iteraciones por menor "
+        f"pérdida en la validación interna ({interna['entrenamiento']} → "
+        f"{interna['validacion']}), de modo que solo puede recortar el entrenamiento.",
+        e["texto"]))
     con_lift = "lift_k_validacion_antes" in estrategias
     filas = []
     for f in estrategias.itertuples():
@@ -500,19 +531,23 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(_figura(fig / f"{fuente}_23_estrategias.png",
                      "Figura 5. Efecto de cada estrategia sobre la PR-AUC de validación, la "
                      "brecha y el Lift@k por familia.", e))
-    h += _vinetas(_estrategias(estrategias, val), e)
+    h += (_parrafos(nar["estrategias"], e) if nar.get("estrategias")
+          else _vinetas(_estrategias(estrategias, val), e))
 
     # ---- Conclusiones --------------------------------------------------------------
     h.append(Paragraph("6. Conclusiones y recomendaciones futuras", e["h1"]))
     h.append(Paragraph("Conclusiones", e["h2"]))
-    h += _vinetas(c["balance"] + [
+    h += _vinetas(nar.get("conclusiones") or c["balance"] + [
         "Una brecha pequeña no basta para dar por bueno un modelo: también debe superar al "
         "azar con margen. Medir las dos cosas evita confundir estabilidad con utilidad.",
         "Reducir la brecha y mejorar la validación son efectos distintos. La Tabla 2 los "
         "muestra por separado para cada estrategia.",
     ], e)
+    if nar.get("aprendizaje"):
+        h.append(Paragraph("Qué aprendimos", e["h2"]))
+        h.append(Paragraph(nar["aprendizaje"], e["texto"]))
     h.append(Paragraph("Limitaciones", e["h2"]))
-    h += _vinetas([
+    h += _vinetas(nar.get("limitaciones") or [
         f"Las estrategias se compararon en {val}, que ya se usó para seleccionar y calibrar "
         "en la Fase 2. Una diferencia pequeña puede ser ruido.",
         f"Hay {principal['eventos_validacion']} eventos en la validación: las diferencias "
@@ -523,7 +558,7 @@ def construir(fuente: str, salida: Path) -> Path:
         "resultados de la Fase 2.",
     ], e)
     h.append(Paragraph("Recomendaciones", e["h2"]))
-    h += _vinetas([
+    h += _vinetas(nar.get("recomendaciones") or [
         "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y "
         "evaluar en esa cohorte nueva las estrategias que aquí mejoraron la validación.",
         "Si se vuelve a entrenar un gradient boosting, elegir el número de iteraciones en "

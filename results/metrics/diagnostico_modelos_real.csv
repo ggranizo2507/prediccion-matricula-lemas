@@ -1,0 +1,6 @@
+modelo,rol,puntaje_entrenamiento,puntaje_validacion,perdida_entrenamiento,perdida_validacion,lift_k_validacion,brecha,brecha_relativa,mejora_sobre_azar,diagnostico,veces_azar_entrenamiento,perdida_ponderada
+Regresión logística,Fase 2,0.139814,0.113317,0.256344,0.306950,1.396000,0.026498,0.189520,1.276207,subajuste,1.840769,False
+Gradient boosting,Fase 2,0.244953,0.103499,0.558714,0.791890,1.063600,0.141454,0.577475,1.165631,sobreajuste,3.224998,True
+Logística híbrida,Fase 2,0.125600,0.125164,0.667922,0.689193,1.528900,0.000437,0.003477,1.409630,subajuste,1.653629,True
+Control: árboles sin regularizar,control,0.998486,0.088042,0.046838,2.870974,0.997100,0.910444,0.911824,0.991557,sobreajuste,13.145867,True
+Control: logística sobrerregularizada,control,0.075954,0.088792,0.268776,0.300915,1.063600,-0.012837,-0.169016,1.000000,subajuste,1.000000,False
