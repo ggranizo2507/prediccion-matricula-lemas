@@ -159,6 +159,24 @@ privacidad:
 figuras:
   dpi: 300                # requisito de la actividad de la semana 3
 
+# -----------------------------------------------------------------------------
+# Diagnóstico de sobreajuste y subajuste (actividad de la semana 3, D46).
+# Reglas prácticas, no pruebas estadísticas. Se fijaron el 02-oct-2026, antes de ejecutar
+# el cuaderno con datos reales, pero cuando ya se conocían las PR-AUC de entrenamiento y
+# de C4 de la Fase 2. C5 no interviene.
+# -----------------------------------------------------------------------------
+diagnostico:
+  # Sobreajuste: la PR-AUC cae más de un 30 % al pasar del entrenamiento a la validación
+  brecha_relativa_max: 0.30
+  # Subajuste: sin esa brecha, la PR-AUC de validación no llega a 1,5 veces la del azar
+  mejora_minima_sobre_azar: 1.5
+  # Cambio mínimo de pérdida para afirmar que la validación empeora al seguir entrenando
+  tolerancia_perdida: 0.01
+  # Cambio mínimo de PR-AUC (o de brecha) para decir que una estrategia mejora o empeora
+  cambio_minimo: 0.005
+  fracciones_entrenamiento: [0.2, 0.36, 0.52, 0.68, 0.84, 1.0]
+  repeticiones: 5         # submuestras por tamaño (banda de variación)
+
 # Calibrado con perfil_lemas.json (30-sep-2026): ~1500 estudiantes por año y tasa de
 # no matrícula de la población modelable ≈ 8 %. Solo totales agregados.
 sintetico:
