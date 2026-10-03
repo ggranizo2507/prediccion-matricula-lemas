@@ -428,3 +428,40 @@ def proyeccion(datos: pd.DataFrame, riesgo_calibrado: np.ndarray, tasa_b1: float
         grupos[f"ape_{col}"] = (grupos[f"esperadas_{col}"] - grupos["observadas"]).abs() / \
             grupos["observadas"]
     return grupos.round(3).reset_index()
+
+
+def proyeccion_publicable(tabla: pd.DataFrame, minimo: int = 5) -> pd.DataFrame:
+    """Proyección que se puede publicar: por subnivel y por sede, no por su cruce (D53).
+
+    La tabla por sede **y** subnivel deja ver, restando elegibles y matrículas, cuántos
+    estudiantes no se matricularon en cada grupo, y en grupos pequeños ese conteo baja de
+    `minimo`. Aquí se suman los grupos por una sola dimensión cada vez. Si aun así queda un
+    conteo entre 1 y `minimo` − 1, se ocultan las matrículas observadas y los errores de esa
+    fila y, si es la única de su bloque, los de otra más (supresión complementaria).
+
+    El MAPE del proyecto se sigue calculando sobre la tabla detallada (`proyeccion`); aquí
+    los errores son los de cada fila agregada.
+    """
+    sumas = ["N", "observadas", "esperadas_modelo", "esperadas_B1"]
+    bloques = []
+    for dimension in ("subnivel", "sede"):
+        bloque = tabla.groupby(dimension)[sumas].sum().reset_index()
+        bloque = bloque.rename(columns={dimension: "grupo"})
+        bloque.insert(0, "dimension", dimension)
+        bloques.append(bloque)
+    salida = pd.concat(bloques, ignore_index=True)
+    for col in ("modelo", "B1"):
+        salida[f"ape_{col}"] = ((salida[f"esperadas_{col}"] - salida["observadas"]).abs()
+                                / salida["observadas"])
+    salida = salida.round(3)
+    salida["observadas"] = salida["observadas"].astype(int).astype(object)
+
+    sin_matricula = salida["N"] - pd.to_numeric(salida["observadas"])
+    ocultas = (sin_matricula > 0) & (sin_matricula < minimo)
+    for _, bloque in salida.groupby("dimension", sort=False):
+        otra = celda_complementaria(sin_matricula[bloque.index], ocultas[bloque.index])
+        if otra is not None:
+            ocultas[otra] = True
+    salida.loc[ocultas, "observadas"] = OCULTO
+    salida.loc[ocultas, ["ape_modelo", "ape_B1"]] = np.nan
+    return salida

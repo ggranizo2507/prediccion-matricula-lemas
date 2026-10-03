@@ -2,7 +2,7 @@
 
 **Workshop · Semana 4**
 
-> Versión en Markdown del documento entregado en Word ([`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx`](Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx)). El análisis completo está en [consideraciones_eticas.md](consideraciones_eticas.md).
+> Versión en Markdown del documento entregado en PDF ([`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx`](Workshop_Impacto_Social_y_Responsabilidad_LEMAS.docx)). El análisis completo está en [consideraciones_eticas.md](consideraciones_eticas.md).
 
 Proyecto: Predicción de matrícula y continuidad estudiantil · Unidad Educativa LEMAS
 
@@ -105,7 +105,7 @@ Con 11 casos entre becadas no sabemos si la diferencia es real. La informamos co
 | **Privacidad**       | Datos administrativos de menores y representantes: curso, promedio, conducta, pagos, reserva y beca. No hubo consentimiento informado específico, solo autorización institucional. Las cédulas se reemplazan por seudónimos y se eliminan nombres y saldos. Reidentificar exige la clave y el Excel original; la base seudonimizada nunca se publica |
 | **Transparencia**    | El personal entiende el sistema: la regla cabe en una frase y cada familia lleva su motivo. Las limitaciones están en la aplicación, el README y la ficha del modelo. Las familias todavía no saben que existe                                                                                                                                       |
 | **Autonomía**        | Una persona decide a quién llamar y qué ofrecer. La aplicación no contacta a nadie. El riesgo de coacción está en el uso: llamar para cobrar                                                                                                                                                                                                         |
-| **Seguridad**        | Si la regla falla, la familia recibe la atención habitual. Los errores posibles son una llamada innecesaria o una familia no listada. Hay 176 pruebas automáticas y un criterio para suspender el sistema                                                                                                                                            |
+| **Seguridad**        | Si la regla falla, la familia recibe la atención habitual. Los errores posibles son una llamada innecesaria o una familia no listada. Hay 179 pruebas automáticas y un criterio para suspender el sistema                                                                                                                                            |
 | **Accountability**   | Responde LEMAS, a través de Dirección. No existe todavía un proceso de apelación para las familias. La auditoría anual está propuesta                                                                                                                                                                                                                |
 
 **Tabla 6. Riesgos éticos analizados**
@@ -170,9 +170,9 @@ Una estrategia por riesgo. La última columna dice qué está hecho y qué queda
 <td>Técnica y diseño</td>
 <td><p>1. Seudónimos HMAC-SHA256 con clave del custodio; se eliminan nombres y saldos.</p>
 <p>2. Versión pública solo con datos sintéticos; versión de LEMAS solo en el mismo equipo, en memoria y con nombres tras confirmar.</p>
-<p>3. Celdas con menos de 5 casos ocultas; repositorio sin datos reales</p></td>
+<p>3. Celdas con menos de 5 casos ocultas, sin que se puedan deducir por diferencia; repositorio sin datos reales</p></td>
 <td>Desde el inicio y de forma continua. Equipo técnico y custodio</td>
-<td><strong>Alta.</strong> Implementada en lo técnico. Pendientes: ocultar una celda más en la tabla de proyección y que LEMAS designe quién ve los nombres</td>
+<td><strong>Alta.</strong> Implementada en lo técnico. Pendiente: que LEMAS designe quién ve los nombres</td>
 </tr>
 <tr class="odd">
 <td><strong>R5.</strong> Decir lo que el sistema no hace y fijar cuándo se suspende</td>
@@ -207,9 +207,9 @@ Nos guiamos por los principios de la Recomendación de la UNESCO sobre la ética
 
 | **Rol**                                              | **Responsabilidades**                                        | **Rendición de cuentas**                                                                                                   |
 |------------------------------------------------------|--------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Desarrolladores** (Guillermo Granizo y José Ulloa) | Implementación técnica correcta y documentación              | 176 pruebas automáticas e integración continua en cada cambio; los cambios entran por pull request                         |
+| **Desarrolladores** (Guillermo Granizo y José Ulloa) | Implementación técnica correcta y documentación              | 179 pruebas automáticas e integración continua en cada cambio; los cambios entran por pull request                         |
 | **Científicos de datos** (el mismo equipo)           | Calidad de los datos, protocolo de validación y equidad      | Sistema congelado con huella SHA-256 antes de la prueba final, hecha una sola vez; tabla de equidad por grupo              |
-| **Product Owner** (Guillermo Granizo)                | Decisiones de diseño y de alcance                            | Registro de 52 decisiones con fecha y motivo                                                                               |
+| **Product Owner** (Guillermo Granizo)                | Decisiones de diseño y de alcance                            | Registro de 53 decisiones con fecha y motivo                                                                               |
 | **Custodio de datos** (LEMAS)                        | Extracción, seudonimización y resguardo de la clave          | Acta con huella SHA-256 en cada extracción; huella de la clave en pantalla                                                 |
 | **Secretaría y Admisiones**                          | Generar la lista, decidir a quién llamar y hacer el contacto | Bitácora por campaña y resultado de cada contacto (propuesto)                                                              |
 | **Dirección de LEMAS** (organización)                | Autorizar el uso, fijar sus límites y dar recursos           | Autorización del estudio (30-sep-2026); informe anual (propuesto); decide si el sistema se mantiene, se ajusta o se retira |

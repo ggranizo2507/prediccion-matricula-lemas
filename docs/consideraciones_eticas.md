@@ -45,8 +45,8 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D52, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
-| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 176 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D53, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 179 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
 ## 3. Dilemas éticos del proyecto
@@ -132,7 +132,7 @@ No aplicamos una corrección estadística de equidad (por ejemplo, cupos por gru
 | Retención | Las copias de trabajo en Colab se borran al terminar cada sesión; el modelo entrenado con datos reales no se publica; se propone eliminarlo 30 días después de la aceptación académica | Práctica del equipo; v5 5.7 |
 | Minimización | Solo se usan variables conocidas en t0. La regla necesita tres; el modelo de apoyo usa además promedio, conducta, subnivel y si el estudiante es nuevo (ver la sección 14, punto 9) | `config.yaml`, v5 5.6 |
 
-Estas medidas aplican el principio de **protección de datos desde el diseño y por defecto**. En la tabla de equidad se aplica además supresión complementaria: cuando solo queda una celda oculta, se oculta una segunda para que no pueda deducirse por diferencia (sección 14, punto 10). El marco legal y lo que falta para cumplirlo por completo están en la sección 11.
+Estas medidas aplican el principio de **protección de datos desde el diseño y por defecto**. En la tabla de equidad se aplica además supresión complementaria: cuando solo queda una celda oculta, se oculta una segunda para que no pueda deducirse por diferencia. La proyección se publica por subnivel y por sede, sin su cruce, por la misma razón (sección 14, punto 10). El marco legal y lo que falta para cumplirlo por completo están en la sección 11.
 
 ## 7. Transparencia y explicabilidad
 
@@ -198,7 +198,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 | Una familia que no se matricula no estaba en la lista | Ninguna adicional: recibe la atención habitual | Secretaría | La lista no reemplaza la atención a todas las familias |
 | Una familia listada sí pensaba matricularse | Una llamada innecesaria | Secretaría | Contacto breve y de apoyo; se registra el resultado |
 | La regla deja de ordenar mejor que el azar | Esfuerzo mal dirigido | Equipo técnico y Dirección | Revalidación anual; se suspende si no supera al azar (9.4) |
-| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 176 pruebas automáticas |
+| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 179 pruebas automáticas |
 | Uso indebido (cobro, exclusión) | Daño a la familia y a la confianza | Dirección | Uso prohibido documentado; revisión anual por Dirección |
 | Fuga de datos personales | Daño a los titulares | LEMAS como responsable del tratamiento; custodio | Protocolo de incidentes (9.5) |
 
@@ -208,7 +208,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D52; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D53; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
@@ -386,7 +386,7 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 7. La voz de las familias y de los estudiantes no estuvo en el diseño. La validación con usuarios prevista incluye solo al personal.
 8. No se hizo una evaluación de impacto formal ni una revisión por un comité de ética antes de empezar.
 9. **Minimización incompleta.** La regla usa tres variables, pero la aplicación pide también el promedio, la conducta y otros campos para un modelo de apoyo cuyas probabilidades no mejoran a la tasa histórica. Si el modelo sigue sin aportar, lo coherente es retirarlo y pedir solo lo que la regla necesita.
-10. **Supresión de celdas pequeñas.** Ocultar una celda no impide deducirla cuando se publican las demás y el total. En la tabla de equidad ya se oculta una segunda celda para evitarlo (D48). Falta hacerlo en dos tablas: la proyección por sede y subnivel, donde la diferencia entre elegibles y matrículas observadas deja ver conteos pequeños, y la exploración del cuaderno de diagnóstico. El riesgo es bajo, porque son conteos dentro de grupos de decenas o cientos de estudiantes, pero no cumplen del todo la regla del proyecto.
+10. **Supresión de celdas pequeñas.** Ocultar una celda no impide deducirla cuando se publican las demás y el total. En la tabla de equidad se oculta una segunda celda para evitarlo (D48). Dos tablas no cumplían la regla hasta el 03-oct-2026 y se corrigieron (D53): la proyección, que por sede y subnivel dejaba ver conteos de 2 a 4 estudiantes al restar elegibles y matrículas, ahora se publica por subnivel y por sede, sin su cruce; y en la exploración del cuaderno de diagnóstico, un grupo de menos de 5 estudiantes se suma a otro en lugar de ocultarse. Los valores anteriores siguen en el historial del repositorio: son conteos dentro de grupos de 44 a 128 estudiantes, sin ningún identificador.
 11. **Desempate.** Hasta el 02-oct-2026 la aplicación resolvía los empates con la probabilidad del modelo, que no era el desempate validado. Desde D48 usa el mismo sorteo con semilla fija que dio el Lift@k de 1,97. Tiene un costo: entre familias con el mismo puntaje, quién entra en la lista depende de un sorteo reproducible y no de un criterio.
 12. **Probabilidad por familia.** Hasta el 02-oct-2026 las listas mostraban una probabilidad estimada junto a cada familia: un número que no mejora a la tasa histórica y que puede leerse como un juicio. Se retiró (D49). La probabilidad queda solo en el formulario individual y, en forma agregada, en el histograma y la proyección.
 
@@ -412,7 +412,7 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 - [x] Mismo desempate en la validación y en la aplicación (D48)
 - [x] Supresión complementaria en la tabla de equidad (D48)
 - [x] Las listas de contacto no muestran una probabilidad por familia (D49)
-- [ ] Supresión complementaria en la tabla de proyección y en la exploración del cuaderno de diagnóstico
+- [x] Proyección publicada sin el cruce de sede y subnivel, y exploración del cuaderno de diagnóstico sin grupos deducibles (D53)
 - [ ] Validación con usuarios y medición del efecto del contacto
 
 ## Anexo A. Texto propuesto para informar a las familias

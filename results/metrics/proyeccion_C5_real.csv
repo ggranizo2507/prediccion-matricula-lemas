@@ -1,9 +1,7 @@
-sede,subnivel,N,observadas,esperadas_modelo,esperadas_B1,ape_modelo,ape_B1
-Mucho Lote 1,Bachillerato,71,69,66.815,65.607,0.032,0.049
-Mucho Lote 1,Educación General Básica,576,530,526.158,532.25,0.007,0.004
-Mucho Lote 1,Inicial,75,71,67.227,69.303,0.053,0.024
-Mucho Lote 1,Preparatoria,69,63,62.485,63.759,0.008,0.012
-Mucho Lote 2,Bachillerato,128,125,119.945,118.278,0.04,0.054
-Mucho Lote 2,Educación General Básica,401,371,367.72,370.542,0.009,0.001
-Mucho Lote 2,Inicial,47,45,42.285,43.43,0.06,0.035
-Mucho Lote 2,Preparatoria,44,39,39.647,40.658,0.017,0.043
+dimension,grupo,N,observadas,esperadas_modelo,esperadas_B1,ape_modelo,ape_B1
+subnivel,Bachillerato,199,194,186.76,183.885,0.037,0.052
+subnivel,Educación General Básica,977,901,893.878,902.792,0.008,0.002
+subnivel,Inicial,122,116,109.512,112.733,0.056,0.028
+subnivel,Preparatoria,113,102,102.132,104.417,0.001,0.024
+sede,Mucho Lote 1,791,733,722.685,730.919,0.014,0.003
+sede,Mucho Lote 2,620,580,569.597,572.908,0.018,0.012
