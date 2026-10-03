@@ -103,7 +103,8 @@ Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además 
 En C5 la lista encontró 22 de las 74 familias que no pagaron en plazo (30 %). Tenía 165 cupos, más que casos, así que el 70 % restante es un límite de señal y no de capacidad. El análisis de ese límite está en [alcance_lista.md](alcance_lista.md); es descriptivo, usa C2 a C4, no toca C5 y no cambia la regla. Lo principal:
 
 - La regla añade entre 9 y 12 puntos de recall sobre el azar con cualquier tamaño de lista. Su Lift fue 1,38 en C2, 1,49 en C3 y 1,93 en C4.
-- En C4 el resultado depende del sorteo entre familias empatadas: el Lift va de 1,53 a 1,99. El 1,93 con el que se eligió la regla está en la parte alta. En adelante conviene informar el promedio de varios sorteos.
+- En C4 el resultado depende del sorteo entre familias empatadas: el Lift va de 1,53 a 1,99, con una media de 1,75. El 1,93 con el que se eligió la regla está en la parte alta; la media sigue por encima del 1,53 de la logística híbrida. En adelante conviene informar el promedio de varios sorteos.
+- El 86 % de los casos son familias que no registran ningún pago en el ciclo siguiente; solo el 5 % paga todo después del 30 de abril. La lista encuentra al 24 % de las primeras y al 43 % del resto.
 - El 77 % de las familias paga en las primeras cuatro semanas. Hacia el día 35 quedan unas 200 pendientes por año y el 44 % son casos.
 - Desde la cuarta semana la regla no ordena mejor que el azar entre las familias que siguen sin pagar.
 

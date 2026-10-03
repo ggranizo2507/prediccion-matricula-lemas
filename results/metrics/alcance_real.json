@@ -17,19 +17,24 @@
   "recall_C4_cuaderno": 0.3053,
   "conclusiones": {
     "desglose": [
-      "Alguna celda del desglose tiene menos casos que el mínimo publicable; no se muestra."
+      "De 260 familias que no pagaron en plazo, 14 (5 %) pagaron todo después del 30 de abril, 23 (9 %) pagaron por unos estudiantes y no por otros y 223 (86 %) no registran ningún pago.",
+      "La lista alcanza al 24 % de las que no registran ningún pago.",
+      "Quienes pagan tarde lo hacen a una mediana de 11 días después del 30 de abril."
     ],
     "por_k": [
       "Con el k aprobado se contacta al 17 % de las familias y se alcanza al 27 % de los casos (al azar: 17 %).",
       "Con el doble de contactos (33 % de las familias) se alcanza al 45 % (al azar: 33 %); la precisión pasa de 0,139 a 0,117.",
+      "Con el k aprobado, el Lift de la lista va de 1,38 a 1,93 según la cohorte.",
       "Contactar a todas las familias equivale a 9,9 contactos por persona y semana; con el k aprobado son 1,6."
     ],
     "semanal": [
       "En la semana 6 sigue sin pagar el 20 % de las familias, y en la 10 el 9 %. La proporción de casos entre las pendientes pasa de 8,7 % en la semana 1 a 43,8 % y 91,9 %.",
-      "Una lista de k familias hecha en la semana 6 contendría al 80 % de los casos, frente al 27 % de la semana 1. Elegir al azar entre las pendientes daría 83 %: la mayor parte de la diferencia viene de saber quién sigue sin pagar, no de la regla."
+      "Una lista de k familias hecha en la semana 6 contendría al 80 % de los casos, frente al 27 % de la semana 1. Elegir al azar entre las pendientes daría 83 %: la mayor parte de la diferencia viene de saber quién sigue sin pagar, no de la regla.",
+      "Desde la semana 4, la regla ya no ordena mejor que el azar entre las familias que siguen sin pagar: su ventaja está al principio de la campaña.",
+      "En la semana 6 quedan unas 198 familias pendientes por año (1,2 veces el k aprobado) y el 44 % son casos. Contactarlas a todas alcanzaría a todos los casos con 34 días de margen."
     ],
     "campana": [
-      "La lista fija llamada entera en la primera semana alcanza al 27 % de los casos, todos con el margen completo. Según cómo caiga el sorteo entre familias empatadas, va de 25 % a 28 %.",
+      "La lista fija llamada entera en la primera semana alcanza al 27 % de los casos, todos con el margen completo. Según cómo caiga el sorteo entre familias empatadas, va de 25 % a 28 % (media: 26 %).",
       "Si esa misma lista se reparte en la campaña, el 52 % de sus familias ya habrá pagado cuando le llegue el turno. Esos cupos quedan sin usar.",
       "La lista semanal da esos cupos a las siguientes familias pendientes y alcanza al 82 % en toda la campaña. Hay que leerlo con cuidado: cerca del 30 de abril casi todas las pendientes son casos (sin regla se llega al 80 %) y el margen medio de un acierto baja a 27 días.",
       "En la primera mitad de las semanas, la lista semanal alcanza al 25 % de los casos: 2 puntos menos que la lista fija llamada al inicio (27 %).",

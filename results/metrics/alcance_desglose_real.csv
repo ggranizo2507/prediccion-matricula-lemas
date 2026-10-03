@@ -2,4 +2,4 @@ cohorte,familias,eventos,en_lista,aciertos,recall,tardia,aciertos_tardia,recall_
 C2,948,96,165,23,0.2396,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
 C3,996,69,165,17,0.2464,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
 C4,1042,95,165,29,0.3053,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
-Todas,2986,260,495,69,0.2654,oculto,oculto,,,oculto,oculto,,,oculto,oculto,,,,
+Todas,2986,260,495,69,0.2654,14,oculto,,0.0538,23,oculto,,0.0885,223,53,0.2377,0.8577,11.5,

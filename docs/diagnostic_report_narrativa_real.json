@@ -56,7 +56,7 @@
     "Validamos con una sola cohorte. Las tasas cambian entre ciclos (9,1 % en C2 y 6,2 % en C3), así que el resultado puede no repetirse el año siguiente.",
     "Los umbrales de diagnóstico son reglas prácticas y los fijamos cuando ya conocíamos los resultados de la Fase 2.",
     "E4 no es una comparación limpia, porque cambia las variables y también los hiperparámetros.",
-    "La comparación con la regla D2 usa un solo sorteo entre familias con el mismo puntaje. Con otros sorteos su Lift@k en C4 va de 1,53 a 1,99."
+    "La comparación con la regla D2 usa un solo sorteo entre familias con el mismo puntaje. Con otros sorteos su Lift@k en C4 va de 1,53 a 1,99, con una media de 1,75."
   ],
   "recomendaciones": [
     "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y evaluar la logística híbrida en esa cohorte nueva.",
@@ -66,8 +66,8 @@
     "Informar el Lift@k de una regla con empates como el promedio de varios sorteos, con su mínimo y su máximo, y no con un sorteo solo."
   ],
   "nota_posterior": [
-    "El 3 de octubre, al analizar por qué la lista no llega a más familias, revisamos cómo se forma la lista de la regla D2. Muchas familias tienen el mismo puntaje y el corte de la lista cae entre ellas, así que el orden entre empatadas se decide con un sorteo de semilla fija. Repetimos ese sorteo cien veces. En C4, la lista de D2 alcanza entre el 24 % y el 32 % de los casos según cómo caiga, lo que equivale a un Lift@k de 1,53 a 1,99. Con el sorteo que usamos en la Fase 2 fue 31 % y 1,93, cerca del extremo alto.",
-    "En el extremo bajo, la regla iguala a la logística híbrida (24 % de los casos). La ventaja de D2 sobre el mejor modelo en C4 es entonces menos firme de lo que sugiere una sola cifra. Lo que sostiene la decisión es la prueba final en C5, que hicimos una sola vez en la Fase 2 y no repetimos: ahí la regla casi duplicó al azar y la logística híbrida no lo superó.",
+    "El 3 de octubre, al analizar por qué la lista no llega a más familias, revisamos cómo se forma la lista de la regla D2. Muchas familias tienen el mismo puntaje y el corte de la lista cae entre ellas, así que el orden entre empatadas se decide con un sorteo de semilla fija. Repetimos ese sorteo cien veces. En C4, la lista de D2 alcanza entre el 24 % y el 32 % de los casos según cómo caiga, lo que equivale a un Lift@k de 1,53 a 1,99. La media es 28 % y 1,75. Con el sorteo que usamos en la Fase 2 fue 31 % y 1,93, cerca del extremo alto.",
+    "En promedio la regla sigue por encima de la logística híbrida (1,75 frente a 1,53), pero en el extremo bajo la iguala (24 % de los casos). La ventaja de D2 sobre el mejor modelo en C4 es entonces menor y menos firme de lo que sugiere una sola cifra. Lo que sostiene la decisión es la prueba final en C5, que hicimos una sola vez en la Fase 2 y no repetimos: ahí la regla casi duplicó al azar y la logística híbrida no lo superó.",
     "Esta nota no cambia ninguna cifra del diagnóstico, que trata de los modelos y no de la regla. El análisis completo está en docs/alcance_lista.md y en el cuaderno 06_alcance_lista."
   ]
 }
