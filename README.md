@@ -134,7 +134,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 175 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
+| `tests/` | 176 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
@@ -165,7 +165,7 @@ El sistema **prioriza contactos de apoyo; no decide admisiones, reservas ni beca
 - **Honestidad:** se informa que los modelos de ML no superaron a la regla y se reporta la incertidumbre.
 
 **Limitaciones conocidas**
-- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante. La lista tenía más cupos (165) que casos (74): es un límite de señal, no de capacidad. El análisis con C2 a C4 ([`docs/alcance_lista.md`](docs/alcance_lista.md)) muestra que la regla solo ayuda las tres primeras semanas, que su Lift va de 1,4 a 2,0 según la cohorte y que hacia el día 35 quedan unas 200 familias pendientes por año, de las que el 44 % son casos.
+- Encuentra cerca del 30 % de los casos y no alcanza al 70 % restante. La lista tenía más cupos (165) que casos (74): es un límite de señal, no de capacidad. El análisis con C2 a C4 ([`docs/alcance_lista.md`](docs/alcance_lista.md)) muestra que el 86 % de los casos son familias que no registran ningún pago, que la regla solo ayuda las tres primeras semanas, que su Lift va de 1,4 a 2,0 según la cohorte y que hacia el día 35 quedan unas 200 familias pendientes por año, de las que el 44 % son casos.
 - Con pocos eventos por grupo, la equidad no puede afirmarse con certeza.
 - No se midió si la llamada cambia la decisión de la familia.
 - Las familias aún no fueron informadas de este uso de sus datos. Antes de un uso operativo, LEMAS debe hacerlo, confirmar con su asesor la base legal para datos de menores y completar los pendientes de la ley ecuatoriana de protección de datos (LOPDP).

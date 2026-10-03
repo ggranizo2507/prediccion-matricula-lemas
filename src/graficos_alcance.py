@@ -74,24 +74,34 @@ def figura_desglose(desglose: pd.DataFrame, cohortes: str) -> Figure:
     total = desglose[desglose["cohorte"] == TODAS].iloc[0]
     fig, ax = plt.subplots(figsize=(9.5, 4))
     casos = {tipo: _numero(total[tipo]) for tipo in TIPOS}
-    if any(np.isnan(v) for v in casos.values()):
-        ax.text(0.5, 0.5, "Alguna celda tiene menos casos que el mínimo publicable:\n"
+    visibles = [v for v in casos.values() if not np.isnan(v)]
+    if not visibles:
+        ax.text(0.5, 0.5, "Todas las celdas tienen menos casos que el mínimo publicable:\n"
                 "el desglose no se muestra.", ha="center", va="center", fontsize=10,
                 color=TINTA_SUAVE, transform=ax.transAxes)
         ax.set_axis_off()
     else:
+        # Una celda oculta («<5» u «oculto») se dibuja sin barra y se dice que está oculta
         _estilo(ax, "", "Familias que no pagaron la matrícula en plazo", "")
         for fila, tipo in enumerate(TIPOS):
             aciertos = _numero(total[f"aciertos_{tipo}"])
+            if np.isnan(casos[tipo]):
+                ax.text(0, fila, "  número de casos oculto por privacidad", va="center",
+                        fontsize=9, color=TINTA_SUAVE, style="italic")
+                continue
             ax.barh(fila, casos[tipo], color=CLARO[REGLA_COLOR], height=0.55)
-            ax.barh(fila, aciertos, color=REGLA_COLOR, height=0.55)
-            nota = f"  {int(aciertos)} de {int(casos[tipo])} en la lista"
-            if casos[tipo]:
-                nota += f" ({_pct(aciertos / casos[tipo])})"
+            if np.isnan(aciertos):
+                nota = f"  {int(casos[tipo])} casos · aciertos ocultos por privacidad"
+            else:
+                ax.barh(fila, aciertos, color=REGLA_COLOR, height=0.55)
+                nota = f"  {int(aciertos)} de {int(casos[tipo])} en la lista"
+                if casos[tipo]:
+                    nota += f" ({_pct(aciertos / casos[tipo])})"
             ax.text(casos[tipo], fila, nota, va="center", fontsize=9, color=TINTA)
         ax.set_yticks(range(len(TIPOS)), list(TIPOS.values()))
         ax.invert_yaxis()
-        ax.set_xlim(0, max(max(casos.values()), 1) * 1.5)
+        ax.set_ylim(len(TIPOS) - 0.5, -0.5)
+        ax.set_xlim(0, max(max(visibles), 1) * 1.6)
         ax.tick_params(axis="y", labelsize=9, colors=TINTA)
         ax.grid(axis="y", visible=False)
     _titulo(fig, "¿A quién encuentra la lista?",

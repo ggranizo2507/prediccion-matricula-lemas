@@ -1,6 +1,6 @@
 # Alcance de la lista: el 70 % que no encuentra
 
-> **Estado:** ejecutado con datos reales el 03-oct-2026 (D50). Cohortes C2, C3 y C4: 2.986 familias y 260 casos. El recall de D2 en C4 coincide con el de la Fase 2 (0,3053). Queda pendiente una nueva ejecución para publicar el desglose por tipo (sección 6.1).
+> **Estado:** ejecutado con datos reales el 03-oct-2026 (D50). Cohortes C2, C3 y C4: 2.986 familias y 260 casos. El recall de D2 en C4 coincide con el de la Fase 2 (0,3053). La segunda ejecución del mismo día, con la regla de privacidad afinada, permitió publicar el desglose por tipo (sección 6.1) y el promedio entre sorteos (sección 6.4).
 >
 > Cuaderno: [`06_alcance_lista.ipynb`](../notebooks/06_alcance_lista.ipynb) · Código: `src/alcance.py`, `src/graficos_alcance.py` · Pruebas: `tests/test_alcance.py`
 
@@ -67,9 +67,20 @@ El orden es el mismo en las tres (regla D2 y un solo sorteo entre empatadas), as
 
 Cohortes C2, C3 y C4 juntas: 2.986 familias, 260 casos (8,7 %), k = 165 familias por año. Todas las cifras salen de los agregados de `results/metrics/alcance_*_real.csv`; las figuras son `results/figures/real_24` a `real_27`. Las cifras «por año» son el total de las tres cohortes dividido para tres, y el resumen automático del cuaderno escribe 1,6 y 9,9 contactos por persona y semana donde aquí se lee 1,7 y 10,0 (los valores son 1,65 y 9,95).
 
-### 6.1 Qué hay dentro del evento: todavía sin respuesta
+### 6.1 Qué hay dentro del evento
 
-Con la primera versión de la regla de privacidad, el desglose por tipo no se pudo publicar: alguna celda tenía menos de 5 familias y se ocultó la tabla entera. La regla se afinó para ocultar solo la celda pequeña y una más; **hace falta volver a ejecutar el cuaderno** para saber cuántos casos son familias que no registran ningún pago y a cuántas de ellas encuentra la lista.
+| Tipo de caso | Familias | % de los casos | En la lista D2 |
+|---|---|---|---|
+| Todos pagan, el último después del 30 de abril | 14 | 5 % | oculto |
+| Paga por unos estudiantes y no por otros | 23 | 9 % | oculto |
+| **No registra ningún pago** | **223** | **86 %** | **53 (24 %)** |
+| Total | 260 | 100 % | 69 (27 %) |
+
+Los aciertos de los dos primeros tipos se ocultan por separado porque alguna celda tiene menos de 5 familias. Juntos son 16 de 37 (43 %), que es la diferencia entre las dos filas publicadas. Por cohorte no se publica nada.
+
+- **El evento es, sobre todo, no registrar ningún pago.** Solo el 5 % de los casos son familias que pagan todo después del 30 de abril, con una mediana de 11,5 días de retraso. La crítica de que la etiqueta mezclaba retrasos con salidas pesa poco: nueve de cada diez casos no son un retraso.
+- **La regla encuentra mejor a quien paga tarde o en parte que a quien no vuelve:** 43 % frente a 24 %. Tiene sentido, porque su señal más fuerte es haber pagado tarde antes. Pero esos tipos son pocos: de los 69 aciertos de la lista, 53 (77 %) son familias sin ningún pago.
+- **El 70 % que la lista no alcanza son casi todas familias sin ningún pago** (170 de 223 quedan fuera). Para ellas los datos administrativos del 20 de febrero dicen poco.
 
 ### 6.2 Más contactos
 
@@ -85,7 +96,7 @@ Con la primera versión de la regla de privacidad, el desglose por tipo no se pu
 
 - **La regla añade entre 9 y 12 puntos sobre el azar con cualquier tamaño de lista.** No más. Con el doble de contactos se llega al 45 % de los casos, pero 33 de esos 45 puntos los daría cualquier lista de ese tamaño.
 - **La capacidad no es el límite.** Contactar a todas las familias una vez son 10 contactos por persona y semana, dos por día laborable. El k aprobado son menos de dos por semana.
-- **El Lift cambia con la cohorte:** 1,38 en C2, 1,49 en C3 y 1,93 en C4. C4 es la cohorte donde se eligió la regla, así que su cifra es la más favorable. Con el 1,97 de la prueba final (C5, IC 95 % [1,24; 2,56]), el Lift de la regla ha ido de 1,4 a 2,0 en cuatro cohortes: no hay base para esperar siempre el valor más alto.
+- **El Lift cambia con la cohorte:** 1,38 en C2, 1,49 en C3 y 1,93 en C4 con el sorteo de la validación; 1,42, 1,57 y 1,75 en promedio de cien sorteos. C4 es la cohorte donde se eligió la regla, así que su cifra es la más favorable. Con el 1,97 de la prueba final (C5, IC 95 % [1,24; 2,56]), el Lift de la regla ha ido de 1,4 a 2,0 en cuatro cohortes: no hay base para esperar siempre el valor más alto.
 
 ### 6.3 Quién sigue sin pagar
 
@@ -118,14 +129,15 @@ Con la primera versión de la regla de privacidad, el desglose por tipo no se pu
 - **Repartir la lista fija es desperdiciarla.** Si se llama en orden durante las diez semanas, la mitad de las familias (52 %) ya habrá pagado cuando le llegue el turno.
 - **La lista semanal alcanza al 82 %, pero no antes.** En la primera mitad de la campaña llega al 25 %, dos puntos menos que la lista fija llamada al inicio. Todo lo que gana lo gana en la segunda mitad, con un margen medio de 27 días.
 - **Lo que gana no se debe a la regla.** Una lista semanal al azar alcanza al 80 %. La regla aporta 7 puntos en la primera mitad (25 % frente a 18 %) y 2 en el total.
-- **El sorteo entre familias empatadas importa.** Muchas familias tienen el mismo puntaje y el corte de la lista cae entre ellas. Según cómo caiga el sorteo, el alcance de la lista fija va de 25 % a 28 % en el conjunto, y en C4 de 24 % a 32 %. El 30,5 % de C4 que se usó para elegir la regla (Lift 1,93) está en la parte alta de ese rango; con el sorteo más desfavorable habría sido 1,53, igual que la logística híbrida.
+- **El sorteo entre familias empatadas importa.** Muchas familias tienen el mismo puntaje y el corte de la lista cae entre ellas. Según cómo caiga el sorteo, el alcance de la lista fija va de 25 % a 28 % en el conjunto (media 26 %), y en C4 de 24 % a 32 % (media 28 %). El 30,5 % de C4 que se usó para elegir la regla (Lift 1,93) está en la parte alta de ese rango: el Lift medio es 1,75 y con el sorteo más desfavorable habría sido 1,53, igual que la logística híbrida. En C2 y C3 ocurrió lo contrario: el sorteo de la validación quedó por debajo de la media.
 
 ## 7. Qué concluimos
 
 1. **El 30 % no mejora con más modelo ni con más cupos, sino con tiempo.** El 20 de febrero los datos no distinguen a la mayoría de los casos. Cinco semanas después, basta mirar quién sigue sin pagar.
 2. **La regla D2 sirve para empezar, no para toda la campaña.** Ordena mejor que el azar las primeras tres semanas (Lift de 1,4 a 1,9 según la cohorte). Después no añade nada.
-3. **El resultado de C4 era algo optimista.** Parte de la ventaja de D2 sobre el mejor modelo dependía del sorteo entre empatadas. La prueba final en C5 no se toca y sigue siendo el resultado del proyecto, pero en adelante conviene informar el promedio de varios sorteos y no uno solo.
+3. **El resultado de C4 era algo optimista.** Parte de la ventaja de D2 sobre el mejor modelo dependía del sorteo entre empatadas: en promedio su Lift en C4 es 1,75, no 1,93, todavía por encima del 1,53 de la logística híbrida. La prueba final en C5 no se toca y sigue siendo el resultado del proyecto, pero en adelante conviene informar el promedio de varios sorteos y no uno solo.
 4. **Sigue sin saberse si llamar ayuda.** Todo lo anterior mide a quién se alcanza y cuándo.
+5. **El problema no es la etiqueta.** El 86 % de los casos son familias que no registran ningún pago, y son las que la regla encuentra peor (24 %).
 
 ### Propuesta para la campaña de 2027 (hipótesis, no resultado)
 

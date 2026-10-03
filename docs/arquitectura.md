@@ -36,7 +36,7 @@ flowchart LR
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 175 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 176 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida

@@ -92,8 +92,8 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 
 - La lista no alcanza a cerca del 70 % de las familias que no pagan la matrícula en plazo. Tenía más cupos (165) que casos (74), así que es un límite de señal y no de capacidad.
 - La regla ordena mejor que el azar solo al inicio de la campaña. Desde la cuarta semana no supera a elegir al azar entre las familias que siguen sin pagar ([alcance_lista.md](alcance_lista.md)).
-- El Lift depende de la cohorte (1,38 en C2, 1,49 en C3, 1,93 en C4 y 1,97 en C5) y del sorteo entre familias empatadas (en C4, de 1,53 a 1,99).
-- El evento incluye a quienes se matriculan después del 30 de abril: parte de lo que la regla detecta son familias que pagan tarde, no familias que se van.
+- El Lift depende de la cohorte (1,38 en C2, 1,49 en C3, 1,93 en C4 y 1,97 en C5) y del sorteo entre familias empatadas (en C4, de 1,53 a 1,99; media 1,75).
+- En C2 a C4, el 86 % de los casos son familias que no registran ningún pago; el 5 % paga todo después del 30 de abril y el 9 % paga por unos estudiantes y no por otros. La regla encuentra al 24 % de las primeras y al 43 % del resto: detecta mejor el retraso que la salida.
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
 - No se ha medido si la llamada cambia la decisión de la familia.

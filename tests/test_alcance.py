@@ -405,3 +405,27 @@ def test_conclusiones_y_figuras_con_celdas_ocultas(tmp_path):
                            ("semanal", ga.figura_semanal(tablas[2], "C2")),
                            ("campana", ga.figura_campana(tablas[3], "C2"))):
         ga.guardar(figura, tmp_path / f"{nombre}.png", dpi=72)
+
+
+def test_figura_y_frases_con_aciertos_ocultos_y_casos_visibles(tmp_path):
+    """Caso real del 03-oct: los casos por tipo se publican, pero algún acierto queda oculto."""
+    # 40 pagan tarde (2 en la lista), 30 en parte, 60 sin pago; 400 pagan en plazo
+    tipos = ["tardia"] * 40 + ["parcial"] * 30 + ["sin_pago"] * 60 + ["en_plazo"] * 400
+    evento = [0 if t == "en_plazo" else 1 for t in tipos]
+    riesgo = [9, 9] + [0] * 38 + [5] * 30 + [5] * 60 + [1] * 400
+    familias = _a_mano(riesgo, evento, [np.nan] * len(tipos))
+    familias["tipo"] = tipos
+    familias["dias_tarde"] = [10.0 if t == "tardia" else np.nan for t in tipos]
+    k = {SEDE: 60}
+    desglose = al.desglose_evento(familias, k, SEMILLA)
+    total = desglose.set_index("cohorte").loc[al.TODAS]
+    assert total["tardia"] == 40 and total["aciertos_tardia"] == "<5"
+    assert OCULTO in (total["aciertos_parcial"], total["aciertos_sin_pago"])
+    figura = ga.figura_desglose(desglose, "C2")                 # antes: ValueError con NaN
+    ga.guardar(figura, tmp_path / "desglose.png", dpi=72)
+    notas = " ".join(t.get_text() for t in figura.axes[0].texts)
+    assert "aciertos ocultos" in notas and "nan" not in notas.lower()
+    textos = al.conclusiones(desglose, al.alcance_por_k(familias, k, SEMILLA),
+                             al.foto_semanal(familias, k, SEMILLA),
+                             al.campana(familias, k, SEMILLA, repeticiones=5))
+    assert _sin_basura(textos)

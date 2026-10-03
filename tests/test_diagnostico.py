@@ -462,10 +462,11 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
         es_d2 = seleccion["candidato"].str.startswith("D2")
         lift_d2 = float(seleccion.loc[es_d2, "lift_k"].iloc[0])
         for fila in fija.itertuples():
-            agregar([fila.recall, fila.recall_min, fila.recall_max])
+            agregar([fila.recall, fila.recall_min, fila.recall_max, fila.recall_medio])
             if fila.cohorte == resumen["validacion"]:       # Lift@k equivalente de cada sorteo
                 agregar([lift_d2 * fila.recall_min / fila.recall,
-                         lift_d2 * fila.recall_max / fila.recall])
+                         lift_d2 * fila.recall_max / fila.recall,
+                         lift_d2 * fila.recall_medio / fila.recall])
     for particion in resumen["particiones"]:                # tasas de evento por partición
         agregar(particion["eventos_entrenamiento"] / particion["n_entrenamiento"])
         agregar(particion["eventos_validacion"] / particion["n_validacion"])
