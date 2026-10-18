@@ -38,7 +38,7 @@ Sí: la tasa es de 6–11 %. Por eso no usamos exactitud, sino métricas que mir
 ## C. Metodología y modelos
 
 **10. ¿Por qué validación temporal y no validación cruzada aleatoria?**
-Porque el sistema se usará para predecir el año siguiente. Mezclar años filtraría información del futuro. Entrenamos con C2–C3, seleccionamos y calibramos en C4 y probamos una sola vez en C5.
+Porque el sistema se usará para predecir el año siguiente. Mezclar años filtraría información del futuro. Entrenamos con C2–C3, seleccionamos y calibramos en C4 y probamos una sola vez en C5. Detalle de técnicas aplicadas y no aplicadas en [evaluacion_robusta.md](evaluacion_robusta.md).
 
 **11. ¿Qué es el Lift@k?**
 Cuántas veces más casos encuentra la lista que una selección al azar del mismo tamaño. Lift 1,97 significa casi el doble de casos que llamando al azar a k familias.

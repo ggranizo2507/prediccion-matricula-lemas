@@ -148,6 +148,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
 | [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
+| [`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) | Por qué validación temporal y no validación cruzada aleatoria; qué técnicas de incertidumbre y comparación aplicamos y cuáles no |
 | [`docs/alcance_lista.md`](docs/alcance_lista.md) | El 70 % que la lista no encuentra: crítica del diseño, método de análisis y decisiones que puede informar |
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Principios y dilemas, sesgos, equidad, privacidad, explicabilidad, impacto social, responsabilidad, mal uso y cumplimiento normativo |
 | [`docs/ficha_modelo.md`](docs/ficha_modelo.md) | Ficha del modelo (*model card*): uso previsto, métricas, resultados por grupo y límites |

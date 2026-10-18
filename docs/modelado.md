@@ -13,6 +13,8 @@
 | Selección y calibración | C4 | Lift@k por representante frente a las reglas D y D2; calibración de Platt |
 | Prueba final, una sola vez | C5 | Sistema congelado (SHA-256 registrado); IC 95 % con 2.000 réplicas bootstrap por representante |
 
+Por qué validación temporal y no validación cruzada aleatoria, y qué técnicas de evaluación robusta se aplicaron: [evaluacion_robusta.md](evaluacion_robusta.md).
+
 **k por sede** (D32, el doble del promedio histórico): 118 representantes en Mucho Lote 1 y 47 en Mucho Lote 2. En total son 165 contactos, alrededor del 15 % de los 1.093 representantes de C5.
 
 **Candidatos:**
