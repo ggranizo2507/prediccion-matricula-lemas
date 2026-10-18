@@ -44,6 +44,18 @@
     "coincide": true,
     "diferencia_maxima": 3.6383085445096386e-05
   },
+  "robustez": {
+    "semillas": [
+      42,
+      7,
+      123,
+      2024,
+      9
+    ],
+    "repeticiones_bootstrap": 2000,
+    "regla": "mejora si cambio >= cambio_minimo, IC 95 % > 0, réplica > 0 y todas las semillas > 0; empeora, lo simétrico; si no, sin diferencia demostrable"
+  },
+  "perdida_referencia": 0.30085168958415553,
   "parametros_fase2": {
     "logistica": {
       "conjunto": "completo",
@@ -89,72 +101,76 @@
       "iteraciones": 718,
       "iteracion_optima": 1,
       "minimo_en_el_limite": false,
-      "perdida_validacion_minima": 0.6936579368094513,
-      "perdida_validacion_final": 0.8418627882680961,
-      "deterioro_perdida": 0.14820485145864482,
+      "perdida_validacion_minima": 0.693658,
+      "perdida_validacion_final": 0.841863,
+      "deterioro_perdida": 0.14820500000000003,
       "validacion_empeora": true,
-      "brecha_perdida_en_optimo": 0.002983656831561321,
-      "brecha_perdida_final": 0.31922176814104697,
+      "brecha_perdida_en_optimo": 0.0029839999999999867,
+      "brecha_perdida_final": 0.319222,
       "brecha_crece": true,
       "iteracion_mejor_puntaje": 526,
-      "mejor_puntaje_validacion": 0.11248798748340999,
-      "brecha_puntaje_final": 0.18257668372172772,
+      "mejor_puntaje_validacion": 0.112488,
+      "brecha_puntaje_final": 0.18257599999999996,
       "entrenamiento_sigue_bajando": true,
       "por_optimizador": false,
+      "perdida_ponderada": true,
       "iteracion_fase2": 359,
-      "perdida_validacion_fase2": 0.7918895289208667,
-      "puntaje_validacion_fase2": 0.10349855645316894
+      "perdida_validacion_fase2": 0.79189,
+      "puntaje_validacion_fase2": 0.103499
     },
     "Control: árboles sin regularizar": {
       "iteraciones": 300,
       "iteracion_optima": 1,
       "minimo_en_el_limite": false,
-      "perdida_validacion_minima": 0.6960815635347445,
-      "perdida_validacion_final": 2.870974313972406,
-      "deterioro_perdida": 2.1748927504376616,
+      "perdida_validacion_minima": 0.696082,
+      "perdida_validacion_final": 2.870974,
+      "deterioro_perdida": 2.174892,
       "validacion_empeora": true,
-      "brecha_perdida_en_optimo": 0.025710620457756184,
-      "brecha_perdida_final": 2.8241363163878628,
+      "brecha_perdida_en_optimo": 0.02571099999999993,
+      "brecha_perdida_final": 2.8241359999999998,
       "brecha_crece": true,
       "iteracion_mejor_puntaje": 5,
-      "mejor_puntaje_validacion": 0.09734188069982827,
-      "brecha_puntaje_final": 0.9104436115030266,
+      "mejor_puntaje_validacion": 0.097342,
+      "brecha_puntaje_final": 0.910444,
       "entrenamiento_sigue_bajando": true,
-      "por_optimizador": false
+      "por_optimizador": false,
+      "perdida_ponderada": true
     },
     "Regresión logística (Fase 2)": {
       "iteraciones": 273,
       "iteracion_optima": 4,
       "minimo_en_el_limite": false,
-      "perdida_validacion_minima": 0.3050357488983438,
-      "perdida_validacion_final": 0.3069496126881731,
-      "deterioro_perdida": 0.0019138637898293287,
+      "perdida_validacion_minima": 0.305036,
+      "perdida_validacion_final": 0.30695,
+      "deterioro_perdida": 0.0019140000000000268,
       "validacion_empeora": false,
-      "brecha_perdida_en_optimo": 0.04759664313236944,
-      "brecha_perdida_final": 0.050605746490171855,
+      "brecha_perdida_en_optimo": 0.047597,
+      "brecha_perdida_final": 0.050605999999999984,
       "brecha_crece": false,
       "iteracion_mejor_puntaje": 4,
-      "mejor_puntaje_validacion": 0.11715376654671646,
-      "brecha_puntaje_final": 0.026497664617667033,
+      "mejor_puntaje_validacion": 0.117154,
+      "brecha_puntaje_final": 0.026496999999999993,
       "entrenamiento_sigue_bajando": false,
-      "por_optimizador": true
+      "por_optimizador": true,
+      "perdida_ponderada": false
     },
     "Logística híbrida (Fase 2)": {
       "iteraciones": 15,
       "iteracion_optima": 3,
       "minimo_en_el_limite": false,
-      "perdida_validacion_minima": 0.6878914190073205,
-      "perdida_validacion_final": 0.6891932737126204,
-      "deterioro_perdida": 0.0013018547052998652,
+      "perdida_validacion_minima": 0.687891,
+      "perdida_validacion_final": 0.689193,
+      "deterioro_perdida": 0.0013019999999999143,
       "validacion_empeora": false,
-      "brecha_perdida_en_optimo": 0.015387112874011954,
-      "brecha_perdida_final": 0.021271036832826717,
+      "brecha_perdida_en_optimo": 0.01538700000000004,
+      "brecha_perdida_final": 0.02127099999999993,
       "brecha_crece": false,
       "iteracion_mejor_puntaje": 3,
-      "mejor_puntaje_validacion": 0.1280433928670226,
-      "brecha_puntaje_final": 0.00043668454774589693,
+      "mejor_puntaje_validacion": 0.128043,
+      "brecha_puntaje_final": 0.00043599999999999195,
       "entrenamiento_sigue_bajando": false,
-      "por_optimizador": true
+      "por_optimizador": true,
+      "perdida_ponderada": true
     }
   },
   "ganancia_por_datos": [
@@ -194,33 +210,36 @@
   ],
   "conclusiones": {
     "modelos": [
-      "Regresión logística: subajuste (no capta señal suficiente: rinde poco en ambos conjuntos). PR-AUC de 0,140 en entrenamiento y 0,113 en C4; brecha de 0,026 (19 % del entrenamiento); 1,28 veces el azar en C4.",
-      "Gradient boosting: sobreajuste (memoriza el entrenamiento y pierde rendimiento con datos nuevos). PR-AUC de 0,245 en entrenamiento y 0,103 en C4; brecha de 0,141 (58 % del entrenamiento); 1,17 veces el azar en C4.",
-      "Logística híbrida: subajuste (no capta señal suficiente: rinde poco en ambos conjuntos). PR-AUC de 0,126 en entrenamiento y 0,125 en C4; brecha de 0,000 (0 % del entrenamiento); 1,41 veces el azar en C4."
+      "Regresión logística: límite de señal; rinde poco en ambos conjuntos, pero ni más capacidad ni más datos lo mejoran: lo que falta es información en las variables, no flexibilidad en el modelo. PR-AUC de 0,140 en entrenamiento y 0,113 en C4; brecha de 0,026 (19 % del entrenamiento); 1,28 veces el azar en C4. Con más capacidad, la mejor PR-AUC de validación cambia 0,000; con todos los datos frente a la mitad, +0,004 (no concluyente).",
+      "Gradient boosting: sobreajuste; memoriza el entrenamiento y pierde rendimiento con datos nuevos. PR-AUC de 0,245 en entrenamiento y 0,103 en C4; brecha de 0,141 (58 % del entrenamiento); 1,17 veces el azar en C4.",
+      "Logística híbrida: límite de señal; rinde poco en ambos conjuntos, pero ni más capacidad ni más datos lo mejoran: lo que falta es información en las variables, no flexibilidad en el modelo. PR-AUC de 0,126 en entrenamiento y 0,125 en C4; brecha de 0,000 (0 % del entrenamiento); 1,41 veces el azar en C4. Con más capacidad, la mejor PR-AUC de validación cambia 0,000; con todos los datos frente a la mitad, +0,002 (no concluyente)."
     ],
     "controles": [
-      "Control: árboles sin regularizar: sobreajuste (memoriza el entrenamiento y pierde rendimiento con datos nuevos). PR-AUC de 0,998 en entrenamiento y 0,088 en C4; brecha de 0,910 (91 % del entrenamiento); 0,99 veces el azar en C4.",
-      "Control: logística sobrerregularizada: subajuste (no capta señal suficiente: rinde poco en ambos conjuntos). PR-AUC de 0,076 en entrenamiento y 0,089 en C4; la validación supera al entrenamiento en 0,013 (no hay brecha de sobreajuste); 1,00 veces el azar en C4."
+      "Control: árboles sin regularizar: sobreajuste; memoriza el entrenamiento y pierde rendimiento con datos nuevos. PR-AUC de 0,998 en entrenamiento y 0,088 en C4; brecha de 0,910 (91 % del entrenamiento); 0,99 veces el azar en C4.",
+      "Control: logística sobrerregularizada: subajuste (falta capacidad); es demasiado rígido: rinde poco en ambos conjuntos y mejora al darle más capacidad. PR-AUC de 0,076 en entrenamiento y 0,089 en C4; la validación supera al entrenamiento en 0,013 (no hay brecha de sobreajuste); 1,00 veces el azar en C4. Con más capacidad, la mejor PR-AUC de validación cambia +0,016."
     ],
     "curvas": [
-      "Gradient boosting (Fase 2): la pérdida de validación es mínima en el paso 1 de 718 (0,694). Después sube 0,148 mientras el entrenamiento sigue bajando: es el patrón de sobreajuste. La Fase 2 usó 359 iteraciones (pérdida de validación 0,792).",
-      "Control: árboles sin regularizar: la pérdida de validación es mínima en el paso 1 de 300 (0,696). Después sube 2,175 mientras el entrenamiento sigue bajando: es el patrón de sobreajuste.",
+      "Gradient boosting (Fase 2): la pérdida ponderada de validación es mínima en el paso 1 de 718 (0,694). Después sube 0,148 mientras el entrenamiento sigue bajando: es el patrón de sobreajuste. La Fase 2 usó 359 iteraciones (pérdida ponderada de validación 0,792). Es la pérdida que minimiza un modelo balanceado; la sin ponderar también refleja que sus probabilidades no están calibradas.",
+      "Control: árboles sin regularizar: la pérdida ponderada de validación es mínima en el paso 1 de 300 (0,696). Después sube 2,175 mientras el entrenamiento sigue bajando: es el patrón de sobreajuste. Es la pérdida que minimiza un modelo balanceado; la sin ponderar también refleja que sus probabilidades no están calibradas.",
       "Regresión logística (Fase 2): la pérdida de validación es mínima en el paso 4 de 273 (0,305). Después cambia solo +0,002: la validación se estanca, no se deteriora.",
-      "Logística híbrida (Fase 2): la pérdida de validación es mínima en el paso 3 de 15 (0,688). Después cambia solo +0,001: la validación se estanca, no se deteriora."
+      "Logística híbrida (Fase 2): la pérdida ponderada de validación es mínima en el paso 3 de 15 (0,688). Después cambia solo +0,001: la validación se estanca, no se deteriora. Es la pérdida que minimiza un modelo balanceado; la sin ponderar también refleja que sus probabilidades no están calibradas."
     ],
     "estrategias": [
-      "E1 · Regularización y menor complejidad: PR-AUC en C4 de 0,088 a 0,103 (+0,015: la PR-AUC mejora); brecha de +0,910 a +0,141 (se reduce); Lift@k de 1,00 a 1,06.",
-      "E2 · Parada temprana: PR-AUC en C4 de 0,103 a 0,095 (−0,009: la PR-AUC empeora); brecha de +0,141 a +0,080 (se reduce); Lift@k de 1,06 a 0,80.",
-      "E3 · Modelo más simple: PR-AUC en C4 de 0,103 a 0,107 (+0,003: PR-AUC sin cambio apreciable); brecha de +0,141 a +0,087 (se reduce); Lift@k de 1,06 a 0,93.",
-      "E4 · Ingeniería de variables: PR-AUC en C4 de 0,113 a 0,125 (+0,012: la PR-AUC mejora); brecha de +0,026 a 0,000 (se reduce); Lift@k de 1,40 a 1,53.",
-      "E5 · Menos regularización: PR-AUC en C4 de 0,113 a 0,113 (0,000: PR-AUC sin cambio apreciable); brecha de +0,026 a +0,027 (sin cambio apreciable); Lift@k de 1,40 a 1,46.",
-      "E6 · Más entrenamiento: PR-AUC en C4 de 0,103 a 0,105 (+0,002: PR-AUC sin cambio apreciable); brecha de +0,141 a +0,183 (aumenta); Lift@k de 1,06 a 0,86. El modelo de partida no presentaba subajuste (sobreajuste), así que sirve como comprobación."
+      "E1 · Más regularización: PR-AUC en C4 de 0,103 a 0,107 (+0,003; IC 95 % [−0,004; +0,015]); brecha de +0,141 a +0,108 (se reduce); Lift@k de 1,06 a 1,13 (cambio según la semilla del desempate: de +0,07 a +0,07). En la réplica 0,089 → 0,080 (−0,009); con 5 semillas, de +0,003 a +0,003. Veredicto: sin diferencia demostrable.",
+      "E2 · Parada temprana: PR-AUC en C4 de 0,103 a 0,095 (−0,009; IC 95 % [−0,033; +0,010]); brecha de +0,141 a +0,080 (se reduce); Lift@k de 1,06 a 0,80 (cambio según la semilla del desempate: de −0,33 a −0,20). En la réplica 0,089 → 0,081 (−0,008); con 5 semillas, de −0,009 a −0,009. Veredicto: sin diferencia demostrable.",
+      "E3 · Árboles más pequeños: PR-AUC en C4 de 0,103 a 0,106 (+0,002; IC 95 % [−0,008; +0,017]); brecha de +0,141 a +0,098 (se reduce); Lift@k de 1,06 a 0,80 (cambio según la semilla del desempate: de −0,27 a −0,27). En la réplica 0,089 → 0,082 (−0,008); con 5 semillas, de +0,002 a +0,002. Veredicto: sin diferencia demostrable.",
+      "E4a · Variables de D2 (solo variables): PR-AUC en C4 de 0,113 a 0,120 (+0,007; IC 95 % [−0,016; +0,037]); brecha de +0,026 a +0,013 (se reduce); Lift@k de 1,40 a 1,33, en sentido contrario a la PR-AUC (cambio según la semilla del desempate: de −0,07 a −0,07). En la réplica 0,106 → 0,084 (−0,022); con 5 semillas, de +0,007 a +0,007. Veredicto: sin diferencia demostrable.",
+      "E4b · Hiperparámetros del híbrido (solo hiperparámetros): PR-AUC en C4 de 0,120 a 0,125 (+0,005; IC 95 % [−0,001; +0,013]); brecha de +0,013 a 0,000 (se reduce); Lift@k de 1,33 a 1,53 (cambio según la semilla del desempate: de +0,20 a +0,20). En la réplica 0,084 → 0,088 (+0,004); con 5 semillas, de +0,005 a +0,005. Veredicto: sin diferencia demostrable.",
+      "E5 · Menos regularización: PR-AUC en C4 de 0,113 a 0,113 (0,000; IC 95 % [−0,001; +0,001]); brecha de +0,026 a +0,027 (sin cambio apreciable); Lift@k de 1,40 a 1,46 (cambio según la semilla del desempate: de +0,07 a +0,07). En la réplica 0,106 → 0,106 (0,000); con 5 semillas, de 0,000 a 0,000. Veredicto: sin diferencia demostrable.",
+      "E6 · Interacciones: PR-AUC en C4 de 0,125 a 0,127 (+0,002; IC 95 % [−0,032; +0,040]); brecha de 0,000 a +0,100 (aumenta); Lift@k de 1,53 a 1,53 (cambio según la semilla del desempate: de 0,00 a 0,00). En la réplica 0,088 → 0,084 (−0,004); con 5 semillas, de +0,002 a +0,002. Veredicto: sin diferencia demostrable. El diagnóstico pasa de subajuste a sobreajuste.",
+      "Referencia · Regularización de la Fase 2: PR-AUC en C4 de 0,088 a 0,103 (+0,015; IC 95 % [−0,003; +0,044]); brecha de +0,910 a +0,141 (se reduce); Lift@k de 1,00 a 1,06 (cambio según la semilla del desempate: de +0,07 a +0,07). En la réplica 0,071 → 0,089 (+0,018); con 5 semillas, de +0,015 a +0,015. Veredicto: sin diferencia demostrable. Es una referencia: parte de un modelo de control y cambia varias cosas a la vez.",
+      "Contraprueba · Más iteraciones: PR-AUC en C4 de 0,103 a 0,105 (+0,002; IC 95 % [−0,008; +0,015]); brecha de +0,141 a +0,183 (aumenta); Lift@k de 1,06 a 0,86 (cambio según la semilla del desempate: de −0,20 a −0,20). En la réplica 0,089 → 0,091 (+0,002); con 5 semillas, de +0,002 a +0,002. Veredicto: sin diferencia demostrable. El modelo de partida no presentaba subajuste (sobreajuste), así que sirve como comprobación."
     ],
     "balance": [
-      "Modelos de la Fase 2 por diagnóstico: 2 con subajuste, 1 con sobreajuste.",
-      "Efecto de las 6 estrategias sobre la PR-AUC en C4: mejora en 2, empeora en 1 y no cambia de forma apreciable en 3.",
+      "Modelos de la Fase 2 por diagnóstico: 2 con límite de señal, 1 con sobreajuste.",
+      "Veredicto de las 7 estrategias sobre la PR-AUC en C4, con la regla fijada antes de repetir (cambio mínimo, IC 95 % sin el cero, réplica y semillas en el mismo sentido): mejora en 0, empeora en 0 y sin diferencia demostrable en 7.",
       "Estrategias contra el sobreajuste que reducen la brecha: 3 de 3.",
-      "Este análisis usa solo las cohortes de entrenamiento y C4. C5 ya se evaluó una vez y no interviene, así que estas estrategias no cambian la decisión final del proyecto (priorizar con la regla D2)."
+      "Este análisis usa solo las cohortes de entrenamiento y C4 (más la réplica en la partición interna). C5 ya se evaluó una vez y no interviene, así que estas estrategias no cambian la decisión final del proyecto (priorizar con la regla D2)."
     ]
   }
 }

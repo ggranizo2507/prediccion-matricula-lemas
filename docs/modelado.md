@@ -34,9 +34,9 @@
 
 | Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha | Diagnóstico |
 |---|---|---|---|---|
-| Regresión logística | 0,140 | 0,113 | 0,026 | Subajuste: las señales son débiles |
+| Regresión logística | 0,140 | 0,113 | 0,026 | Límite de señal: estable, y ni más capacidad ni más datos la mejoran (D54) |
 | Gradient boosting | 0,245 | 0,103 | 0,141 | **Sobreajuste**: aprende particularidades de C2–C3 |
-| Logística híbrida | 0,126 | 0,125 | 0,000 | Estable, pero con poca capacidad |
+| Logística híbrida | 0,126 | 0,125 | 0,000 | Límite de señal: estable; con más capacidad (interacciones) solo memoriza (D54) |
 
 **Decisión (D40):** ningún modelo supera a D2, así que **la priorización final es la regla D2**. La logística híbrida calibrada se conserva para las probabilidades y la proyección.
 

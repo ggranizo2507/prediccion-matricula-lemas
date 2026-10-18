@@ -89,35 +89,37 @@ Reglas del análisis: **C5 no interviene**, las particiones respetan el orden te
 
 Los umbrales son reglas prácticas, no pruebas estadísticas. Se fijaron el 02-oct-2026, antes de ejecutar el cuaderno con datos reales, pero cuando ya se conocían las PR-AUC de entrenamiento y de C4 de la Fase 2. Esta regla es más completa que la de la tabla de la sección 2 (brecha absoluta mayor que 0,10; entrenamiento menor que 0,15) y puede diferir de ella en casos límite.
 
-### Resultados con datos reales (C2+C3 → C4)
+### Resultados con datos reales (C2+C3 → C4), versión revisada (D54)
 
-> **Primera versión (antes de D54).** Las tablas siguientes son de la ejecución del 02-oct-2026. Tras la calificación de la docente se separaron los dos tipos de subajuste, se rehicieron E1, E4 y E6 como comparaciones limpias y se añadió la regla de veredicto con bootstrap, réplica y semillas (D54). Esta sección se actualiza al repetir el cuaderno con datos reales.
+| Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha relativa | Veces el azar en C4 | Más capacidad | Lift@k | Diagnóstico |
+|---|---|---|---|---|---|---|---|
+| Regresión logística | 0,140 | 0,113 | 19 % | 1,28 | 0,000 | 1,40 | Límite de señal |
+| Gradient boosting | 0,245 | 0,103 | 58 % | 1,17 | — | 1,06 | **Sobreajuste** |
+| Logística híbrida | 0,126 | 0,125 | 0 % | 1,41 | 0,000 | 1,53 | Límite de señal |
+| Control: árboles sin regularizar | 0,998 | 0,088 | 91 % | 0,99 | — | 1,00 | Sobreajuste |
+| Control: logística sobrerregularizada | 0,076 | 0,089 | −17 % | 1,00 | +0,016 | 1,06 | Subajuste (falta capacidad) |
 
-| Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha relativa | Veces el azar en C4 | Lift@k | Diagnóstico |
-|---|---|---|---|---|---|---|
-| Regresión logística | 0,140 | 0,113 | 19 % | 1,28 | 1,40 | Subajuste |
-| Gradient boosting | 0,245 | 0,103 | 58 % | 1,17 | 1,06 | **Sobreajuste** |
-| Logística híbrida | 0,126 | 0,125 | 0 % | 1,41 | 1,53 | Subajuste |
-| Control: árboles sin regularizar | 0,998 | 0,088 | 91 % | 0,99 | 1,00 | Sobreajuste |
-| Control: logística sobrerregularizada | 0,076 | 0,089 | −17 % | 1,00 | 1,06 | Subajuste |
+«Más capacidad»: cambio de la mejor PR-AUC de validación con un C mayor que el actual (curva D). En la primera etapa las dos logísticas eran «subajuste»; la segunda etapa las separa del control, que sí mejora con más capacidad. Más datos tampoco ayudan de forma concluyente (+0,004 y +0,002 entre la mitad y el total, menos que la variación entre submuestras).
 
 Lo que mostraron las curvas:
 
-- **Gradient boosting.** La pérdida de validación es mínima en la primera iteración (0,694, prácticamente ln 2) y solo sube: 0,792 en las 359 iteraciones de la Fase 2. La PR-AUC de validación se queda cerca de 0,10 (máximo 0,112 en la iteración 526) mientras la de entrenamiento sigue subiendo.
-- **Regresiones logísticas.** Las curvas de entrenamiento y validación se aplanan casi de inmediato y terminan juntas, cerca del azar (0,089).
-- **Más datos.** Entre la mitad y el total del entrenamiento la validación cambia +0,004, +0,007 y +0,002, menos que la variación entre submuestras. Con las mismas variables, más registros no parecen la solución.
-- **Hiperparámetros.** El valor que eligió Optuna queda cerca del máximo de validación en los tres modelos.
+- **Gradient boosting.** La pérdida ponderada de validación (la que minimiza el modelo) es mínima en la primera iteración (0,694) y sube a 0,792 en las 359 iteraciones de la Fase 2. La sin ponderar baja (0,692 → 0,580) porque corrige la inflación de probabilidades de un modelo balanceado; por eso la figura A muestra las dos. La PR-AUC de validación se queda cerca de 0,10 (máximo 0,112 en la iteración 526) mientras la de entrenamiento sigue subiendo.
+- **Regresiones logísticas.** Las curvas se aplanan casi de inmediato y terminan juntas. La regresión logística queda a la altura de no tener modelo en pérdida sin ponderar (0,307 frente a 0,301).
+- **Hiperparámetros.** El valor que eligió Optuna queda cerca del máximo de validación en los tres modelos; en las logísticas, aumentar C hasta 100 no cambia la validación.
 
-| Estrategia | PR-AUC C4 | Brecha | Lift@k | Efecto |
-|---|---|---|---|---|
-| E1 · Regularización y menor complejidad (control → gradient boosting) | 0,088 → 0,103 | 0,910 → 0,141 | 1,00 → 1,06 | Mejora |
-| E2 · Parada temprana (359 → 20 iteraciones) | 0,103 → 0,095 | 0,141 → 0,080 | 1,06 → 0,80 | Empeora |
-| E3 · Modelo más simple | 0,103 → 0,107 | 0,141 → 0,087 | 1,06 → 0,93 | Sin cambio apreciable |
-| E4 · Ingeniería de variables (regresión logística → híbrida) | 0,113 → 0,125 | 0,026 → 0,000 | 1,40 → 1,53 | **Mejora** |
-| E5 · Menos regularización (C 2,75 → 27,5) | 0,113 → 0,113 | 0,026 → 0,027 | 1,40 → 1,46 | Sin cambio apreciable |
-| E6 · Más entrenamiento (359 → 718 iteraciones) | 0,103 → 0,105 | 0,141 → 0,183 | 1,06 → 0,86 | Sin cambio apreciable |
+| Estrategia (cambia una sola cosa) | PR-AUC C4 | Diferencia [IC 95 %] | Réplica C2 → C3 | Brecha | Lift@k | Veredicto |
+|---|---|---|---|---|---|---|
+| E1 · L2 ×10 (gradient boosting) | 0,103 → 0,107 | +0,003 [−0,004; +0,015] | −0,009 | 0,141 → 0,108 | 1,06 → 1,13 | Sin diferencia demostrable |
+| E2 · Parada temprana (359 → 20) | 0,103 → 0,095 | −0,009 [−0,033; +0,010] | −0,008 | 0,141 → 0,080 | 1,06 → 0,80 | Sin diferencia demostrable |
+| E3 · Árboles más pequeños | 0,103 → 0,106 | +0,002 [−0,008; +0,017] | −0,008 | 0,141 → 0,098 | 1,06 → 0,80 | Sin diferencia demostrable |
+| E4a · Solo variables de D2 | 0,113 → 0,120 | +0,007 [−0,016; +0,037] | −0,022 | 0,026 → 0,013 | 1,40 → 1,33 | Sin diferencia demostrable |
+| E4b · Solo hiperparámetros del híbrido | 0,120 → 0,125 | +0,005 [−0,001; +0,013] | +0,004 | 0,013 → 0,000 | 1,33 → 1,53 | Sin diferencia demostrable |
+| E5 · C ×10 (regresión logística) | 0,113 → 0,113 | 0,000 [−0,001; +0,001] | 0,000 | 0,026 → 0,027 | 1,40 → 1,46 | Sin diferencia demostrable |
+| E6 · Interacciones (logística híbrida) | 0,125 → 0,127 | +0,002 [−0,032; +0,040] | −0,004 | 0,000 → 0,100 | 1,53 → 1,53 | Sin diferencia demostrable |
+| Referencia · control → Fase 2 | 0,088 → 0,103 | +0,015 [−0,003; +0,044] | +0,018 | 0,910 → 0,141 | 1,00 → 1,06 | Sin diferencia demostrable |
+| Contraprueba · 359 → 718 iteraciones | 0,103 → 0,105 | +0,002 [−0,008; +0,015] | +0,002 | 0,141 → 0,183 | 1,06 → 0,86 | Sin diferencia demostrable |
 
-Ninguna estrategia cambió el diagnóstico de su modelo. Las tres estrategias contra el sobreajuste redujeron la brecha sin mejorar la validación, y la única mejora útil vino de las variables (E4). El mejor modelo llega a un Lift@k de 1,53 en C4, por debajo del 1,93 de la regla D2, así que la decisión final no cambia. Estas comparaciones se hacen en C4, que ya se usó para seleccionar y calibrar, y por eso son indicios y no pruebas.
+Con la regla fijada antes de repetir (D54: cambio ≥ 0,005, IC 95 % bootstrap por familia sin el cero, réplica y cinco semillas en el mismo sentido), **ninguna estrategia mejora ni empeora la PR-AUC de forma demostrable**. Las tres contra el sobreajuste reducen la brecha sin mejorar la validación. E6 confirma el límite de señal: con interacciones, la PR-AUC de entrenamiento de la híbrida sube de 0,126 a 0,227 y la de C4 casi no cambia, y el modelo pasa a sobreajustar. La mejora que la primera versión atribuía a E4 (0,113 → 0,125) queda, separada en dos pasos, dentro del ruido. El mejor modelo llega a un Lift@k de 1,53 en C4, por debajo del 1,93 de la regla D2, así que la decisión final no cambia.
 
 El reporte se regenera con `python tools/generar_reporte_diagnostico.py --fuente real` después de ejecutar el cuaderno. Las tablas y figuras salen de los resultados guardados y el análisis escrito está en `docs/diagnostic_report_narrativa_real.json`; una prueba automática comprueba que cada cifra citada en ese análisis exista en los resultados.
 

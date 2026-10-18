@@ -353,8 +353,11 @@ def construir(fuente: str, salida: Path) -> Path:
         "actividad revisamos si esos modelos memorizan los datos de entrenamiento o si no "
         "aprenden lo suficiente. Registramos las métricas durante el entrenamiento, generamos "
         "cuatro tipos de curvas de aprendizaje, medimos el ajuste con dos reglas y probamos "
-        f"{n_estrategias} estrategias de mejora con comparación antes y después. Entrenamos "
-        f"con {tr} y validamos con {val}. La cohorte de prueba (C5) no intervino, porque ya "
+        + (f"{len(_propias(estrategias))} estrategias de mejora con comparación antes y "
+           "después, más dos filas de comprobación. Entrenamos " if "tipo_fila" in estrategias
+           else f"{n_estrategias} estrategias de mejora con comparación antes y después. "
+           "Entrenamos ")
+        + f"con {tr} y validamos con {val}. La cohorte de prueba (C5) no intervino, porque ya "
         "la habíamos evaluado una sola vez en la Fase 2.", e["texto"]))
     h.append(Paragraph("<b>Qué encontramos.</b>", e["texto"]))
     h += _vinetas(nar.get("hallazgos") or [
@@ -371,7 +374,11 @@ def construir(fuente: str, salida: Path) -> Path:
         f"<b>Entregables.</b> Cuaderno {CODIGO.format('overfitting_analysis.ipynb')}, módulos "
         f"{CODIGO.format('src/diagnostico.py')} y {CODIGO.format('src/graficos_diagnostico.py')} "
         "con pruebas automáticas, cinco figuras a 300 DPI y este reporte.", e["izquierda"]))
-    h.append(PageBreak())
+    if nar.get("revision"):            # respuesta a la revisión de la primera versión
+        h.append(Paragraph("Cambios respecto de la primera versión", e["h2"]))
+        h += _vinetas(nar["revision"], e)
+    else:
+        h.append(PageBreak())
 
     # ---- Metodología ---------------------------------------------------------------
     h.append(Paragraph("2. Metodología utilizada", e["h1"]))
@@ -590,7 +597,7 @@ def construir(fuente: str, salida: Path) -> Path:
 
     h.append(_figura(fig / f"{fuente}_22_curva_hiperparametros.png",
                      "Figura 4. PR-AUC al variar un hiperparámetro; la línea discontinua "
-                     "marca el valor de la Fase 2.", e,
+                     "marca el valor del modelo (en el control, su valor fijo).", e,
                      "4.4 Curva D: hiperparámetros (opcional)"))
     h += (_parrafos(nar["curva_d"], e) if nar.get("curva_d")
           else _vinetas(_lectura_hiperparametros(hiper), e))

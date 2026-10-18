@@ -68,8 +68,9 @@ def _leyenda(fig: Figure, extra: list | None = None) -> None:
     claves = [Line2D([], [], color=ENTRENAMIENTO, lw=2, label="Entrenamiento"),
               Line2D([], [], color=VALIDACION, lw=2, marker="o", ms=5,
                      markeredgecolor="white", label="Validación")]
-    fig.legend(handles=claves + (extra or []), loc="lower center", ncol=4, frameon=False,
-               fontsize=9, labelcolor=TINTA, bbox_to_anchor=(0.5, 0.0))
+    todas = claves + (extra or [])
+    fig.legend(handles=todas, loc="lower center", ncol=4 if len(todas) <= 4 else 3,
+               frameon=False, fontsize=9, labelcolor=TINTA, bbox_to_anchor=(0.5, 0.0))
 
 
 def _titulo(fig: Figure, titulo: str, subtitulo: str) -> None:
@@ -81,9 +82,10 @@ def _titulo(fig: Figure, titulo: str, subtitulo: str) -> None:
              va="top")
 
 
-def _ajustar(fig: Figure) -> None:
+def _ajustar(fig: Figure, abajo: float = 0.42) -> None:
+    """`abajo`: pulgadas reservadas para la leyenda (más si ocupa dos filas)."""
     alto = fig.get_figheight()
-    fig.tight_layout(rect=(0, 0.42 / alto, 1, 1 - 0.72 / alto))
+    fig.tight_layout(rect=(0, abajo / alto, 1, 1 - 0.72 / alto))
 
 
 def _en_ejes(ax, x, y) -> np.ndarray:
@@ -172,6 +174,11 @@ def _limites_comunes(seguimientos: dict[str, pd.DataFrame], nombres: list[str],
                      metrica: str, referencia: float | None) -> tuple[float, float]:
     valores = [v for nombre in nombres for conjunto in ("entrenamiento", "validacion")
                for v in seguimientos[nombre][f"{metrica}_{conjunto}"].to_numpy()]
+    if metrica == "perdida_sin_ponderar":       # también la ponderada de los balanceados
+        valores += [v for nombre in nombres
+                    if bool(seguimientos[nombre].get("perdida_ponderada", pd.Series([False]))
+                            .iloc[0])
+                    for v in seguimientos[nombre]["perdida_validacion"].to_numpy()]
     if referencia is not None:
         valores.append(referencia)
     bajo, alto = float(np.nanmin(valores)), float(np.nanmax(valores))
@@ -189,6 +196,15 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
     ax.plot(x, tr, color=ENTRENAMIENTO, lw=2, marker="s" if pocos else None, ms=3.5)
     ax.plot(x, val, color=VALIDACION, lw=2, marker="o", ms=4.5, markeredgecolor="white",
             markevery=1 if pocos else max(1, len(x) // 12))
+    # En un modelo balanceado, la pérdida sin ponderar mezcla el orden con la falta de
+    # calibración: se añade la ponderada (lo que el modelo minimiza) y el punto crítico se
+    # busca en ella, porque es la que muestra si el modelo empeora en su propio objetivo.
+    ponderada = (metrica == "perdida_sin_ponderar" and "perdida_ponderada" in s
+                 and bool(s["perdida_ponderada"].iloc[0]))
+    critica = val
+    if ponderada:
+        critica = s["perdida_validacion"].to_numpy()
+        ax.plot(x, critica, color=VALIDACION, lw=1.4, ls=(0, (3, 2)), alpha=0.9)
     unidad = s["unidad"].iloc[0] if "unidad" in s else "iteración"
     if unidad.startswith("iteración del optimizador") and x[-1] > 20:
         ax.set_xscale("log")
@@ -205,7 +221,7 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
         ax.margins(y=0.22)
 
     fase2 = s["iteracion_fase2"].iloc[0] if "iteracion_fase2" in s else np.nan
-    curvas = [(x, tr), (x, val)]
+    curvas = [(x, tr), (x, val)] + ([(x, critica)] if ponderada else [])
     if pd.notna(fase2) and fase2 <= x[-1]:
         ax.axvline(fase2, color=NEUTRO, lw=1, ls=(0, (4, 3)))
         curvas.append((np.full(12, fase2), np.linspace(*ax.get_ylim(), 12)))
@@ -217,12 +233,13 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
         curvas.append((x, np.full(len(x), referencia)))
     _brecha(ax, x[-1], tr[-1], val[-1])
 
-    critico = int(np.argmin(val) if es_perdida else np.argmax(val))
+    critico = int(np.argmin(critica) if es_perdida else np.argmax(critica))
     etiqueta = "mínimo" if es_perdida else "máximo"
-    ax.scatter([x[critico]], [val[critico]], s=70, color=VALIDACION, edgecolor="white",
+    que = "de la pérdida ponderada" if ponderada else "de validación"
+    ax.scatter([x[critico]], [critica[critico]], s=70, color=VALIDACION, edgecolor="white",
                linewidth=2, zorder=5)
-    _nota(ax, f"{etiqueta} de validación\niteración {int(x[critico])}: {numero(val[critico])}",
-          (x[critico], val[critico]), curvas)
+    _nota(ax, f"{etiqueta} {que}\niteración {int(x[critico])}: {numero(critica[critico])}",
+          (x[critico], critica[critico]), curvas)
 
 
 def figura_iteraciones(seguimientos: dict[str, pd.DataFrame], metrica: str,
@@ -245,8 +262,8 @@ def figura_iteraciones(seguimientos: dict[str, pd.DataFrame], metrica: str,
     fig, ejes = plt.subplots(filas, columnas, figsize=(4.9 * columnas, 3.7 * filas + 1.2),
                              squeeze=False)
     es_perdida = metrica.startswith("perdida")
-    ylabel = {"perdida": "Pérdida ponderada (entropía cruzada; menor es mejor)",
-              "perdida_sin_ponderar": "Pérdida sin ponderar (entropía cruzada; menor es mejor)",
+    ylabel = {"perdida": "Pérdida ponderada (menor es mejor)",
+              "perdida_sin_ponderar": "Entropía cruzada (menor es mejor)",
               }.get(metrica, "PR-AUC (mayor es mejor)")
     comun = [nombre for nombre in (comun or []) if nombre in seguimientos]
     limites = (_limites_comunes(seguimientos, comun, metrica,
@@ -258,7 +275,7 @@ def figura_iteraciones(seguimientos: dict[str, pd.DataFrame], metrica: str,
             notas.append("escala propia")
         if (metrica == "perdida_sin_ponderar" and "perdida_ponderada" in s
                 and bool(s["perdida_ponderada"].iloc[0])):
-            notas.append("clases balanceadas: probabilidades sin calibrar")
+            notas.append("clases balanceadas: sin calibrar")
         _panel_iteraciones(ax, s, metrica, nombre, ylabel, tasa,
                            limites if nombre in comun else None,
                            referencia if es_perdida else None, " · ".join(notas))
@@ -275,12 +292,17 @@ def figura_iteraciones(seguimientos: dict[str, pd.DataFrame], metrica: str,
             + escala)
     extra = [Line2D([], [], color=NEUTRO, lw=1, ls=(0, (4, 3)),
                     label="Iteraciones elegidas en la Fase 2")]
+    if metrica == "perdida_sin_ponderar" and any(
+            bool(t["perdida_ponderada"].iloc[0]) for t in seguimientos.values()
+            if "perdida_ponderada" in t):
+        extra.append(Line2D([], [], color=VALIDACION, lw=1.4, ls=(0, (3, 2)),
+                            label="Validación ponderada (lo que minimiza un modelo balanceado)"))
     if es_perdida and referencia is not None:
         extra.append(Line2D([], [], color=NEUTRO, lw=1, ls=":",
                             label=f"Sin modelo (todos con la tasa del entrenamiento): "
                                   f"{numero(referencia)}"))
     _leyenda(fig, extra)
-    _ajustar(fig)
+    _ajustar(fig, 0.42 if len(extra) <= 2 else 0.68)
     return fig
 
 
