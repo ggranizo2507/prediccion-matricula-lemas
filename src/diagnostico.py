@@ -565,6 +565,9 @@ def resumen_seguimiento(seguimiento: pd.DataFrame, umbrales: dict | None = None)
             > u["tolerancia_perdida"]),
         "por_optimizador": bool("unidad" in s and str(s["unidad"].iloc[0]).startswith(
             "iteración del optimizador")),
+        # True: la pérdida medida aquí usa pesos de clase (lo que minimiza el modelo)
+        "perdida_ponderada": bool("perdida_ponderada" in s
+                                  and bool(s["perdida_ponderada"].iloc[0])),
     }
     iteracion_fase2 = s["iteracion_fase2"].iloc[0] if "iteracion_fase2" in s else np.nan
     if pd.notna(iteracion_fase2):
@@ -1081,7 +1084,8 @@ def conclusiones(diagnostico: pd.DataFrame, resumenes: dict[str, dict],
         salida["controles" if fila.rol == "control" else "modelos"].append(frase)
 
     for nombre, r in resumenes.items():
-        frase = (f"{nombre}: la pérdida de validación es mínima en el paso "
+        tipo = "ponderada " if r.get("perdida_ponderada") else ""
+        frase = (f"{nombre}: la pérdida {tipo}de validación es mínima en el paso "
                  f"{r['iteracion_optima']} de {r['iteraciones']} "
                  f"({_n(r['perdida_validacion_minima'])}). ")
         if r["minimo_en_el_limite"] and r.get("por_optimizador"):
@@ -1098,8 +1102,11 @@ def conclusiones(diagnostico: pd.DataFrame, resumenes: dict[str, dict],
             frase += (f"Después cambia solo {_n(r['deterioro_perdida'], signo=True)}: la "
                       "validación se estanca, no se deteriora.")
         if "iteracion_fase2" in r:
-            frase += (f" La Fase 2 usó {r['iteracion_fase2']} iteraciones (pérdida de "
+            frase += (f" La Fase 2 usó {r['iteracion_fase2']} iteraciones (pérdida {tipo}de "
                       f"validación {_n(r['perdida_validacion_fase2'])}).")
+        if r.get("perdida_ponderada"):
+            frase += (" Es la pérdida que minimiza un modelo balanceado; la sin ponderar "
+                      "también refleja que sus probabilidades no están calibradas.")
         salida["curvas"].append(frase)
 
     fase2 = diagnostico[diagnostico["rol"] == "Fase 2"]
