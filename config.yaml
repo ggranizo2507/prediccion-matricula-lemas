@@ -176,6 +176,11 @@ diagnostico:
   cambio_minimo: 0.005
   fracciones_entrenamiento: [0.2, 0.36, 0.52, 0.68, 0.84, 1.0]
   repeticiones: 5         # submuestras por tamaño (banda de variación)
+  # Robustez de las estrategias (D54, fijado el 17-oct-2026 antes de repetir con datos reales).
+  # «Mejora» solo si: cambio >= cambio_minimo, IC 95 % bootstrap por familia sin el cero,
+  # réplica C2 -> C3 y todas las semillas en el mismo sentido. Si no, «sin diferencia demostrable».
+  semillas: [42, 7, 123, 2024, 9]
+  repeticiones_bootstrap: 2000
 
 # Calibrado con perfil_lemas.json (30-sep-2026): ~1500 estudiantes por año y tasa de
 # no matrícula de la población modelable ≈ 8 %. Solo totales agregados.

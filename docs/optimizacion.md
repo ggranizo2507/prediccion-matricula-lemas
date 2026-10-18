@@ -81,15 +81,17 @@ El análisis completo está en el cuaderno [`overfitting_analysis.ipynb`](../not
 | Componente | Qué se hizo | Código |
 |---|---|---|
 | Seguimiento de métricas | Pérdida y PR-AUC de entrenamiento y validación en cada iteración del gradient boosting y en cada iteración del optimizador de las regresiones logísticas; `learning_curve` y `validation_curve` de scikit-learn para los tres modelos | `src/diagnostico.py` |
-| Curvas de aprendizaje | A (pérdida) y B (PR-AUC) durante el entrenamiento; C por tamaño del entrenamiento; D por hiperparámetro. 300 DPI, con anotaciones | `src/graficos_diagnostico.py` |
-| Diagnóstico cuantitativo | Brecha relativa de PR-AUC (sobreajuste si supera 30 %) y mejora sobre el azar (subajuste si no llega a 1,5 veces). Umbrales en `config.yaml` | `diagnosticar`, `resumen_seguimiento` |
-| Estrategias con antes/después | Contra el sobreajuste: E1 regularización y menor complejidad, E2 parada temprana, E3 modelo más simple. Contra el subajuste: E4 ingeniería de variables, E5 menos regularización, E6 más entrenamiento. Un cambio de PR-AUC menor que 0,005 se informa como «sin cambio apreciable» | `evaluar_estrategias` |
+| Curvas de aprendizaje | A (pérdida sin ponderar, con escala común en los modelos de la Fase 2 y una referencia sin modelo) y B (PR-AUC) durante el entrenamiento; C por tamaño del entrenamiento; D por hiperparámetro (incluye el control sobrerregularizado). 300 DPI, con anotaciones | `src/graficos_diagnostico.py` |
+| Diagnóstico cuantitativo | Brecha relativa de PR-AUC (sobreajuste si supera 30 %) y mejora sobre el azar (subajuste si no llega a 1,5 veces). Segunda etapa (D54): un subajuste se nombra «subajuste (falta capacidad)» si con más capacidad la validación sube al menos 0,005, «subajuste (faltan datos)» si solo ayudan más datos y «límite de señal» si no ayuda ninguna de las dos. Umbrales en `config.yaml` | `diagnosticar`, `refinar_diagnostico`, `resumen_seguimiento` |
+| Estrategias con antes/después | Cada una cambia una sola cosa de un modelo de la Fase 2 que tiene el problema (D54). Contra el sobreajuste: E1 L2 ×10, E2 parada temprana, E3 árboles más pequeños. Contra el subajuste: E4a solo variables de D2, E4b solo hiperparámetros del híbrido, E5 menos regularización, E6 interacciones. Más una fila de referencia (control → Fase 2) y una contraprueba (más iteraciones). Veredicto con IC 95 % bootstrap por familia, réplica C2 → C3 y cinco semillas | `plan_estrategias`, `evaluar_estrategias`, `veredicto_estrategia` |
 
 Reglas del análisis: **C5 no interviene**, las particiones respetan el orden temporal y lo que una estrategia debe elegir (las iteraciones de la parada temprana) se decide en la validación interna, no en C4. Dos modelos de control, uno que sobreajusta y otro que subajusta, comprueban que las reglas reconocen los casos claros. Este análisis no cambia la decisión final (regla D2).
 
 Los umbrales son reglas prácticas, no pruebas estadísticas. Se fijaron el 02-oct-2026, antes de ejecutar el cuaderno con datos reales, pero cuando ya se conocían las PR-AUC de entrenamiento y de C4 de la Fase 2. Esta regla es más completa que la de la tabla de la sección 2 (brecha absoluta mayor que 0,10; entrenamiento menor que 0,15) y puede diferir de ella en casos límite.
 
 ### Resultados con datos reales (C2+C3 → C4)
+
+> **Primera versión (antes de D54).** Las tablas siguientes son de la ejecución del 02-oct-2026. Tras la calificación de la docente se separaron los dos tipos de subajuste, se rehicieron E1, E4 y E6 como comparaciones limpias y se añadió la regla de veredicto con bootstrap, réplica y semillas (D54). Esta sección se actualiza al repetir el cuaderno con datos reales.
 
 | Modelo | PR-AUC entrenamiento | PR-AUC C4 | Brecha relativa | Veces el azar en C4 | Lift@k | Diagnóstico |
 |---|---|---|---|---|---|---|

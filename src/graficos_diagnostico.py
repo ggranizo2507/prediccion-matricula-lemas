@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import MaxNLocator, ScalarFormatter
 
 from src.diagnostico import numero
 
@@ -161,8 +161,27 @@ def guardar(fig: Figure, ruta: Path, dpi: int = 300) -> Path:
 # --------------------------------------------------------------------------- #
 # A y B. Curvas durante el entrenamiento
 # --------------------------------------------------------------------------- #
+def _referencia_perdida(ax, valor: float | None) -> None:
+    """Pérdida de un modelo sin variables (predice a todos la tasa del entrenamiento)."""
+    if valor is None:
+        return
+    ax.axhline(valor, color=NEUTRO, lw=1, ls=":")     # el valor va en la leyenda
+
+
+def _limites_comunes(seguimientos: dict[str, pd.DataFrame], nombres: list[str],
+                     metrica: str, referencia: float | None) -> tuple[float, float]:
+    valores = [v for nombre in nombres for conjunto in ("entrenamiento", "validacion")
+               for v in seguimientos[nombre][f"{metrica}_{conjunto}"].to_numpy()]
+    if referencia is not None:
+        valores.append(referencia)
+    bajo, alto = float(np.nanmin(valores)), float(np.nanmax(valores))
+    margen = 0.22 * ((alto - bajo) or 0.01)
+    return bajo - margen, alto + margen
+
+
 def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: str,
-                       tasa: float | None) -> None:
+                       tasa: float | None, ylim: tuple[float, float] | None = None,
+                       referencia: float | None = None, nota: str = "") -> None:
     x = s["iteracion"].to_numpy(dtype=float)
     tr = s[f"{metrica}_entrenamiento"].to_numpy()
     val = s[f"{metrica}_validacion"].to_numpy()
@@ -174,11 +193,16 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
     if unidad.startswith("iteración del optimizador") and x[-1] > 20:
         ax.set_xscale("log")
         unidad += ", escala log"
+    es_perdida = metrica.startswith("perdida")
     # Brecha con signo: positiva cuando la validación es peor que el entrenamiento
-    brecha = val[-1] - tr[-1] if metrica == "perdida" else tr[-1] - val[-1]
-    _estilo(ax, f"{nombre}\nbrecha al final: {numero(brecha, signo=True)}",
+    brecha = val[-1] - tr[-1] if es_perdida else tr[-1] - val[-1]
+    _estilo(ax, f"{nombre}\n{nota + chr(10) if nota else ''}brecha al final: "
+            f"{numero(brecha, signo=True)}",
             unidad[0].upper() + unidad[1:], ylabel)
-    ax.margins(y=0.22)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+    else:
+        ax.margins(y=0.22)
 
     fase2 = s["iteracion_fase2"].iloc[0] if "iteracion_fase2" in s else np.nan
     curvas = [(x, tr), (x, val)]
@@ -188,10 +212,13 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
     if metrica == "puntaje" and tasa is not None:
         _azar(ax, tasa, val)
         curvas.append((x, np.full(len(x), tasa)))
+    if es_perdida and referencia is not None:
+        _referencia_perdida(ax, referencia)
+        curvas.append((x, np.full(len(x), referencia)))
     _brecha(ax, x[-1], tr[-1], val[-1])
 
-    critico = int(np.argmin(val) if metrica == "perdida" else np.argmax(val))
-    etiqueta = "mínimo" if metrica == "perdida" else "máximo"
+    critico = int(np.argmin(val) if es_perdida else np.argmax(val))
+    etiqueta = "mínimo" if es_perdida else "máximo"
     ax.scatter([x[critico]], [val[critico]], s=70, color=VALIDACION, edgecolor="white",
                linewidth=2, zorder=5)
     _nota(ax, f"{etiqueta} de validación\niteración {int(x[critico])}: {numero(val[critico])}",
@@ -200,29 +227,59 @@ def _panel_iteraciones(ax, s: pd.DataFrame, metrica: str, nombre: str, ylabel: s
 
 def figura_iteraciones(seguimientos: dict[str, pd.DataFrame], metrica: str,
                        etiqueta_tr: str, etiqueta_val: str, tasa: float | None = None,
-                       columnas: int = 2) -> Figure:
-    """Curva A (metrica="perdida") o B (metrica="puntaje"): un panel por modelo.
+                       columnas: int = 2, comun: list[str] | None = None,
+                       referencia: float | None = None) -> Figure:
+    """Curva A (metrica="perdida_sin_ponderar" o "perdida") o B ("puntaje").
 
-    Cada panel tiene su propia escala vertical: el modelo de control se aleja tanto que,
-    con una escala común, las curvas de los modelos de la Fase 2 quedarían aplastadas."""
+    Un panel por modelo. Los modelos de `comun` comparten la escala vertical, para que se
+    puedan comparar a simple vista; los demás (el control, que se aleja mucho) usan su
+    propia escala y lo dicen en el título. Sin `comun`, cada panel tiene su escala.
+    `referencia` dibuja la pérdida de validación de un modelo sin variables.
+
+    La pérdida sin ponderar es la única comparable entre modelos. Aun así, los modelos
+    entrenados con clases balanceadas dan probabilidades infladas (sin calibrar) y por
+    eso tienen una pérdida mayor: el título del panel lo indica."""
     n = len(seguimientos)
     columnas = min(columnas, n)
     filas = int(np.ceil(n / columnas))
     fig, ejes = plt.subplots(filas, columnas, figsize=(4.9 * columnas, 3.7 * filas + 1.2),
                              squeeze=False)
-    ylabel = ("Pérdida (entropía cruzada; menor es mejor)" if metrica == "perdida"
-              else "PR-AUC (mayor es mejor)")
+    es_perdida = metrica.startswith("perdida")
+    ylabel = {"perdida": "Pérdida ponderada (entropía cruzada; menor es mejor)",
+              "perdida_sin_ponderar": "Pérdida sin ponderar (entropía cruzada; menor es mejor)",
+              }.get(metrica, "PR-AUC (mayor es mejor)")
+    comun = [nombre for nombre in (comun or []) if nombre in seguimientos]
+    limites = (_limites_comunes(seguimientos, comun, metrica,
+                                referencia if es_perdida else None) if comun else None)
     planos = list(ejes.ravel())
     for ax, (nombre, s) in zip(planos, seguimientos.items(), strict=False):
-        _panel_iteraciones(ax, s, metrica, nombre, ylabel, tasa)
+        notas = []
+        if comun and nombre not in comun:
+            notas.append("escala propia")
+        if (metrica == "perdida_sin_ponderar" and "perdida_ponderada" in s
+                and bool(s["perdida_ponderada"].iloc[0])):
+            notas.append("clases balanceadas: probabilidades sin calibrar")
+        _panel_iteraciones(ax, s, metrica, nombre, ylabel, tasa,
+                           limites if nombre in comun else None,
+                           referencia if es_perdida else None, " · ".join(notas))
     for ax in planos[n:]:
         ax.set_visible(False)
-    letra, que = ("A", "Pérdida") if metrica == "perdida" else ("B", "PR-AUC")
+    letra, que = ("A", "Pérdida") if es_perdida else ("B", "PR-AUC")
+    if comun:
+        escala = ("escala común en los modelos de la Fase 2; el control usa la suya"
+                  if len(comun) < n else "escala común en todos los paneles")
+    else:
+        escala = "cada panel tiene su propia escala: no se comparan alturas entre paneles"
     _titulo(fig, f"{letra}. {que} de entrenamiento y de validación durante el entrenamiento",
             f"Entrenamiento: {etiqueta_tr} · Validación: {etiqueta_val} · C5 no interviene · "
-            "cada panel tiene su propia escala")
-    _leyenda(fig, [Line2D([], [], color=NEUTRO, lw=1, ls=(0, (4, 3)),
-                          label="Iteraciones elegidas en la Fase 2")])
+            + escala)
+    extra = [Line2D([], [], color=NEUTRO, lw=1, ls=(0, (4, 3)),
+                    label="Iteraciones elegidas en la Fase 2")]
+    if es_perdida and referencia is not None:
+        extra.append(Line2D([], [], color=NEUTRO, lw=1, ls=":",
+                            label=f"Sin modelo (todos con la tasa del entrenamiento): "
+                                  f"{numero(referencia)}"))
+    _leyenda(fig, extra)
     _ajustar(fig)
     return fig
 
@@ -317,7 +374,7 @@ def figura_hiperparametros(curvas: pd.DataFrame, etiqueta_tr: str, etiqueta_val:
             f"Entrenamiento: {etiqueta_tr} · Validación: {etiqueta_val} · "
             "los demás hiperparámetros, como en la Fase 2")
     _leyenda(fig, [Line2D([], [], color=NEUTRO, lw=1, ls=(0, (4, 3)),
-                          label="Valor elegido en la Fase 2")])
+                          label="Valor del modelo (Fase 2; en el control, su valor fijo)")])
     _ajustar(fig)
     return fig
 
@@ -325,63 +382,119 @@ def figura_hiperparametros(curvas: pd.DataFrame, etiqueta_tr: str, etiqueta_val:
 # --------------------------------------------------------------------------- #
 # Estrategias: antes y después
 # --------------------------------------------------------------------------- #
+def _etiqueta_estrategia(fila) -> str:
+    tipo = getattr(fila, "tipo_fila", "estrategia")
+    nombre = fila.estrategia
+    if len(nombre) > 34 and " (" in nombre:            # «E4a · … (solo variables)»
+        nombre = nombre.replace(" (", "\n(", 1)
+    if tipo == "estrategia":
+        return f"{nombre}\n[contra el {fila.problema}]"
+    return nombre.replace(" · ", "\n", 1)          # «Referencia» o «Contraprueba» ya lo dicen
+
+
+def _panel_diferencias(ax, e: pd.DataFrame, etiqueta_val: str) -> None:
+    """Diferencia de PR-AUC (después − antes) con su IC 95 % y la réplica."""
+    y = np.arange(len(e))
+    cambio = e["cambio_puntaje_validacion"].to_numpy(dtype=float)
+    inferior = e["ic_inferior"].to_numpy(dtype=float)
+    superior = e["ic_superior"].to_numpy(dtype=float)
+    replica = e["cambio_replica"].to_numpy(dtype=float)
+    con_ic = ~np.isnan(inferior)
+    ax.axvline(0, color=NEUTRO, lw=1)
+    ax.hlines(y[con_ic], inferior[con_ic], superior[con_ic], color=VALIDACION, lw=2,
+              alpha=0.55, zorder=2)
+    ax.scatter(cambio, y, s=40, color=VALIDACION, edgecolor="white", linewidth=1, zorder=4)
+    ax.scatter(replica, y - 0.28, s=34, marker="D", color="white", edgecolor=ENTRENAMIENTO,
+               linewidth=1.5, zorder=3)
+    for fila, valor in zip(y, cambio, strict=True):
+        ax.text(valor, fila + 0.24, numero(valor, signo=True), fontsize=8, color=TINTA,
+                ha="center")
+    extremos = np.concatenate([cambio, replica, inferior[con_ic], superior[con_ic]])
+    alto = float(np.nanmax(np.abs(extremos))) or 0.01
+    ax.set_xlim(-1.18 * alto, 1.18 * alto)
+    ax.xaxis.set_major_locator(MaxNLocator(nbins=4, symmetric=True))
+    _estilo(ax, "Diferencia de PR-AUC (después − antes)",
+            f"{etiqueta_val} con IC 95 % bootstrap · ◇ réplica C2 → C3", "")
+
+
 def figura_estrategias(estrategias: pd.DataFrame, etiqueta_val: str) -> Figure:
-    """Un panel por medida, con la misma lista de estrategias: PR-AUC de validación,
-    brecha y, si se calculó, Lift@k (la métrica principal del proyecto).
+    """Un panel por medida, con la misma lista de estrategias: PR-AUC de validación antes
+    y después, la diferencia con su IC 95 % y la réplica (si se calcularon), la brecha y,
+    si se calculó, Lift@k (la métrica principal del proyecto).
 
     El panel de la brecha usa una escala comprimida (lineal hasta ±0,05 y logarítmica
-    después), para que una brecha muy grande no aplaste a las demás."""
+    después), para que una brecha muy grande no aplaste a las demás. Las filas de
+    referencia y de contraprueba quedan abajo, separadas por una línea."""
     e = estrategias.iloc[::-1].reset_index(drop=True)   # E1 arriba
-    etiquetas = [f"{fila.estrategia}\n(contra el {fila.problema})" for fila in e.itertuples()]
+    etiquetas = [_etiqueta_estrategia(fila) for fila in e.itertuples()]
     paneles = [("puntaje_validacion", f"PR-AUC en validación ({etiqueta_val})",
-                "mayor es mejor · eje recortado"),
-               ("brecha", "Brecha entrenamiento − validación",
-                "más cerca de cero es mejor · escala comprimida")]
+                "mayor es mejor · eje recortado")]
+    if "ic_inferior" in e:
+        paneles.append(("diferencia", "", ""))
+    paneles.append(("brecha", "Brecha entrenamiento − validación",
+                    "más cerca de cero es mejor · escala comprimida"))
     if "lift_k_validacion_antes" in e:
         paneles.append(("lift_k_validacion", f"Lift@k por familia ({etiqueta_val})",
                         "métrica principal · mayor es mejor"))
     fig, ejes = plt.subplots(1, len(paneles), sharey=True, squeeze=False,
-                             figsize=(3.1 * len(paneles) + 3.0, 0.9 * len(e) + 2.5))
+                             figsize=(3.1 * len(paneles) + 3.4, 0.95 * len(e) + 2.6))
+    separador = None
+    if "tipo_fila" in e:
+        extra = np.flatnonzero(e["tipo_fila"].to_numpy() != "estrategia")
+        if len(extra) and len(extra) < len(e):
+            separador = extra.max() + 0.5
     for ax, (columna, titulo, lectura) in zip(ejes[0], paneles, strict=True):
-        antes, despues = e[f"{columna}_antes"], e[f"{columna}_despues"]
-        decimales = 2 if columna == "lift_k_validacion" else 3
-        valores = pd.concat([antes, despues])
-        if columna == "brecha":
-            ax.set_xscale("symlog", linthresh=0.05, linscale=1.5)
-            ax.set_xlim(min(-0.02, valores.min() * 1.6), max(0.08, valores.max() * 1.6))
-            marcas = [m for m in (-0.05, 0, 0.05, 0.2, 1.0)
-                      if ax.get_xlim()[0] <= m <= ax.get_xlim()[1]]
-            ax.set_xticks(marcas, [f"{m:g}".replace(".", ",") for m in marcas])
-            ax.minorticks_off()
-            ax.axvline(0, color=NEUTRO, lw=1)
+        if columna == "diferencia":
+            _panel_diferencias(ax, e, etiqueta_val)
         else:
-            margen = 0.16 * ((valores.max() - valores.min()) or 0.01)
-            ax.set_xlim(valores.min() - margen, valores.max() + margen)
-            if columna == "lift_k_validacion" and ax.get_xlim()[0] < 1:
-                ax.axvline(1, color=NEUTRO, lw=1)
-        for y, (a, d) in enumerate(zip(antes, despues, strict=True)):
-            if abs(d - a) > 1e-9:
-                ax.annotate("", xy=(d, y), xytext=(a, y), zorder=2,
-                            arrowprops={"arrowstyle": "-|>", "color": NEUTRO, "lw": 1.5})
-            ax.text(d, y + 0.24, numero(d, decimales), fontsize=8, color=TINTA, ha="center")
-            ax.text(a, y - 0.3, numero(a, decimales), fontsize=8, color=TINTA_SUAVE,
-                    ha="center", va="top")
-        ax.scatter(antes, range(len(e)), s=70, color="white", edgecolor=NEUTRO,
-                   linewidth=2, zorder=3)
-        ax.scatter(despues, range(len(e)), s=34, color=VALIDACION, edgecolor="white",
-                   linewidth=1, zorder=4)
-        _estilo(ax, titulo, lectura, "")
+            antes, despues = e[f"{columna}_antes"], e[f"{columna}_despues"]
+            decimales = 2 if columna == "lift_k_validacion" else 3
+            valores = pd.concat([antes, despues])
+            if columna == "brecha":
+                ax.set_xscale("symlog", linthresh=0.05, linscale=1.5)
+                ax.set_xlim(min(-0.02, valores.min() * 1.6), max(0.08, valores.max() * 1.6))
+                marcas = [m for m in (-0.05, 0, 0.05, 0.2, 1.0)
+                          if ax.get_xlim()[0] <= m <= ax.get_xlim()[1]]
+                ax.set_xticks(marcas, [f"{m:g}".replace(".", ",") for m in marcas])
+                ax.minorticks_off()
+                ax.axvline(0, color=NEUTRO, lw=1)
+            else:
+                margen = 0.16 * ((valores.max() - valores.min()) or 0.01)
+                ax.set_xlim(valores.min() - margen, valores.max() + margen)
+                if columna == "lift_k_validacion" and ax.get_xlim()[0] < 1:
+                    ax.axvline(1, color=NEUTRO, lw=1)
+            for y, (a, d) in enumerate(zip(antes, despues, strict=True)):
+                if abs(d - a) > 1e-9:
+                    ax.annotate("", xy=(d, y), xytext=(a, y), zorder=2,
+                                arrowprops={"arrowstyle": "-|>", "color": NEUTRO, "lw": 1.5})
+                ax.text(d, y + 0.24, numero(d, decimales), fontsize=8, color=TINTA,
+                        ha="center")
+                ax.text(a, y - 0.3, numero(a, decimales), fontsize=8, color=TINTA_SUAVE,
+                        ha="center", va="top")
+            ax.scatter(antes, range(len(e)), s=70, color="white", edgecolor=NEUTRO,
+                       linewidth=2, zorder=3)
+            ax.scatter(despues, range(len(e)), s=34, color=VALIDACION, edgecolor="white",
+                       linewidth=1, zorder=4)
+            _estilo(ax, titulo, lectura, "")
+        if separador is not None:
+            ax.axhline(separador, color=TINTA_SUAVE, lw=0.8, ls=(0, (2, 2)))
         ax.set_yticks(range(len(e)), etiquetas, fontsize=8.5, color=TINTA)
         ax.set_ylim(-0.75, len(e) - 0.35)
     _titulo(fig, "Estrategias de mejora: antes y después",
-            "Cada flecha va del modelo de partida al modelo con la estrategia · "
-            "C5 no interviene")
-    fig.legend(handles=[
-        Line2D([], [], marker="o", ls="", ms=8, markerfacecolor="white",
-               markeredgecolor=NEUTRO, markeredgewidth=2, label="Antes"),
-        Line2D([], [], marker="o", ls="", ms=6, markerfacecolor=VALIDACION,
-               markeredgecolor="white", label="Después")],
-        loc="lower center", ncol=2, frameon=False, fontsize=9, labelcolor=TINTA,
-        bbox_to_anchor=(0.5, 0.0))
+            "Cada estrategia cambia una sola cosa del modelo de partida · las flechas van de "
+            "antes a después · C5 no interviene")
+    claves = [Line2D([], [], marker="o", ls="", ms=8, markerfacecolor="white",
+                     markeredgecolor=NEUTRO, markeredgewidth=2, label="Antes"),
+              Line2D([], [], marker="o", ls="", ms=6, markerfacecolor=VALIDACION,
+                     markeredgecolor="white", label="Después")]
+    if "ic_inferior" in e:
+        claves += [Line2D([], [], color=VALIDACION, lw=2, alpha=0.55, marker="o", ms=6,
+                          markerfacecolor=VALIDACION, markeredgecolor="white",
+                          label=f"Diferencia en {etiqueta_val} e IC 95 % (familias)"),
+                   Line2D([], [], marker="D", ls="", ms=6, markerfacecolor="white",
+                          markeredgecolor=ENTRENAMIENTO, markeredgewidth=1.5,
+                          label="Diferencia en la réplica C2 → C3")]
+    fig.legend(handles=claves, loc="lower center", ncol=len(claves), frameon=False,
+               fontsize=9, labelcolor=TINTA, bbox_to_anchor=(0.5, 0.0))
     _ajustar(fig)
     return fig
