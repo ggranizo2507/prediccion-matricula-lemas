@@ -80,6 +80,9 @@ Están bien calibradas en promedio (Brier 0,0648), pero empatan con usar la tasa
 **22. ¿Qué es lo que el sistema no puede detectar?**
 La lista no alcanza a cerca del 70 % de los casos: encontró 22 de 74. Tenía 165 cupos, más que casos, así que el límite es de señal y no de capacidad. No sabemos por qué no continúan esas familias, porque no tenemos datos de motivos. Sí sabemos que no es un problema de retrasos: en C2 a C4, el 86 % de los casos no registra ningún pago, y a esas familias la regla las encuentra peor (24 %) que a las que pagan tarde o en parte (43 %). Lo analizamos con C2 a C4, sin tocar C5: tres de cada cuatro familias pagan en las primeras cuatro semanas, y hacia el día 35 quedan unas 200 pendientes por año, de las que el 44 % son casos. La mejora no viene de un modelo mejor, sino de una segunda etapa a mitad de campaña con quienes siguen sin pagar. Es una propuesta para 2027, sin validar (`docs/alcance_lista.md`). La aplicación ya lista a esas familias en la pestaña *Seguimiento*; es un listado de pagos, no una predicción.
 
+**22 bis. ¿Por qué no eligieron el umbral que minimiza el costo esperado?**
+Porque el número de llamadas lo fija la capacidad del personal. Una llamada de más cuesta minutos; un estudiante perdido, un año de pensiones. Con esa diferencia, el umbral de costo mínimo pediría llamar a más familias de las que se pueden atender, así que minimizar el costo con k llamadas es encontrar el mayor número de casos: eso mide Lift@k. Lo cuantificamos sin montos reales con la razón de equilibrio: si una llamada rescata al 10 % de los casos, en C5 la lista compensa si un caso vale más de 75 llamadas, frente a 148 al azar. Y la capacidad extra rinde más en una segunda llamada a quienes siguen sin pagar en la semana 5 (38 % son casos) que alargando la lista inicial (10 %, casi como al azar). Detalle en [evaluacion_robusta.md](evaluacion_robusta.md) §3.
+
 ## F. Ética y aplicación
 
 **23. ¿Qué sesgos encontraron?**

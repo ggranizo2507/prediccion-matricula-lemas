@@ -131,7 +131,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `data/` | `raw/` y `processed/` (vacías en el repositorio público) y `synthetic/` con la base artificial |
 | `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (entrena, optimiza, calibra y evalúa una vez en C5), 04 optimización y 05 evaluación (análisis de resultados guardados), listos para Colab |
 | `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `modeling` (entrenamiento, Optuna, calibración, evaluación), `inferencia` (lógica de la app), `synthetic` y `utils` |
-| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS) |
+| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS); reporte de diagnóstico y costo esperado (`generar_costo.py`), que solo leen tablas agregadas de `results/metrics` |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
 | `tests/` | 179 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
@@ -142,13 +142,13 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D53 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D56 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
 | [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
-| [`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) | Por qué validación temporal y no validación cruzada aleatoria; qué técnicas de incertidumbre y comparación aplicamos y cuáles no |
+| [`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) | Por qué validación temporal y no validación cruzada aleatoria; qué técnicas de incertidumbre y comparación aplicamos y cuáles no; costo esperado y razón de equilibrio de las llamadas |
 | [`docs/alcance_lista.md`](docs/alcance_lista.md) | El 70 % que la lista no encuentra: crítica del diseño, método de análisis y decisiones que puede informar |
 | [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) | Principios y dilemas, sesgos, equidad, privacidad, explicabilidad, impacto social, responsabilidad, mal uso y cumplimiento normativo |
 | [`docs/ficha_modelo.md`](docs/ficha_modelo.md) | Ficha del modelo (*model card*): uso previsto, métricas, resultados por grupo y límites |

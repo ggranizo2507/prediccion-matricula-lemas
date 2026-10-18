@@ -1,0 +1,81 @@
+{
+  "fuente": "sintetica",
+  "cohorte": "C4",
+  "semana_segunda_llamada": 5,
+  "supuestos": {
+    "eficacias": [
+      0.1,
+      0.25
+    ],
+    "razones_cFN_cFP": [
+      50,
+      100,
+      200
+    ],
+    "unidad": "llamadas (cFP = 1)"
+  },
+  "mejor_tamano": [
+    {
+      "eficacia": 0.1,
+      "razon": 50,
+      "multiplicador": "0.5",
+      "contactos": 95,
+      "pct_familias": 0.0921,
+      "beneficio_lista": -35.0,
+      "compensa": false
+    },
+    {
+      "eficacia": 0.1,
+      "razon": 100,
+      "multiplicador": "1.5",
+      "contactos": 283,
+      "pct_familias": 0.2745,
+      "beneficio_lista": 77.0,
+      "compensa": true
+    },
+    {
+      "eficacia": 0.1,
+      "razon": 200,
+      "multiplicador": "todas",
+      "contactos": 1031,
+      "pct_familias": 1.0,
+      "beneficio_lista": 929.0,
+      "compensa": true
+    },
+    {
+      "eficacia": 0.25,
+      "razon": 50,
+      "multiplicador": "4.0",
+      "contactos": 752,
+      "pct_familias": 0.7294,
+      "beneficio_lista": 223.0,
+      "compensa": true
+    },
+    {
+      "eficacia": 0.25,
+      "razon": 100,
+      "multiplicador": "todas",
+      "contactos": 1031,
+      "pct_familias": 1.0,
+      "beneficio_lista": 1419.0,
+      "compensa": true
+    },
+    {
+      "eficacia": 0.25,
+      "razon": 200,
+      "multiplicador": "todas",
+      "contactos": 1031,
+      "pct_familias": 1.0,
+      "beneficio_lista": 3869.0,
+      "compensa": true
+    }
+  ],
+  "conclusiones": [
+    "Si una llamada rescata al 10 % de los casos, llamar al azar compensa cuando un estudiante perdido vale más de 105 llamadas; con la lista D2 basta con que valga más de 99.",
+    "En la prueba final (C5) la misma cuenta da 125 al azar y 99 con la lista: la lista divide por 1,3 lo que debe valer un caso para que las llamadas compensen.",
+    "En la primera mitad de la lista la proporción de casos es 13 %; si se alarga de k a 2k, las familias nuevas tienen 12 % de casos, casi lo mismo que al azar (10 %).",
+    "Llamar a quienes siguen sin pagar en la semana 5 tiene 50 % de casos: la capacidad extra rinde más en una segunda llamada que alargando la lista inicial, aunque con menos días de margen.",
+    "Cada tramo que se añade después de k compensa solo si un caso vale más de 56 a 186 llamadas (eficacia de 10 %). Cuánto vale un caso lo decide la institución: el análisis solo dice a partir de qué valor conviene cada tamaño de lista.",
+    "Tamaño de lista con mayor beneficio, según cuánto vale un caso: 50 llamadas → 9 % de las familias; 100 llamadas → 27 % de las familias; 200 llamadas → 100 % de las familias."
+  ]
+}

@@ -1,6 +1,6 @@
 # Evaluación robusta: validación, incertidumbre y comparación de sistemas
 
-Este documento explica cómo validamos los modelos y por qué no usamos la validación cruzada aleatoria. También dice qué técnicas de evaluación robusta aplicamos, cuáles no y por qué. No contiene resultados nuevos: describe el método con el que se obtuvieron los que ya están en [modelado.md](modelado.md), [optimizacion.md](optimizacion.md), [alcance_lista.md](alcance_lista.md) y el [reporte de diagnóstico](diagnostic_report.pdf). La decisión de documentarlo está registrada como D55 en [planificacion.md](planificacion.md).
+Este documento explica cómo validamos los modelos y por qué no usamos la validación cruzada aleatoria. También dice qué técnicas de evaluación robusta aplicamos, cuáles no y por qué. Las secciones 1 y 2 describen el método con el que se obtuvieron los resultados que ya están en [modelado.md](modelado.md), [optimizacion.md](optimizacion.md), [alcance_lista.md](alcance_lista.md) y el [reporte de diagnóstico](diagnostic_report.pdf) (D55). La sección 3 añade la métrica de negocio del costo esperado, calculada solo con conteos ya publicados (D56). Ambas decisiones están en [planificacion.md](planificacion.md).
 
 ## 1. Por qué validación temporal y no validación cruzada aleatoria
 
@@ -41,17 +41,50 @@ C1 quedó fuera por la auditoría de comparabilidad de la Fase 1. Las cohortes s
 
 Con 122 eventos en C4, ninguna de las siete estrategias cumplió las cuatro.
 
-## 3. Limitaciones
+## 3. Métrica de negocio: costo esperado
+
+En problemas de negocio y riesgo se recomienda elegir el umbral que minimiza el **costo esperado**, FP × cFP + FN × cFN, y no el que maximiza la exactitud. Aquí la exactitud sería engañosa: en C5, decir «todas se matriculan» acierta el 93 % (1.019 de 1.093 familias) sin encontrar ningún caso, y la lista D2 acierta el 82 % (898). Por eso reportamos Lift@k, Precision@k, Recall@k y PR-AUC, y no exactitud ni F1.
+
+**Por qué el umbral lo fija la capacidad.** Una llamada de más (cFP) cuesta minutos del personal y una molestia pequeña para la familia. Un estudiante que no continúa (cFN) cuesta un año de pensiones y la continuidad del niño. Como cFN es mucho mayor que cFP, el umbral de costo mínimo pediría llamar a más familias de las que el personal puede atender. Con la capacidad k como restricción, minimizar el costo equivale a encontrar el mayor número de casos con k llamadas, que es lo que mide Lift@k. Es el argumento formal de la métrica principal.
+
+**Cómo lo adaptamos.** Una llamada no rescata todos los casos: solo una fracción, la *eficacia*, que no conocemos y que mediría un piloto controlado en 2027, con una parte de las familias elegida al azar y atendida como siempre ([consideraciones_eticas.md](consideraciones_eticas.md), seguimiento). Medimos todo en llamadas (cFP = 1) y con la razón R = cFN / cFP, sin montos reales:
+
+- beneficio neto de k llamadas = eficacia × R × aciertos − k;
+- llamar compensa si precisión × eficacia × R > 1, es decir, si R supera la **razón de equilibrio** R* = 1 / (precisión × eficacia). Cuanto menor es R*, más fácil es que las llamadas compensen.
+
+**Resultados** (`tools/generar_costo.py`, `src/costo.py`). Son aritmética sobre las tablas `alcance_por_k_real.csv` y `alcance_semanal_real.csv` (C2–C4) y la precisión de D2 en C5 ya publicada (D41). **C5 no se vuelve a evaluar.**
+
+| Escenario | Cohorte | Proporción de casos | R* con eficacia 10 % | R* con eficacia 25 % |
+|---|---|---|---|---|
+| Llamar al azar a k familias | C4 | 9,1 % | 110 | 44 |
+| Primera mitad de la lista D2 (k/2) | C4 | 24,1 % | 41 | 17 |
+| Lista D2 completa (k) | C4 | 17,6 % | 57 | 23 |
+| Alargar la lista de k a 2k (familias nuevas) | C4 | 9,7 % | 103 | 41 |
+| Llamar a quienes siguen sin pagar en la semana 5 | C2–C4 | 37,6 % | 27 | 11 |
+| Lista D2 completa (k), prueba final | C5 | 13,3 % | 75 | 30 |
+| Llamar al azar, prueba final | C5 | 6,8 % | 148 | 59 |
+
+Lectura:
+
+1. **La lista reduce a la mitad lo que debe valer un caso para que llamar compense:** de 110 a 57 en C4 y de 148 a 75 en C5. Si una llamada rescata al 10 % de los casos y un estudiante perdido vale más de 75 llamadas, la lista compensa. Con 15 minutos por llamada, eso son unas 19 horas de personal por estudiante.
+2. **El valor de la lista está al principio.** La primera mitad tiene 24 % de casos. Las familias que se añaden al alargarla de k a 2k tienen 9,7 %, casi lo mismo que al azar (9,1 %). Las tres cohortes juntas dan lo mismo: el tramo de k a 2k necesita R mayor que 99 a 112, y el último tramo (de 4k a todas las familias), mayor que 160 (`costo_marginal_real.csv`).
+3. **La capacidad extra rinde más en una segunda llamada.** Entre quienes siguen sin pagar en la semana 5 el 38 % son casos (R* = 27), contra 9,7 % si se alarga la lista inicial. Es la campaña en dos etapas de D50, con una salvedad: quedan menos días de margen (41) y la eficacia de una llamada tardía puede ser distinta. Sigue sin validar.
+4. **Cuánto vale un caso lo decide la institución.** Con eficacia del 10 %, el tamaño de lista con mayor beneficio en C4 es k/2 si un caso vale 50 llamadas, k si vale 100 y todas las familias si vale 200 (figura `results/figures/real_28_costo_esperado.png`). El análisis no fija k: dice a partir de qué valor conviene cada tamaño.
+
+**Límites.** La eficacia y la razón R son supuestos. La precisión por tramos de C4 se apoya en pocos casos (de 7 a 23 por tramo), y las cifras de C2–C4 describen, no validan: son las cohortes con las que se eligió la regla. El costo de una llamada a una familia que sí iba a pagar no es solo tiempo: si la llamada se percibe como cobranza, daña la relación. Por eso el protocolo de apoyo de [consideraciones_eticas.md](consideraciones_eticas.md) es parte del cálculo.
+
+## 4. Limitaciones
 
 - **No hay intervalo de la diferencia entre sistemas en C5.** Tenemos el intervalo de cada sistema por separado (D2: 1,97 [1,24; 2,56]; logística híbrida: 0,98 [0,47; 1,52]), pero no el de la diferencia D2 − híbrida. No lo calculamos ahora porque obligaría a volver a usar C5, que se evaluó una sola vez, y no cambiaría la decisión: la elección de D2 se tomó en C4.
 - **Pocas particiones independientes.** Solo hay cuatro cohortes comparables, y C4 y C3 ya intervinieron en decisiones (selección y optimización). La réplica C2 → C3 favorece al modelo que Optuna afinó ahí.
 - **El bootstrap mide la variación entre familias de una misma cohorte**, no el cambio entre años. La variación entre años se ve en el Lift de D2 por cohorte (de 1,4 a 2,0).
 - **Pocos eventos por grupo.** Los resultados por sede, beca o nivel tienen intervalos amplios ([ficha_modelo.md](ficha_modelo.md) §6).
 
-## 4. Qué haríamos con la cohorte de 2027
+## 5. Qué haríamos con la cohorte de 2027
 
 La cohorte que cierre en mayo de 2027 no habrá participado en ninguna decisión. Con ella proponemos:
 
 - evaluar la regla D2 y la logística híbrida con el mismo protocolo, incluyendo el **IC bootstrap pareado de la diferencia** registrado antes de mirar los resultados;
 - añadir la cohorte a la ventana de validación temporal (C2 … C5 → C6), para tener una partición más y medir mejor la variación entre años;
-- aplicar la regla de veredicto de la sección 2 a las estrategias E4a y E4b, que fueron las que más se acercaron.
+- aplicar la regla de veredicto de la sección 2 a las estrategias E4a y E4b, que fueron las que más se acercaron;
+- medir la **eficacia** de la llamada con ese grupo de comparación para reemplazar el supuesto de la sección 3 y recalcular el tamaño de lista que conviene.

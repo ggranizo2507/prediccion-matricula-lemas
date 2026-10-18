@@ -42,6 +42,7 @@ Resumen de una página del sistema de priorización, con el formato de las ficha
 - **Brier** para las probabilidades y **MAPE** para la proyección por sede y subnivel.
 - Intervalos de confianza del 95 % con 2.000 réplicas bootstrap por representante.
 - Validación temporal por cohortes, no validación cruzada aleatoria: ver [evaluacion_robusta.md](evaluacion_robusta.md).
+- No se usan exactitud ni F1: con 6,8 % de casos, decir «todas se matriculan» acierta el 93 %. El número de llamadas lo fija la capacidad, no un umbral; el **costo esperado** se analiza con la razón de equilibrio cFN / cFP: con una eficacia supuesta de la llamada del 10 %, la lista compensa si un caso vale más de 75 llamadas, frente a 148 al azar (C5, conteos ya publicados; [evaluacion_robusta.md](evaluacion_robusta.md) §3).
 
 ## 5. Datos
 

@@ -31,6 +31,7 @@ flowchart LR
 | `src/modeling.py` | Candidatos, optimización con Optuna, selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
 | `src/diagnostico.py` · `src/graficos_diagnostico.py` | Actividad de la semana 3: seguimiento de métricas por iteración, curvas de aprendizaje de scikit-learn, diagnóstico cuantitativo de sobreajuste y subajuste (con la segunda etapa de D54), estrategias de un solo cambio con bootstrap, réplica y semillas, y sus figuras |
 | `src/alcance.py` · `src/graficos_alcance.py` | Análisis descriptivo del alcance de la lista (D50): desglose del evento, alcance según k y lista semanal frente a lista fija. No usa C5 ni cambia el sistema |
+| `src/costo.py` · `src/graficos_costo.py` · `tools/generar_costo.py` | Costo esperado de las llamadas (D56): razón de equilibrio cFN / cFP por escenario, precisión por tramo de la lista y beneficio neto según k. Solo usa tablas agregadas ya publicadas; no vuelve a evaluar C5 |
 | `src/inferencia.py` | Lógica de la aplicación (validación, población del ciclo, puntuación, lista, proyección y formulario), separada de Streamlit para poder probarla |
 | `src/institucional.py` | Modo institucional (D45): seudonimiza el Excel en memoria, verifica que no queden identificadores, arma el acta y construye la lista con nombres. Comprueba que la app se use en el mismo equipo |
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
