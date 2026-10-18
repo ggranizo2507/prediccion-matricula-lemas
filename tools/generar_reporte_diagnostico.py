@@ -156,11 +156,21 @@ def _lista(nombres: list[str]) -> str:
 # --------------------------------------------------------------------------- #
 # Frases calculadas con los resultados
 # --------------------------------------------------------------------------- #
+ESTADOS = ("sobreajuste", "subajuste (falta capacidad)", "subajuste (faltan datos)",
+           "límite de señal", "subajuste", "ajuste adecuado", "indeterminado")
+
+
+def _columna_diagnostico(diag: pd.DataFrame) -> str:
+    """La etiqueta de la segunda etapa si existe (D54); si no, la de la primera."""
+    return "diagnostico_detallado" if "diagnostico_detallado" in diag else "diagnostico"
+
+
 def _por_diagnostico(diag: pd.DataFrame) -> str:
     fase2 = diag[diag["rol"] == "Fase 2"]
+    columna = _columna_diagnostico(diag)
     frases = []
-    for estado in ("sobreajuste", "subajuste", "ajuste adecuado", "indeterminado"):
-        nombres = [nombre.lower() for nombre in fase2[fase2["diagnostico"] == estado]["modelo"]]
+    for estado in ESTADOS:
+        nombres = [nombre.lower() for nombre in fase2[fase2[columna] == estado]["modelo"]]
         if nombres:
             verbo = "presenta" if len(nombres) == 1 else "presentan"
             frases.append(f"<b>{_lista(nombres).capitalize()}</b> {verbo} <b>{estado}</b>.")
@@ -168,28 +178,59 @@ def _por_diagnostico(diag: pd.DataFrame) -> str:
 
 
 def _controles(diag: pd.DataFrame) -> str:
-    estados = list(diag[diag["rol"] == "control"]["diagnostico"])
+    controles = diag[diag["rol"] == "control"]
+    estados = list(controles["diagnostico"])
     if estados == ["sobreajuste", "subajuste"]:
-        return ("Los dos modelos de control, que son casos extremos, se clasifican como se "
-                "esperaba (sobreajuste y subajuste). Esto comprueba la regla en casos claros, "
-                "no en los casos cercanos a los umbrales.")
+        frase = ("Los dos modelos de control, que son casos extremos, se clasifican como se "
+                 "esperaba (sobreajuste y subajuste). Esto comprueba la regla en casos claros, "
+                 "no en los casos cercanos a los umbrales.")
+        if "diagnostico_detallado" in controles:
+            rigido = controles.iloc[-1]
+            if rigido["diagnostico_detallado"] == "subajuste (falta capacidad)":
+                sube = numero(rigido["ganancia_por_capacidad"], signo=True)
+                frase += (" La segunda etapa reconoce que el control sobrerregularizado "
+                          "subajusta por falta de capacidad: con un C mayor su PR-AUC de "
+                          f"validación sube {sube}.")
+            else:
+                frase += (" Atención: la segunda etapa no reconoce la falta de capacidad del "
+                          f"control sobrerregularizado ({rigido['diagnostico_detallado']}).")
+        return frase
     return ("Atención: los modelos de control no se clasificaron como se esperaba "
             f"({_lista(estados)}); conviene revisar los umbrales.")
 
 
+def _propias(estrategias: pd.DataFrame) -> pd.DataFrame:
+    """Solo las estrategias (sin las filas de referencia y de contraprueba)."""
+    if "tipo_fila" not in estrategias:
+        return estrategias
+    return estrategias[estrategias["tipo_fila"] == "estrategia"]
+
+
 def _estrategias(estrategias: pd.DataFrame, val: str) -> list[str]:
+    todas, estrategias = estrategias, _propias(estrategias)
+    robusta = "veredicto" in estrategias
     activas = estrategias[~estrategias["modelo_sin_cambios"]]
     sin_cambios = [n.split(" · ")[0] for n in
                    estrategias[estrategias["modelo_sin_cambios"]]["estrategia"]]
-    conteo = activas["efecto_validacion"].value_counts()
-    frases = [
-        f"De las {len(estrategias)} estrategias evaluadas, la PR-AUC en {val} mejora en "
-        f"{int(conteo.get('mejora', 0))}, empeora en {int(conteo.get('empeora', 0))} y no "
-        f"cambia de forma apreciable en {int(conteo.get('sin cambio apreciable', 0))}"
-        + (f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
-           if sin_cambios else ".")]
+    if robusta:
+        conteo = activas["veredicto"].value_counts()
+        frases = [
+            f"De las {len(estrategias)} estrategias, con la regla fijada antes de repetir, la "
+            f"PR-AUC en {val} mejora de forma demostrable en {int(conteo.get('mejora', 0))}, "
+            f"empeora en {int(conteo.get('empeora', 0))} y queda sin diferencia demostrable "
+            f"en {int(conteo.get('sin diferencia demostrable', 0))}"
+            + (f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
+               if sin_cambios else ".")]
+    else:
+        conteo = activas["efecto_validacion"].value_counts()
+        frases = [
+            f"De las {len(estrategias)} estrategias evaluadas, la PR-AUC en {val} mejora en "
+            f"{int(conteo.get('mejora', 0))}, empeora en {int(conteo.get('empeora', 0))} y no "
+            f"cambia de forma apreciable en {int(conteo.get('sin cambio apreciable', 0))}"
+            + (f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
+               if sin_cambios else ".")]
     mejor = estrategias.loc[estrategias["cambio_puntaje_validacion"].idxmax()]
-    if mejor["efecto_validacion"] == "mejora":
+    if (mejor["veredicto"] if robusta else mejor["efecto_validacion"]) == "mejora":
         frase = (f"La de mayor efecto es <b>{mejor['estrategia']}</b>: de "
                  f"{numero(mejor['puntaje_validacion_antes'])} a "
                  f"{numero(mejor['puntaje_validacion_despues'])}")
@@ -211,6 +252,13 @@ def _estrategias(estrategias: pd.DataFrame, val: str) -> list[str]:
         frases.append("Cambian el diagnóstico: " + "; ".join(
             f"{f.estrategia.split(' · ')[0]} ({f.diagnostico_antes} → {f.diagnostico_despues})"
             for f in cambian.itertuples()) + ".")
+    if "tipo_fila" in todas:
+        for f in todas[todas["tipo_fila"] != "estrategia"].itertuples():
+            frases.append(
+                f"{f.estrategia}: PR-AUC de {numero(f.puntaje_validacion_antes)} a "
+                f"{numero(f.puntaje_validacion_despues)} y brecha de "
+                f"{numero(f.brecha_antes, signo=True)} a {numero(f.brecha_despues, signo=True)}"
+                + (f" (veredicto: {f.veredicto})." if robusta else "."))
     return frases
 
 
@@ -344,7 +392,8 @@ def construir(fuente: str, salida: Path) -> Path:
          ["Interna", interna["entrenamiento"], interna["validacion"],
           interna["n_entrenamiento"], interna["eventos_entrenamiento"],
           interna["n_validacion"], interna["eventos_validacion"],
-          f"Elegir sin mirar {val} (parada temprana)"]],
+          f"Elegir sin mirar {val} (parada temprana)"
+          + (" y réplica de las estrategias" if "robustez" in resultado else "")]],
         [1.8, 1.9, 1.6, 1.0, 1.4, 1.0, 1.4, 3.6], e))
     h.append(Spacer(1, 6))
     h.append(Paragraph(
@@ -353,9 +402,17 @@ def construir(fuente: str, salida: Path) -> Path:
         "con clases tan desbalanceadas la exactitud no nos sirve: un modelo que nunca detecta "
         "un caso acierta en casi todos. Por eso usamos como puntaje la <b>PR-AUC</b> "
         "(precisión promedio), en la que un ordenamiento al azar obtiene la tasa de eventos. "
-        "Como <b>pérdida</b> usamos la entropía cruzada. En los modelos entrenados con clases "
-        "balanceadas la ponderamos igual que en el entrenamiento, así que la pérdida solo se "
-        "puede comparar entre curvas del mismo modelo.", e["texto"]))
+        "Como <b>pérdida</b> usamos la entropía cruzada"
+        + (". La guardamos de dos formas: ponderada con los pesos de clase en los modelos "
+           "balanceados (lo que esos modelos minimizan) y sin ponderar en todos. La Figura 1 "
+           "usa la sin ponderar, con una escala común para los modelos de la Fase 2. Aun así, "
+           "su altura no sirve para elegir entre modelos: los entrenados con clases "
+           "balanceadas dan probabilidades infladas (sin calibrar) y por eso tienen más "
+           "pérdida. Entre modelos comparamos con la PR-AUC; la pérdida la leemos por su "
+           "forma: dónde es mínima y si después sube." if "perdida_referencia" in resultado
+           else ". En los modelos entrenados con clases balanceadas la ponderamos igual que en "
+           "el entrenamiento, así que la pérdida solo se puede comparar entre curvas del "
+           "mismo modelo."), e["texto"]))
 
     h.append(Paragraph("2.2 Seguimiento de métricas", e["h2"]))
     h.append(Paragraph(
@@ -405,15 +462,28 @@ def construir(fuente: str, salida: Path) -> Path:
           "Sin esa brecha, PR-AUC de validación menor que "
           f"{numero(u['mejora_minima_sobre_azar'], 1)} veces el azar"],
          ["Ajuste adecuado", "Brecha pequeña y estable en un nivel útil",
-          "Ninguna de las dos condiciones anteriores"]],
-        [1.6, 3.6, 3.6], e))
+          "Ninguna de las dos condiciones anteriores"]]
+        + ([["↳ Subajuste<br/>(falta capacidad)", "Con más capacidad la validación sube",
+             "Curva D: con C o tasa de aprendizaje mayores que los actuales, la PR-AUC de "
+             f"validación sube al menos {numero(u['cambio_minimo'], 3)}"],
+            ["↳ Subajuste<br/>(faltan datos)", "Con más datos la validación sube",
+             "Más capacidad no ayuda, pero la curva C muestra una ganancia concluyente"],
+            ["↳ Límite de señal", "Las curvas quedan juntas y bajas, y no suben ni con más "
+             "capacidad ni con más datos",
+             "Ninguna de las dos condiciones anteriores: falta información en las variables, "
+             "no flexibilidad en el modelo"]] if "diagnostico_detallado" in diag else []),
+        [1.9, 3.5, 3.4], e))
     h.append(Spacer(1, 6))
     h.append(Paragraph(
         "Brecha relativa = (entrenamiento − validación) / entrenamiento. En las curvas "
         "durante el entrenamiento medimos además el paso con menor pérdida de validación y "
         "cuánto sube la pérdida después (lo contamos como deterioro si supera "
-        f"{numero(u['tolerancia_perdida'], 2)}). Decimos que una estrategia mejora o empeora "
-        f"solo si la PR-AUC cambia al menos {numero(u['cambio_minimo'], 3)}.", e["texto"]))
+        f"{numero(u['tolerancia_perdida'], 2)}). "
+        + ("Las filas con ↳ son una segunda etapa que solo se aplica a los modelos con "
+           "subajuste: separa un modelo demasiado rígido de uno que ya extrae lo que las "
+           "variables permiten, porque piden remedios distintos." if "diagnostico_detallado"
+           in diag else "Decimos que una estrategia mejora o empeora solo si la PR-AUC "
+           f"cambia al menos {numero(u['cambio_minimo'], 3)}."), e["texto"]))
     h.append(Paragraph(
         "<b>Alcance de estas reglas.</b> Son reglas prácticas, no pruebas estadísticas. "
         f"Fijamos los umbrales en {CODIGO.format('config.yaml')} el 2 de octubre de 2026, "
@@ -422,19 +492,46 @@ def construir(fuente: str, salida: Path) -> Path:
         "eventos puede ser distinta, y por eso en la Tabla 1 mostramos también cuántas veces "
         "supera al azar cada conjunto. En la Fase 2 habíamos usado una regla más simple "
         "(brecha absoluta mayor que 0,10; entrenamiento menor que 0,15), que puede diferir "
-        "de esta en casos límite.", e["texto"]))
+        "de esta en casos límite."
+        + (" La segunda etapa y la regla de veredicto de las estrategias (sección 5) las "
+           "añadimos el 17 de octubre de 2026 (decisión D54), después de la primera versión "
+           "de este reporte y antes de repetir el cuaderno con datos reales."
+           if "robustez" in resultado else ""), e["texto"]))
 
     # ---- Resultados del diagnóstico ------------------------------------------------
     h.append(Paragraph("3. Resultados del diagnóstico", e["h1"]))
-    filas = [[f.modelo, f.rol, numero(f.puntaje_entrenamiento), numero(f.puntaje_validacion),
-              numero(f.brecha, signo=True), f"{numero(100 * f.brecha_relativa, 0)} %",
-              numero(f.veces_azar_entrenamiento, 2), numero(f.mejora_sobre_azar, 2),
-              f"<b>{f.diagnostico}</b>"] for f in diag.itertuples()]
-    h.append(_tabla(["Modelo", "Rol", "PR-AUC<br/>entr.", f"PR-AUC<br/>{val}", "Brecha",
-                     "Brecha<br/>relativa", "Veces el azar<br/>(entr.)",
-                     f"Veces el azar<br/>({val})", "Diagnóstico"],
-                    filas, [3.0, 1.3, 1.45, 1.45, 1.35, 1.45, 1.6, 1.6, 2.4], e))
-    h.append(Paragraph(f"Tabla 1. Diagnóstico por modelo ({tr} → {val}).", e["pie"]))
+    detallado = "diagnostico_detallado" in diag
+    filas = []
+    for f in diag.itertuples():
+        if detallado:      # sin columna de rol: el nombre de los controles ya lo dice
+            filas.append([
+                f.modelo, numero(f.puntaje_entrenamiento), numero(f.puntaje_validacion),
+                numero(f.brecha, signo=True), f"{numero(100 * f.brecha_relativa, 0)} %",
+                f"{numero(f.veces_azar_entrenamiento, 2)} / {numero(f.mejora_sobre_azar, 2)}",
+                "—" if pd.isna(f.ganancia_por_capacidad)
+                else numero(f.ganancia_por_capacidad, signo=True),
+                f"<b>{f.diagnostico_detallado}</b>"])
+        else:
+            filas.append([
+                f.modelo, f.rol, numero(f.puntaje_entrenamiento), numero(f.puntaje_validacion),
+                numero(f.brecha, signo=True), f"{numero(100 * f.brecha_relativa, 0)} %",
+                numero(f.veces_azar_entrenamiento, 2), numero(f.mejora_sobre_azar, 2),
+                f"<b>{f.diagnostico}</b>"])
+    if detallado:
+        h.append(_tabla(["Modelo", "PR-AUC<br/>entr.", f"PR-AUC<br/>{val}", "Brecha",
+                         "Brecha<br/>relativa", f"Veces el azar<br/>entr. / {val}",
+                         "Más<br/>capacidad", "Diagnóstico"],
+                        filas, [2.85, 1.35, 1.35, 1.35, 1.45, 1.95, 1.8, 2.6], e))
+    else:
+        h.append(_tabla(["Modelo", "Rol", "PR-AUC<br/>entr.", f"PR-AUC<br/>{val}", "Brecha",
+                         "Brecha<br/>relativa", "Veces el azar<br/>(entr.)",
+                         f"Veces el azar<br/>({val})", "Diagnóstico"],
+                        filas, [3.0, 1.3, 1.45, 1.45, 1.35, 1.45, 1.6, 1.6, 2.4], e))
+    h.append(Paragraph(
+        f"Tabla 1. Diagnóstico por modelo ({tr} → {val})."
+        + (" «Más capacidad»: cambio de la mejor PR-AUC de validación al aumentar C o la "
+           "tasa de aprendizaje respecto del valor actual (curva D)." if detallado else ""),
+        e["pie"]))
     if nar.get("diagnostico"):
         h += _parrafos(nar["diagnostico"], e)
     else:
@@ -448,8 +545,14 @@ def construir(fuente: str, salida: Path) -> Path:
         "redondos es validación. En las regresiones logísticas cada punto es un "
         "entrenamiento completo con ese límite de iteraciones.", e["texto"]))
     h.append(_figura(fig / f"{fuente}_19_curva_perdida.png",
-                     "Figura 1. Pérdida de entrenamiento y de validación en cada paso. Cada "
-                     "panel tiene su propia escala.", e,
+                     ("Figura 1. Pérdida sin ponderar de entrenamiento y de validación en "
+                      "cada paso. Los modelos de la Fase 2 comparten la escala; el control usa "
+                      "la suya. La línea punteada es la pérdida sin modelo. Los paneles "
+                      "marcados «clases balanceadas» tienen probabilidades sin calibrar: su "
+                      "pérdida es mayor por eso, no porque ordenen peor."
+                      if "perdida_referencia" in resultado else
+                      "Figura 1. Pérdida de entrenamiento y de validación en cada paso. Cada "
+                      "panel tiene su propia escala."), e,
                      "4.1 Curva A: pérdida durante el entrenamiento"))
     h += _parrafos(nar["curva_a"], e) if nar.get("curva_a") else _vinetas(c["curvas"], e)
     h.append(_figura(fig / f"{fuente}_20_curva_puntaje.png",
@@ -494,43 +597,116 @@ def construir(fuente: str, salida: Path) -> Path:
 
     # ---- Estrategias ---------------------------------------------------------------
     h.append(Paragraph("5. Estrategias implementadas y resultados", e["h1"]))
-    h.append(Paragraph(
-        f"Implementamos {n_estrategias} estrategias (la actividad pide al menos dos) y las "
-        "medimos todas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
-        "ajusta a la vez los hiperparámetros de complejidad), con dos excepciones: E1 parte "
-        "de un modelo de control y no de un candidato, y E4 cambia las variables y también "
-        "los hiperparámetros. En la parada temprana elegimos las iteraciones por menor "
-        f"pérdida en la validación interna ({interna['entrenamiento']} → "
-        f"{interna['validacion']}), de modo que solo puede recortar el entrenamiento.",
-        e["texto"]))
+    robusta = "veredicto" in estrategias
+    if robusta:
+        rob = resultado.get("robustez", {})
+        h.append(Paragraph(
+            f"Implementamos {len(_propias(estrategias))} estrategias (la actividad pide al "
+            "menos dos). Cada una parte de un modelo de la Fase 2 que tiene el problema que "
+            "busca corregir y <b>cambia una sola cosa</b>, para poder atribuirle la "
+            "diferencia. Por eso separamos la antigua E4 en E4a (solo las variables de D2) y "
+            "E4b (solo los hiperparámetros del híbrido). Dos filas más no son estrategias: la "
+            "<b>referencia</b> (del control sin regularizar al gradient boosting de la Fase "
+            "2, donde cambian varias cosas) y la <b>contraprueba</b> (más iteraciones a un "
+            "modelo que no tiene subajuste). En la parada temprana elegimos las iteraciones "
+            f"en la validación interna ({interna['entrenamiento']} → "
+            f"{interna['validacion']}), de modo que solo puede recortar.", e["texto"]))
+        h.append(Paragraph(
+            f"<b>Regla de veredicto.</b> Con {principal['eventos_validacion']} eventos en "
+            f"{val}, una diferencia pequeña puede ser ruido. Decimos que una estrategia "
+            "<b>mejora</b> la PR-AUC solo si se cumplen cuatro condiciones: (1) el cambio en "
+            f"{val} llega a {numero(u['cambio_minimo'], 3)}; (2) el intervalo de confianza "
+            "del 95 % de la diferencia no incluye el cero "
+            f"({rob.get('repeticiones_bootstrap', 2000)} "
+            "réplicas bootstrap que remuestrean familias y comparan los dos modelos con las "
+            f"mismas familias); (3) la réplica en {interna['entrenamiento']} → "
+            f"{interna['validacion']} va en el mismo sentido; y (4) con "
+            f"{len(rob.get('semillas', [])) or 5} semillas la diferencia va en el mismo "
+            "sentido. <b>Empeora</b> es lo simétrico; en otro caso, <b>sin diferencia "
+            "demostrable</b>. Fijamos esta regla antes de repetir el cuaderno con datos "
+            "reales. Dos advertencias: en la partición de la réplica eligió Optuna los "
+            "hiperparámetros de la Fase 2, así que favorece al modelo ya afinado (y en E2 es "
+            "circular); y el gradient boosting y la logística con lbfgs no dependen de la "
+            "semilla, de modo que las semillas solo mueven la logística con saga y el "
+            "desempate del Lift@k.", e["texto"]))
+    else:
+        h.append(Paragraph(
+            f"Implementamos {n_estrategias} estrategias (la actividad pide al menos dos) y las "
+            "medimos todas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
+            "ajusta a la vez los hiperparámetros de complejidad), con dos excepciones: E1 "
+            "parte de un modelo de control y no de un candidato, y E4 cambia las variables y "
+            "también los hiperparámetros. En la parada temprana elegimos las iteraciones por "
+            f"menor pérdida en la validación interna ({interna['entrenamiento']} → "
+            f"{interna['validacion']}), de modo que solo puede recortar el entrenamiento.",
+            e["texto"]))
     con_lift = "lift_k_validacion_antes" in estrategias
     filas = []
     for f in estrategias.itertuples():
-        efecto = "el modelo no cambia" if f.modelo_sin_cambios else f.efecto_validacion
-        fila = [f"<b>{f.estrategia}</b> (contra el {f.problema})<br/>{f.cambio}",
-                f"{numero(f.puntaje_validacion_antes)} → {numero(f.puntaje_validacion_despues)}"
-                f"<br/><b>{efecto}</b>",
-                f"{numero(f.brecha_antes, signo=True)} → {numero(f.brecha_despues, signo=True)}"
-                + ("" if f.modelo_sin_cambios else
-                   f"<br/>{'se reduce' if f.efecto_brecha == 'reduce' else f.efecto_brecha}")]
-        if con_lift:
-            fila.append(f"{numero(f.lift_k_validacion_antes, 2)} → "
+        tipo = getattr(f, "tipo_fila", "estrategia")
+        encabezado = (f"<b>{f.estrategia}</b> (contra el {f.problema})" if tipo == "estrategia"
+                      else f"<b>{f.estrategia}</b>")
+        brecha = (f"{numero(f.brecha_antes, signo=True)} → {numero(f.brecha_despues, signo=True)}"
+                  + ("" if f.modelo_sin_cambios else
+                     f"<br/>{'se reduce' if f.efecto_brecha == 'reduce' else f.efecto_brecha}"))
+        if robusta:
+            puntaje = (f"{numero(f.puntaje_validacion_antes)} → "
+                       f"{numero(f.puntaje_validacion_despues)}<br/>"
+                       f"{numero(f.cambio_puntaje_validacion, signo=True)}")
+            if not pd.isna(f.ic_inferior):
+                puntaje += (f" [{numero(f.ic_inferior, signo=True)}; "
+                            f"{numero(f.ic_superior, signo=True)}]")
+            fila = [f"{encabezado}<br/>{f.cambio}", puntaje,
+                    numero(f.cambio_replica, signo=True), brecha]
+            if con_lift:
+                lift = (f"{numero(f.lift_k_validacion_antes, 2)} → "
                         f"{numero(f.lift_k_validacion_despues, 2)}")
-        fila.append(f.diagnostico_antes if f.diagnostico_antes == f.diagnostico_despues
-                    else f"{f.diagnostico_antes} → {f.diagnostico_despues}")
+                if hasattr(f, "cambio_lift_min_semillas") and not pd.isna(
+                        f.cambio_lift_min_semillas):
+                    lift += (f"<br/>semillas: {numero(f.cambio_lift_min_semillas, 2, signo=True)}"
+                             f" a {numero(f.cambio_lift_max_semillas, 2, signo=True)}")
+                fila.append(lift)
+            fila.append(f"<b>{f.veredicto}</b>")
+        else:
+            efecto = "el modelo no cambia" if f.modelo_sin_cambios else f.efecto_validacion
+            fila = [f"{encabezado}<br/>{f.cambio}",
+                    f"{numero(f.puntaje_validacion_antes)} → "
+                    f"{numero(f.puntaje_validacion_despues)}<br/><b>{efecto}</b>", brecha]
+            if con_lift:
+                fila.append(f"{numero(f.lift_k_validacion_antes, 2)} → "
+                            f"{numero(f.lift_k_validacion_despues, 2)}")
+            fila.append(f.diagnostico_antes if f.diagnostico_antes == f.diagnostico_despues
+                        else f"{f.diagnostico_antes} → {f.diagnostico_despues}")
         filas.append(fila)
-    encabezados = ["Estrategia y cambio aplicado", f"PR-AUC {val}", "Brecha"]
-    anchos = [4.6, 2.2, 2.3]
-    if con_lift:
-        encabezados.append("Lift@k")
-        anchos.append(1.9)
-    h.append(_tabla(encabezados + ["Diagnóstico"], filas, anchos + [2.0], e))
-    h.append(Paragraph("Tabla 2. Antes → después de cada estrategia. Las palabras «mejora» y "
-                       "«empeora» se refieren a la PR-AUC; el efecto sobre la brecha se juzga "
-                       "por su tamaño (valor absoluto).", e["pie"]))
+    if robusta:
+        encabezados = ["Estrategia y cambio aplicado",
+                       f"PR-AUC {val}<br/>diferencia [IC 95 %]",
+                       f"Réplica<br/>{interna['validacion']}", "Brecha"]
+        anchos = [4.3, 2.9, 1.5, 2.1]
+        if con_lift:
+            encabezados.append("Lift@k")
+            anchos.append(2.3)
+        h.append(_tabla(encabezados + ["Veredicto"], filas, anchos + [2.5], e))
+        h.append(Paragraph(
+            "Tabla 2. Antes → después de cada estrategia. «Réplica»: diferencia de PR-AUC en "
+            f"la partición {interna['entrenamiento']} → {interna['validacion']}. «Semillas»: "
+            "rango de la diferencia de Lift@k con cada semilla del desempate. El veredicto "
+            "aplica la regla de cuatro condiciones; el efecto sobre la brecha se juzga por su "
+            "tamaño (valor absoluto).", e["pie"]))
+    else:
+        encabezados = ["Estrategia y cambio aplicado", f"PR-AUC {val}", "Brecha"]
+        anchos = [4.6, 2.2, 2.3]
+        if con_lift:
+            encabezados.append("Lift@k")
+            anchos.append(1.9)
+        h.append(_tabla(encabezados + ["Diagnóstico"], filas, anchos + [2.0], e))
+        h.append(Paragraph("Tabla 2. Antes → después de cada estrategia. Las palabras «mejora» "
+                           "y «empeora» se refieren a la PR-AUC; el efecto sobre la brecha se "
+                           "juzga por su tamaño (valor absoluto).", e["pie"]))
     h.append(_figura(fig / f"{fuente}_23_estrategias.png",
                      "Figura 5. Efecto de cada estrategia sobre la PR-AUC de validación, la "
-                     "brecha y el Lift@k por familia.", e))
+                     "brecha y el Lift@k por familia"
+                     + ("; el segundo panel muestra la diferencia de PR-AUC con su IC 95 % "
+                        "y la réplica." if robusta else "."), e))
     h += (_parrafos(nar["estrategias"], e) if nar.get("estrategias")
           else _vinetas(_estrategias(estrategias, val), e))
 
@@ -549,9 +725,10 @@ def construir(fuente: str, salida: Path) -> Path:
     h.append(Paragraph("Limitaciones", e["h2"]))
     h += _vinetas(nar.get("limitaciones") or [
         f"Las estrategias se compararon en {val}, que ya se usó para seleccionar y calibrar "
-        "en la Fase 2. Una diferencia pequeña puede ser ruido.",
-        f"Hay {principal['eventos_validacion']} eventos en la validación: las diferencias "
-        "de pocas milésimas de PR-AUC no son concluyentes.",
+        "en la Fase 2, y en la réplica, donde Optuna afinó los hiperparámetros: ninguna de "
+        "las dos cohortes es independiente.",
+        f"Hay {principal['eventos_validacion']} eventos en la validación. El bootstrap mide "
+        "la variación entre familias de la misma cohorte, no el cambio entre años.",
         "La validación usa una sola cohorte. Las tasas cambian entre ciclos, así que el "
         "resultado puede no repetirse el año siguiente.",
         "Los umbrales de diagnóstico son reglas prácticas y se fijaron conociendo ya los "

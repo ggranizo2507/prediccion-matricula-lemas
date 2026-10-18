@@ -69,7 +69,9 @@ def seguimiento(particion):
 
 @pytest.fixture(scope="module")
 def estrategias(particion, interna, k):
-    return dg.evaluar_estrategias(PARAMETROS, particion, interna, SEMILLA, k)
+    # Menos réplicas y semillas que en el cuaderno, para que las pruebas sean rápidas
+    return dg.evaluar_estrategias(PARAMETROS, particion, interna, SEMILLA, k,
+                                  semillas=(42, 7), repeticiones=200)
 
 
 # --------------------------------------------------------------------------- #
@@ -234,6 +236,21 @@ def test_los_controles_se_reconocen(particion, k):
         tabla.columns)
 
 
+def test_seguimiento_guarda_la_perdida_sin_ponderar(particion, seguimiento):
+    """El gradient boosting de prueba es balanceado: las dos pérdidas difieren."""
+    assert bool(seguimiento["perdida_ponderada"].iloc[0])
+    assert not np.allclose(seguimiento["perdida_validacion"],
+                           seguimiento["perdida_sin_ponderar_validacion"])
+    logistica = dg.seguir_logistica("logistica", PARAMETROS["logistica"], particion, SEMILLA)
+    assert not bool(logistica["perdida_ponderada"].iloc[0])         # sin pesos: son iguales
+    assert np.allclose(logistica["perdida_validacion"],
+                       logistica["perdida_sin_ponderar_validacion"])
+    tasa = particion.y_tr.mean()
+    p = particion.y_val.mean()
+    esperado = -(p * np.log(tasa) + (1 - p) * np.log(1 - tasa))
+    assert dg.perdida_de_referencia(particion) == pytest.approx(esperado)
+
+
 def test_perdida_ponderada_y_sin_ponderar():
     y = np.array([0, 0, 0, 1])
     prob = np.array([0.1, 0.1, 0.1, 0.5])
@@ -272,13 +289,21 @@ def test_curva_por_hiperparametro(particion):
 # Estrategias
 # --------------------------------------------------------------------------- #
 def test_estrategias_antes_y_despues(estrategias):
-    assert len(estrategias) == 6
-    assert list(estrategias["problema"]) == ["sobreajuste"] * 3 + ["subajuste"] * 3
-    e1 = estrategias.iloc[0]
-    assert e1["modelo_antes"] == dg.CONTROL_COMPLEJO
-    assert e1["diagnostico_antes"] == "sobreajuste"
-    assert e1["brecha_despues"] < e1["brecha_antes"] and e1["efecto_brecha"] == "reduce"
-    for columna in ("puntaje_validacion", "brecha", "lift_k_validacion", "diagnostico"):
+    assert len(estrategias) == 9
+    assert list(estrategias["tipo_fila"]) == ["estrategia"] * 7 + ["referencia",
+                                                                   "contraprueba"]
+    assert list(estrategias["problema"]) == (["sobreajuste"] * 3 + ["subajuste"] * 4
+                                             + ["sobreajuste", "subajuste"])
+    gb = dg.NOMBRES_CORTOS["arboles"]
+    # Las estrategias contra el sobreajuste parten del gradient boosting de la Fase 2
+    assert set(estrategias.iloc[:3]["modelo_antes"]) == {gb}
+    referencia = estrategias.iloc[7]
+    assert referencia["modelo_antes"] == dg.CONTROL_COMPLEJO
+    assert referencia["diagnostico_antes"] == "sobreajuste"
+    assert referencia["brecha_despues"] < referencia["brecha_antes"]
+    assert referencia["efecto_brecha"] == "reduce"
+    for columna in ("puntaje_validacion", "brecha", "lift_k_validacion", "diagnostico",
+                    "perdida_sin_ponderar_validacion"):
         assert f"{columna}_antes" in estrategias and f"{columna}_despues" in estrategias
     assert np.allclose(estrategias["cambio_puntaje_validacion"],
                        estrategias["puntaje_validacion_despues"]
@@ -286,10 +311,11 @@ def test_estrategias_antes_y_despues(estrategias):
     assert set(estrategias["efecto_validacion"]) <= {"mejora", "empeora",
                                                      "sin cambio apreciable"}
     assert set(estrategias["efecto_brecha"]) <= {"reduce", "aumenta", "sin cambio apreciable"}
-    # E1 parte de un modelo con sobreajuste: la estrategia sí aplica a su diagnóstico
-    assert e1["aplica_al_diagnostico"] and not e1["modelo_sin_cambios"]
+    assert set(estrategias["veredicto"]) <= {"mejora", "empeora", "sin diferencia demostrable",
+                                             "sin cambios en el modelo"}
     sin_cambios = estrategias[estrategias["modelo_sin_cambios"]]
     assert (sin_cambios["cambio_puntaje_validacion"] == 0).all()
+    assert (sin_cambios["veredicto"] == "sin cambios en el modelo").all()
 
 
 def test_el_efecto_respeta_el_cambio_minimo(estrategias):
@@ -302,17 +328,133 @@ def test_el_efecto_respeta_el_cambio_minimo(estrategias):
         assert e.efecto_validacion == esperado
         tamano = abs(e.brecha_despues) - abs(e.brecha_antes)      # se compara en valor absoluto
         assert e.cambio_brecha == pytest.approx(tamano)
+        if e.veredicto == "mejora":            # la regla nunca es más laxa que la lectura puntual
+            assert e.efecto_validacion == "mejora" and e.ic_inferior > 0
 
 
-def test_e3_y_e6_cambian_una_sola_cosa(estrategias, particion, k):
-    """E3 conserva las iteraciones; E6 solo las duplica."""
-    e3 = dg.evaluar("arboles", dg.modelo_simple(PARAMETROS["arboles"]), particion, SEMILLA, k)
-    e6 = dg.evaluar("arboles", {**PARAMETROS["arboles"], "max_iter": 80}, particion, SEMILLA, k)
-    assert estrategias.iloc[2]["puntaje_validacion_despues"] == pytest.approx(
-        e3["puntaje_validacion"])
-    assert estrategias.iloc[5]["puntaje_validacion_despues"] == pytest.approx(
-        e6["puntaje_validacion"])
-    assert dg.modelo_simple(PARAMETROS["arboles"])["max_iter"] == PARAMETROS["arboles"]["max_iter"]
+def _parametros_de(plan, nombre):
+    return next(e for e in plan if e.nombre.startswith(nombre))
+
+
+def test_cada_estrategia_cambia_una_sola_cosa(interna):
+    """Comentario de la calificación: E1, E4 y E6 no eran comparaciones limpias."""
+    plan = dg.plan_estrategias(PARAMETROS, interna, SEMILLA)
+    arboles, logistica, hibrido = (PARAMETROS["arboles"], PARAMETROS["logistica"],
+                                   PARAMETROS["hibrido"])
+
+    def distintos(a, b):
+        return {clave for clave in set(a) | set(b) if a.get(clave) != b.get(clave)}
+
+    e1 = _parametros_de(plan, "E1")
+    assert e1.antes[2] == arboles and distintos(*[x[2] for x in (e1.antes, e1.despues)]) == {
+        "l2_regularization"}
+    e3 = _parametros_de(plan, "E3")
+    assert distintos(e3.antes[2], e3.despues[2]) <= {"max_depth", "max_leaf_nodes",
+                                                     "min_samples_leaf"}
+    e4a, e4b = _parametros_de(plan, "E4a"), _parametros_de(plan, "E4b")
+    # E4a: mismos hiperparámetros de la regresión logística, otras variables
+    assert e4a.antes[1] == "logistica" and e4a.despues[1] == "hibrido_elastico"
+    assert all(e4a.despues[2][clave] == logistica[clave] for clave in ("C", "l1_ratio"))
+    # E4b: mismas variables (parte de donde termina E4a), otros hiperparámetros
+    assert e4b.antes == e4a.despues and e4b.despues == (dg.NOMBRES_CORTOS["hibrido"],
+                                                        "hibrido", hibrido)
+    e6 = _parametros_de(plan, "E6")
+    assert e6.antes[1:] == ("hibrido", hibrido) and e6.despues[1:] == (
+        "hibrido_interacciones", hibrido)
+    contra = _parametros_de(plan, "Contraprueba")
+    assert distintos(contra.antes[2], contra.despues[2]) == {"max_iter"}
+    assert {e.tipo_fila for e in plan} == {"estrategia", "referencia", "contraprueba"}
+
+
+def test_variantes_del_modelo_hibrido(particion):
+    X = particion.X_tr.head(200)
+    elastico = dg.construir("hibrido_elastico", PARAMETROS["logistica"], SEMILLA)
+    assert elastico[-1].solver == "saga" and elastico[-1].l1_ratio == 0.5
+    base = dg.construir("hibrido", PARAMETROS["hibrido"], SEMILLA)
+    interacciones = dg.construir("hibrido_interacciones", PARAMETROS["hibrido"], SEMILLA)
+    n_base = base[0].fit_transform(X).shape[1]
+    n_inter = interacciones[0].fit_transform(X).shape[1]
+    assert n_inter == n_base + n_base * (n_base - 1) // 2     # todos los pares, sin cuadrados
+
+
+def test_estrategias_miden_la_robustez(estrategias, particion, interna, k):
+    e5 = estrategias[estrategias["estrategia"].str.startswith("E5")].iloc[0]
+    logistica = PARAMETROS["logistica"]
+    antes = dg.evaluar("logistica", logistica, interna, SEMILLA)
+    despues = dg.evaluar("logistica", {**logistica, "C": logistica["C"] * 10}, interna, SEMILLA)
+    assert e5["cambio_replica"] == pytest.approx(despues["puntaje_validacion"]
+                                                 - antes["puntaje_validacion"])
+    activas = estrategias[~estrategias["modelo_sin_cambios"]]
+    assert (activas["ic_inferior"] <= activas["ic_superior"]).all()
+    assert (activas["cambio_min_semillas"] <= activas["cambio_max_semillas"] + 1e-12).all()
+    assert (estrategias["semillas"] == 2).all()
+    assert {"cambio_lift_min_semillas", "cambio_lift_max_semillas", "nota_replica"} <= set(
+        estrategias.columns)
+    e2 = estrategias[estrategias["estrategia"].str.startswith("E2")].iloc[0]
+    assert "circular" in e2["nota_replica"]
+
+
+def test_bootstrap_pareado_por_familia():
+    rng = np.random.default_rng(0)
+    y = np.array([1, 0, 0, 0, 1, 0, 0, 0] * 25)
+    familias = np.repeat(np.arange(100), 2)              # hermanos de dos en dos
+    ruido = rng.random(len(y))
+    assert dg.bootstrap_diferencia(y, ruido, ruido, familias, 100) == (0.0, 0.0)
+    bueno = y + 0.5 * ruido                              # ordena casi perfecto
+    inferior, superior = dg.bootstrap_diferencia(y, ruido, bueno, familias, 300)
+    assert 0 < inferior <= superior
+    # Con la misma semilla el intervalo se repite
+    assert dg.bootstrap_diferencia(y, ruido, bueno, familias, 50, 3) == \
+        dg.bootstrap_diferencia(y, ruido, bueno, familias, 50, 3)
+
+
+@pytest.mark.parametrize("valores, esperado", [
+    ((0.02, 0.004, 0.03, 0.01, 0.015, 0.025), "mejora"),
+    ((0.02, -0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),   # IC con el 0
+    ((0.02, 0.004, 0.03, -0.01, 0.015, 0.025), "sin diferencia demostrable"),   # réplica
+    ((0.02, 0.004, 0.03, 0.01, -0.001, 0.025), "sin diferencia demostrable"),   # una semilla
+    ((0.004, 0.001, 0.006, 0.01, 0.003, 0.005), "sin diferencia demostrable"),  # < mínimo
+    ((-0.02, -0.03, -0.004, -0.01, -0.025, -0.015), "empeora"),
+    ((float("nan"), 0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),
+])
+def test_veredicto_de_cuatro_condiciones(valores, esperado):
+    assert dg.veredicto_estrategia(*valores, minimo=0.005) == esperado
+
+
+def test_refinar_distingue_capacidad_datos_y_senal():
+    tabla = pd.DataFrame({
+        "modelo": ["rigido", "datos", "senal", "sobre", "sin_curva"],
+        "diagnostico": ["subajuste", "subajuste", "subajuste", "sobreajuste", "subajuste"],
+        "puntaje_validacion": [0.10, 0.12, 0.12, 0.12, 0.12]})
+    curvas = pd.concat([
+        pd.DataFrame({"modelo": m, "hiperparametro": "C", "valor": [0.01, 0.1, 1.0, 10.0],
+                      "valor_fase2": 0.1, "puntaje_validacion": v})
+        for m, v in [("rigido", [0.30, 0.10, 0.14, 0.16]),      # más C ayuda
+                     ("datos", [0.20, 0.12, 0.122, 0.121]),     # solo un C menor ayudaría
+                     ("senal", [0.11, 0.12, 0.123, 0.12]),
+                     ("sobre", [0.11, 0.12, 0.20, 0.25])]])
+    ganancia = pd.DataFrame({"modelo": ["datos", "senal"], "ganancia": [0.03, 0.03],
+                             "concluyente": [True, False]})
+    salida = dg.refinar_diagnostico(tabla, curvas, ganancia).set_index("modelo")
+    assert salida.loc["rigido", "diagnostico_detallado"] == "subajuste (falta capacidad)"
+    assert salida.loc["rigido", "ganancia_por_capacidad"] == pytest.approx(0.06)
+    assert salida.loc["datos", "diagnostico_detallado"] == "subajuste (faltan datos)"
+    assert salida.loc["senal", "diagnostico_detallado"] == "límite de señal"
+    assert salida.loc["sobre", "diagnostico_detallado"] == "sobreajuste"   # no se toca
+    assert salida.loc["sin_curva", "diagnostico_detallado"] == "subajuste"
+    assert (salida["diagnostico"] == tabla.set_index("modelo")["diagnostico"]).all()
+
+
+def test_el_control_rigido_se_reconoce_como_falta_de_capacidad(particion, k):
+    """La segunda etapa debe reconocer un subajuste por rigidez en un caso claro."""
+    tabla = dg.tabla_diagnostico(PARAMETROS, particion, SEMILLA, k)
+    _, rigido = dg.parametros_control(PARAMETROS)[dg.CONTROL_RIGIDO]
+    curva = dg.curva_por_hiperparametro("logistica", rigido, particion, SEMILLA, "C",
+                                        [0.001, 0.01, 0.1, 1.0], modelo=dg.CONTROL_RIGIDO)
+    assert set(curva["modelo"]) == {dg.CONTROL_RIGIDO}
+    salida = dg.refinar_diagnostico(tabla, curva).set_index("modelo")
+    assert salida.loc[dg.CONTROL_RIGIDO, "diagnostico_detallado"] == \
+        "subajuste (falta capacidad)"
 
 
 def test_parada_temprana_solo_recorta_y_no_mira_c4(dataset, interna):
@@ -332,7 +474,9 @@ def test_modelo_simple_no_aumenta_la_complejidad():
     simple = dg.modelo_simple(PARAMETROS["arboles"])
     assert simple["max_depth"] == 2 and simple["max_leaf_nodes"] == 4
     assert simple["min_samples_leaf"] >= PARAMETROS["arboles"]["min_samples_leaf"]
-    assert simple["l2_regularization"] >= 10
+    # La L2 es otra estrategia (E1): E3 no la toca, ni tampoco las iteraciones
+    assert simple["l2_regularization"] == PARAMETROS["arboles"]["l2_regularization"]
+    assert simple["max_iter"] == PARAMETROS["arboles"]["max_iter"]
 
 
 # --------------------------------------------------------------------------- #
@@ -355,11 +499,13 @@ def test_conclusiones_coinciden_con_las_cifras(particion, k, seguimiento, estrat
     frases = dg.conclusiones(tabla, resumenes, estrategias, "C4")
     assert set(frases) == {"modelos", "controles", "curvas", "estrategias", "balance"}
     assert len(frases["modelos"]) == 3 and len(frases["controles"]) == 2
-    assert len(frases["estrategias"]) == 6
+    assert len(frases["estrategias"]) == 9
     primero = tabla.iloc[0]
     assert dg.numero(primero["puntaje_validacion"]) in frases["modelos"][0]
     assert primero["diagnostico"] in frases["modelos"][0]
-    assert estrategias.iloc[0]["efecto_validacion"] in frases["estrategias"][0]
+    for e, frase in zip(estrategias.itertuples(), frases["estrategias"], strict=True):
+        assert e.veredicto in frase or e.modelo_sin_cambios
+    assert "Es una referencia" in frases["estrategias"][7]
     assert "C5" in frases["balance"][-1]
     solo_modelos = dg.conclusiones(tabla, resumenes, None, "C4")
     assert solo_modelos["estrategias"] == [] and len(solo_modelos["balance"]) == 1
@@ -514,12 +660,20 @@ def test_figuras_a_300_dpi(tmp_path, particion, seguimiento, estrategias):
     curvas = {"Gradient boosting": seguimiento, "Logística híbrida": logistica,
               "Otro": seguimiento}
     figuras = {
-        "perdida": gd.figura_iteraciones(curvas, "perdida", "C2+C3", "C4"),
+        "perdida": gd.figura_iteraciones(curvas, "perdida_sin_ponderar", "C2+C3", "C4",
+                                         comun=["Gradient boosting", "Logística híbrida"],
+                                         referencia=dg.perdida_de_referencia(particion)),
+        "perdida_ponderada": gd.figura_iteraciones(curvas, "perdida", "C2+C3", "C4"),
         "puntaje": gd.figura_iteraciones(curvas, "puntaje", "C2+C3", "C4", tasa),
         "tamano": gd.figura_tamano(tamano, "C2+C3", "C4", tasa),
         "hiper": gd.figura_hiperparametros(hiper, "C2+C3", "C4", tasa),
         "estrategias": gd.figura_estrategias(estrategias, "C4"),
     }
+    # Escala común en la pérdida (comentario de la calificación) y aviso en el panel aparte
+    paneles = [ax for ax in figuras["perdida"].axes if ax.get_visible()]
+    assert paneles[0].get_ylim() == paneles[1].get_ylim()
+    assert "escala propia" in paneles[2].get_title(loc="left")
+    assert "clases balanceadas" in paneles[0].get_title(loc="left")
     for nombre, figura in figuras.items():
         ejes = [ax for ax in figura.axes if ax.get_visible() and (ax.lines or ax.collections)]
         assert ejes and all(ax.get_title(loc="left") for ax in ejes), nombre
