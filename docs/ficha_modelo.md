@@ -41,6 +41,7 @@ Resumen de una página del sistema de priorización, con el formato de las ficha
 - **Precision@k y Recall@k** por familia, con k igual a la capacidad de contacto de cada sede (118 y 47).
 - **Brier** para las probabilidades y **MAPE** para la proyección por sede y subnivel.
 - Intervalos de confianza del 95 % con 2.000 réplicas bootstrap por representante.
+- Validación temporal por cohortes, no validación cruzada aleatoria: ver [evaluacion_robusta.md](evaluacion_robusta.md).
 
 ## 5. Datos
 
