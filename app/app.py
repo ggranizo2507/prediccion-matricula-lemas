@@ -386,10 +386,13 @@ with tab_lista:
                 st.stop()
             puntuados = puntuar(poblacion, SISTEMA)
             lista = lista_contactos(puntuados, k_editado, CONFIG["proyecto"]["semilla"])
-        avisos_senales = revisar_senales(poblacion, CONFIG)
-        if avisos_senales:   # D57: una señal caída hace que la lista ordene casi al azar
-            st.error("**Revise los datos antes de usar esta lista.**\n\n"
-                     + "\n".join(f"- {aviso}" for aviso in avisos_senales))
+        calidad = revisar_senales(poblacion, CONFIG)   # D57: señales vacías o constantes
+        if calidad["nivel"] != "ok":
+            texto = "\n".join(f"- {aviso}" for aviso in calidad["avisos"])
+            if calidad["nivel"] == "grave":
+                st.error(f"**Revise los datos antes de usar esta lista.**\n\n{texto}")
+            else:
+                st.warning(f"**Revise los datos cuando pueda.**\n\n{texto}")
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Estudiantes elegibles", f"{resumen['elegibles']:,}".replace(",", "."))
         c2.metric("Familias (representantes)", f"{resumen['representantes']:,}".replace(",", "."))

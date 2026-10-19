@@ -99,6 +99,10 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
 - No se ha medido si la llamada cambia la decisión de la familia.
-- Con una señal de D2 vacía o constante (por ejemplo, atrasos todos en cero o sin la hoja del ciclo anterior), la lista se acerca al azar. La aplicación lo advierte en rojo antes de usarla. Los escenarios críticos, como errores de registro, faltantes, desbalance y cambio de distribución, están en [escenarios_criticos.md](escenarios_criticos.md).
+- Escenarios críticos con datos reales sobre C4 ([escenarios_criticos.md](escenarios_criticos.md)):
+  - la lista tolera hasta un 10 % de errores de registro y deja de ser útil hacia el 20 %; es su debilidad principal, por eso conviene revisar los motivos de la lista antes de llamar;
+  - con una sola señal vacía o constante casi no cambia (Lift de 1,66 a 1,78);
+  - con las tres caídas queda en el azar (1,05), y la aplicación lo advierte en amarillo con una señal afectada y en rojo con dos o más;
+  - la logística híbrida no se transfiere entre sedes.
 - Revalidar cada mayo con la cohorte que cierra. Si el Lift@k baja de 1,20, revisar la regla; si no supera al azar dos años seguidos, suspender su uso.
 - Antes de un uso operativo, LEMAS debe informar a las familias, confirmar la base legal para datos de menores y completar los pendientes de cumplimiento descritos en [consideraciones_eticas.md](consideraciones_eticas.md).

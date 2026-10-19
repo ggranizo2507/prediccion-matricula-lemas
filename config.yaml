@@ -155,14 +155,15 @@ capacidad:
 
 # -----------------------------------------------------------------------------
 # Escenarios críticos (D57) y control de calidad de las señales en la aplicación.
-# Los umbrales de la app se revisan con los límites que salen del cuaderno 07 con datos
-# reales (docs/escenarios_criticos.md). Mientras tanto, valores prudentes.
+# Umbrales revisados con los datos reales (cuaderno 07, 18-oct-2026): una sola señal con
+# hasta el 50 % de vacíos casi no cambia la lista, así que una señal afectada da una
+# advertencia y dos o más, un aviso grave (docs/escenarios_criticos.md).
 # -----------------------------------------------------------------------------
 escenarios:
   repeticiones: 50          # perturbaciones (y sorteos de empates) por nivel
   umbral_lift: 1.20         # meta del proyecto: por debajo, la lista deja de ser útil
 calidad_senales:
-  max_vacios: 0.20          # fracción máxima de una señal vacía antes de advertir
+  max_vacios: 0.30          # una señal con más vacíos que esto cuenta como afectada
   max_nuevos: 0.80          # si casi todos figuran como nuevos, falta la hoja anterior
   min_filas: 50             # con menos estudiantes no se evalúa la calidad
 

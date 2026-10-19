@@ -203,31 +203,51 @@ def poblacion(config):
 
 
 def test_sin_avisos_con_datos_sanos(poblacion, config):
-    assert revisar_senales(poblacion, config) == []
+    assert revisar_senales(poblacion, config) == {"nivel": "ok", "avisos": []}
 
 
-def test_avisa_si_los_atrasos_llegan_en_cero(poblacion, config):
-    avisos = revisar_senales(poblacion.assign(atrasos_pension=0), config)
-    assert any("toda en cero" in a for a in avisos)
-    assert "azar" in avisos[-1]
+def test_una_senal_caida_es_advertencia(poblacion, config):
+    calidad = revisar_senales(poblacion.assign(atrasos_pension=0), config)
+    assert calidad["nivel"] == "advertencia"
+    assert any("toda en cero" in a for a in calidad["avisos"])
+    assert "compensan" in calidad["avisos"][-1]
+
+
+def test_dos_senales_caidas_es_grave(poblacion, config):
+    datos = poblacion.assign(atrasos_pension=0, pago_origen="nuevo")
+    calidad = revisar_senales(datos, config)
+    assert calidad["nivel"] == "grave"
+    assert "azar" in calidad["avisos"][-1]
 
 
 def test_avisa_si_faltan_fechas_de_pago(poblacion, config):
     datos = poblacion.copy()
     no_nuevos = datos.index[datos["pago_origen"] != "nuevo"]
     datos.loc[no_nuevos[: int(0.5 * len(no_nuevos))], "pago_origen"] = "sin_dato"
-    assert any("fecha de pago" in a for a in revisar_senales(datos, config))
+    assert any("fecha de pago" in a for a in revisar_senales(datos, config)["avisos"])
+
+
+def test_pocos_vacios_no_avisan(poblacion, config):
+    datos = poblacion.copy()
+    no_nuevos = datos.index[datos["pago_origen"] != "nuevo"]
+    datos.loc[no_nuevos[: int(0.2 * len(no_nuevos))], "pago_origen"] = "sin_dato"
+    assert revisar_senales(datos, config)["nivel"] == "ok"      # 20 % < umbral de 30 %
 
 
 def test_avisa_si_falta_la_hoja_anterior(poblacion, config):
-    avisos = revisar_senales(poblacion.assign(pago_origen="nuevo"), config)
+    avisos = revisar_senales(poblacion.assign(pago_origen="nuevo"), config)["avisos"]
     assert any("hoja del ciclo anterior" in a for a in avisos)
 
 
 def test_avisa_si_no_hay_ningun_pago_tardio(poblacion, config):
     datos = poblacion.assign(pago_origen=poblacion["pago_origen"].replace("tardio", "en_plazo"))
-    assert any("pago tardío" in a for a in revisar_senales(datos, config))
+    assert any("pago tardío" in a for a in revisar_senales(datos, config)["avisos"])
 
 
 def test_poblacion_pequena_no_se_evalua(poblacion, config):
-    assert revisar_senales(poblacion.head(10).assign(atrasos_pension=0), config) == []
+    datos = poblacion.head(10).assign(atrasos_pension=0)
+    assert revisar_senales(datos, config)["nivel"] == "ok"
+
+
+def test_brier_no_se_calcula_para_la_regla(c4):
+    assert np.isnan(es.medir(es.senal_caida(c4, "todas_d2"), es.puntuador_d2, K, SEMILLA)["brier"])
