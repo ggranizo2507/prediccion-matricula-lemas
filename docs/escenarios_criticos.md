@@ -8,7 +8,7 @@ La prueba en C5 se diseñó para que medir el sistema fuera lo mismo que usarlo 
 
 | Cómo se usará en LEMAS | Cómo se evaluó | Dónde |
 |---|---|---|
-| Cada 20 de febrero, solo con lo que se sabe a esa fecha | Foto al 20 de febrero (t0): los predictores solo usan datos anteriores. Las pensiones atrasadas deben contarse de mayo a enero (ver sección 5) | `config.yaml` (`t0_mes_dia`), [hoja_de_datos.md](hoja_de_datos.md) |
+| Cada 20 de febrero, solo con lo que se sabe a esa fecha | Foto al 20 de febrero (t0): los predictores solo usan datos anteriores. Las pensiones atrasadas se cuentan de mayo a enero (confirmado por LEMAS, ver sección 5) | `config.yaml` (`t0_mes_dia`), [hoja_de_datos.md](hoja_de_datos.md) |
 | Se aplica a un año que todavía no ocurrió | Se entrena con años pasados y se prueba con un año que no se miró antes (C2 + C3 → C5) | [evaluacion_robusta.md](evaluacion_robusta.md) §1 |
 | Nadie puede ajustar el sistema mirando el resultado | Sistema congelado con huella SHA-256 registrada antes de abrir C5; C5 se evaluó una sola vez | D38, D41 |
 | Se llama a familias, no a estudiantes | Métricas por familia: los hermanos se consolidan en un solo contacto | `evaluate.consolidar_familias` |
@@ -140,4 +140,4 @@ La lista se muestra igual, porque quien decide es una persona, pero el aviso no 
 - **Entre años distintos**, el cambio de distribución ya se ve en el Lift por cohorte (sección 1). Aquí solo se simula el cambio entre grupos de una misma cohorte.
 - **Con 95 familias con caso en C4**, el desbalance al 1 % deja unas 10 familias con caso, y el rango de las repeticiones es amplio por construcción.
 - **La calibración de referencia** («entrenado con todos») se ajustó en todo C4, que incluye al grupo de destino. Favorece a la referencia, así que la pérdida del modelo transferido puede estar algo exagerada.
-- **Columna de atrasos.** La calcula LEMAS desde el registro de pagos, y `config.yaml` recomienda contar solo de mayo a enero, porque la pensión de febrero vence después del 20 de febrero. Falta confirmar que las bases históricas se generaron así. Si incluyeran meses posteriores, los atrasos tendrían información futura. La aplicación debe recibir la columna calculada de la misma forma cada año.
+- **Columna de atrasos (confirmado).** LEMAS calcula `# meses caído` desde el registro de pagos contando solo de mayo a enero (confirmado por el PO el 18-oct-2026). La pensión de febrero, que vence después del 20 de febrero, no entra, así que esta señal no tiene información futura. La aplicación debe seguir recibiendo la columna calculada de la misma forma cada año.

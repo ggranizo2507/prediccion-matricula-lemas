@@ -52,6 +52,15 @@ Un puntaje administrativo: 100 por pago tardío de la matrícula anterior, más 
 **14. ¿No es injusto comparar modelos con una regla diseñada mirando los datos?**
 La regla se definió con conocimiento del negocio y se evaluó con la misma disciplina que los modelos: seleccionada en C4 y probada una sola vez en C5. Allí mantuvo su desempeño (1,97, IC [1,24; 2,56]).
 
+**14 bis. ¿Cómo evitaron la fuga de información (*data leakage*)?**
+De cuatro formas:
+- Cada predictor se mide con lo que se sabe el 20 de febrero. Los atrasos se cuentan de mayo a enero, confirmado con LEMAS: la pensión de febrero vence después del corte y no entra.
+- El preprocesamiento va dentro del *pipeline*, así que imputación y escalado se ajustan solo con el entrenamiento. Optuna afinó en C2 → C3 y la calibración se hizo en C4, nunca en C5.
+- Los hermanos se consolidan por familia, para que un mismo caso no cuente dos veces.
+- C5 se abrió una sola vez, con el sistema congelado y su huella registrada.
+
+Además encontramos y corregimos una fuga real: un falso grupo de 38 hermanos que inflaba el ROC-AUC de 0,54 a 0,59 (D29).
+
 ## D. Optimización y diagnóstico
 
 **15. ¿Cómo optimizaron los hiperparámetros?**
