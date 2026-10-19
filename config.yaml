@@ -55,8 +55,8 @@ columnas:
   tipo_reserva: "Tiempo"
   beca: "beca"
   # Pensiones pagadas después de la fecha tope de su mes, calculado por LEMAS desde el
-  # registro de pagos. Recomendado: contar solo mayo a enero (la pensión de febrero
-  # vence después de t0 = 20-feb y sería información futura).
+  # registro de pagos, solo de mayo a enero (confirmado el 18-oct-2026, D57): la pensión
+  # de febrero vence después de t0 = 20-feb y sería información futura.
   atrasos: "# meses caído"
   anio_ingreso: "anio_ingreso"
   id_estudiante: "id_seudonimo"

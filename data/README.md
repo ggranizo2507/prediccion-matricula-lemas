@@ -45,7 +45,7 @@ En el uso anual, el modo institucional de la aplicación hace el paso 1 en el pr
 | `Fecha Reserva` | Fecha y hora del formulario de reserva (en algunas hojas se llamó `Fecha`) | Auditoría: se excluyen las reservas posteriores a t0 |
 | `Tiempo` | ORDINARIA / EXTRAORDINARIA | Predictor |
 | `beca` | "SI" si tiene beca en `anoa`; vacío = sin beca (0) | Predictor y atributo de equidad |
-| `# meses caído` | Pensiones del ciclo pagadas después de la fecha tope de su mes, calculadas desde el registro de pagos (recomendado: solo mayo a enero) | Predictor |
+| `# meses caído` | Pensiones del ciclo pagadas después de la fecha tope de su mes, calculadas desde el registro de pagos, solo de mayo a enero (confirmado por LEMAS, D57) | Predictor |
 | `anio_ingreso` | Año de ingreso (2 primeros dígitos del código) | Años de permanencia |
 | `id_seudonimo` | Seudónimo de la cédula del estudiante | Enlace entre ciclos |
 | `id_familia_seudonimo` | Seudónimo del representante | Unidad de contacto; hermanos |
@@ -62,7 +62,7 @@ En el uso anual, el modo institucional de la aplicación hace el paso 1 en el pr
 
 ## Limitaciones conocidas
 - No hay fecha de aprobación de la reserva. Se usa el estado actual, y las aprobaciones excepcionales posteriores a enero pueden quedar incluidas. Por eso se hace un análisis de sensibilidad solo con "Aprobar".
-- `# meses caído` puede incluir la pensión de febrero, cuyo vencimiento es posterior a t0.
+- `# meses caído` se calcula de mayo a enero (confirmado por LEMAS el 18-oct-2026), así que no incluye la pensión de febrero, que vence después de t0. Si en algún año se calculara de otra forma, tendría información futura: hay que mantener el mismo criterio.
 - La aprobación de reservas depende también de factores institucionales que no están en los datos.
 - La unidad de contacto es el representante: dos hermanos con distinto representante cuentan como dos contactos.
 
