@@ -26,6 +26,10 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
 
 1. **Abra la aplicación:** [continuidad-matricula-lemas.streamlit.app](https://continuidad-matricula-lemas.streamlit.app/) (también enlazada en el README). Si estuvo inactiva, Streamlit puede tardar unos segundos en despertarla. Arriba verá un aviso azul: *Modo demostración*.
 2. **Cargue datos.** En la barra lateral pulse **▶️ Prueba con ejemplo**. Aparecerá *Datos: Ejemplo sintético*.
+
+   ![Pantalla inicial](img/app/01_inicio.png)
+
+   *Pantalla inicial.* **(1)** Botón para cargar los datos de ejemplo. **(2)** Carga de una base propia en CSV, que debe estar seudonimizada. **(3)** Pasos para empezar.
 3. **Revise los parámetros** en la barra lateral:
    - **Ciclo de origen:** el ciclo cuyas reservas se van a priorizar. Viene elegido el más reciente. Si elige uno anterior, la app avisa que el resultado es **retrospectivo**, porque esos ciclos se usaron para entrenar el sistema.
    - **Familias a contactar (k):** **no cambia al elegir otro ciclo**, porque representa la capacidad de contacto de cada sede y se calcula una sola vez con los ciclos de entrenamiento. Indica cuántas familias puede atender cada sede. El valor sugerido es el aprobado: el doble del promedio histórico de familias que no se matricularon. Puede cambiarlo según el personal disponible.
@@ -34,10 +38,39 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
    - Las tarjetas muestran elegibles, familias, familias a contactar y cobertura.
    - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
    - Pulse **⬇️ Descargar lista (CSV)** para guardarla.
+
+   ![Lista de contactos](img/app/02_lista.png)
+
+   *Lista de contactos.* **(1)** Genera la lista. **(2)** Familias a contactar por sede (k), editable según el personal disponible. **(3)** Resumen: elegibles, familias, familias en la lista y cobertura. **(4)** Motivo de cada familia en palabras simples; antes de llamar, confírmelo en el sistema de Secretaría (sección 6).
+
+   ![Descarga y gráficos de la lista](img/app/03_lista_graficos.png)
+
+   *Debajo de la lista.* **(1)** Descarga en CSV. **(2)** Cuántas familias de la lista tienen cada señal. **(3)** Distribución de la probabilidad estimada en todos los elegibles (es orientativa; no ordena la lista).
 5. Pestaña **📅 Seguimiento:** elija una **fecha de corte** entre el 20 de febrero y el 30 de abril. Verá cuántas familias ya pagaron, cuántas siguen sin pagar y cuáles no estaban en la lista inicial. Con el ejemplo, elija antes un ciclo anterior en la barra lateral: el más reciente todavía no tiene pagos del ciclo siguiente.
+
+   ![Seguimiento](img/app/04_seguimiento.png)
+
+   *Seguimiento.* **(1)** Ciclo anterior elegido para practicar con el ejemplo. **(2)** Fecha de corte. **(3)** Familias del 20 de febrero, las que ya pagaron, las que siguen sin pagar y las que no estaban en la lista inicial. **(4)** Opción para ocultar a las familias que ya se llamaron en la primera etapa.
 6. Pestaña **📈 Proyección:** matrículas esperadas por sede y subnivel, según el modelo y según la tasa histórica (B1).
+
+   ![Proyección](img/app/05_proyeccion.png)
+
+   *Proyección.* **(1)** Elegibles y matrículas esperadas por sede y subnivel, con el modelo y con la tasa histórica. **(2)** La misma información en tabla.
 7. Pestaña **🧑‍🎓 Evaluar un estudiante:** complete el formulario (sede, subnivel, pago anterior, pensiones pagadas tarde, tipo de reserva, promedio y conducta) y pulse **Estimar**. Obtendrá la prioridad D2 (alta, media o baja), la probabilidad y su comparación con la tasa histórica.
+
+   ![Evaluar un estudiante](img/app/06_estudiante.png)
+
+   *Evaluar un estudiante.* **(1)** Formulario con los datos conocidos al 20 de febrero, sin nombres ni cédulas. **(2)** Prioridad según la regla D2, probabilidad estimada y tasa histórica. **(3)** Señales que explican la prioridad. En la demostración el modelo se entrena con datos inventados, así que la probabilidad puede no coincidir con la prioridad: la que decide el orden es la regla D2.
 8. Pestaña **ℹ️ Acerca de:** cómo se validó el sistema, sus resultados y sus limitaciones.
+
+   ![Acerca de](img/app/07_acerca.png)
+
+   *Acerca de.* **(1)** Resultados de la prueba final con datos reales, con su intervalo de confianza. Más abajo, el gráfico de Lift y las limitaciones.
+9. **Si el archivo no sirve**, la aplicación lo dice en palabras simples y no continúa.
+
+   ![Archivo rechazado](img/app/08_error.png)
+
+   *Archivo rechazado.* **(1)** En la barra lateral, el archivo queda marcado como rechazado. **(2)** El motivo y qué hacer; aquí, un CSV con cédulas y nombres. La tabla de la sección 7 reúne todos los mensajes.
 
 ## 4. Cómo interpretar los resultados
 
@@ -155,3 +188,13 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 - **¿Pueden ver la app desde otro computador?** No. El arranque solo permite abrirla en el mismo equipo.
 - **¿Para qué sirve la pestaña Seguimiento?** Para la segunda ronda de contactos: lista a todas las familias que siguen sin pagar a la fecha que usted elija. No predice nada, solo lee los pagos del archivo.
 - **¿Sirve para estudiantes nuevos?** No. Solo para estudiantes antiguos con reserva aprobada.
+
+## 9. Soporte
+
+| Tipo de consulta | A quién acudir |
+|---|---|
+| Uso de la aplicación, errores o instalación en el computador de LEMAS | Guillermo Granizo, responsable técnico del proyecto en LEMAS: **[correo de soporte por definir]** |
+| Datos personales, pedidos de las familias (ver, corregir u oponerse) o dudas legales | La persona que designe la Dirección de LEMAS para la protección de datos (decisión 3 de la presentación a la Dirección) |
+| Código, documentación o reporte de un fallo | Repositorio del proyecto: pestaña *Issues* en [github.com/ggranizo2507/prediccion-matricula-lemas](https://github.com/ggranizo2507/prediccion-matricula-lemas/issues) |
+
+Al reportar un problema, indique la pestaña, el mensaje exacto y la hora. **No adjunte el Excel, la clave ni listas con nombres.**

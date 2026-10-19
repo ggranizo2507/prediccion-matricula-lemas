@@ -66,6 +66,9 @@ Además encontramos y corregimos una fuga real: un falso grupo de 38 hermanos qu
 **15. ¿Cómo optimizaron los hiperparámetros?**
 Con Optuna (TPE, semilla 42), 60 pruebas por modelo, 180 en total, maximizando PR-AUC entrenando en C2 y evaluando en C3. Ejemplo: la logística pasó de 0,062 a 0,106 de PR-AUC entre la peor y la mejor prueba.
 
+**15 bis. ¿Qué hiperparámetros importaron y cómo lo saben?**
+Lo medimos sobre las 180 pruebas de Optuna, sin volver a entrenar, con importancia por fANOVA, dependencia parcial e interacciones. En la regresión logística lo decisivo es `C`: con regularización fuerte el modelo se aplana hacia la tasa base, y desde `C` ≈ 1 hay una meseta. En el gradient boosting, el tamaño mínimo de hoja explica el 90 %: con hojas de menos de 80 estudiantes memoriza. La logística híbrida casi no responde a sus hiperparámetros. Las interacciones son débiles. La búsqueda mejoró la validación interna (la regresión logística pasó de 0,079 a 0,106), pero esa ganancia no se trasladó a C4: el límite es de señal, no de hiperparámetros. Detalle en [optimizacion.md](optimizacion.md), sección 2 bis.
+
 **16. ¿Hubo sobreajuste o subajuste?**
 El gradient boosting se sobreajustó: PR-AUC 0,245 en entrenamiento y 0,103 en C4. La logística mostró subajuste leve (0,140 frente a 0,113), porque las señales son débiles. La híbrida fue estable (0,126 frente a 0,125) pero con poca capacidad.
 

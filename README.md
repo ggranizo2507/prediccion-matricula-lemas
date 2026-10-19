@@ -2,8 +2,8 @@
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/licencia-MIT-green)
-![Tests](https://img.shields.io/badge/tests-pytest-orange)
-![Estado](https://img.shields.io/badge/estado-fase%203-blue)
+[![Pruebas](https://github.com/ggranizo2507/prediccion-matricula-lemas/actions/workflows/tests.yml/badge.svg)](https://github.com/ggranizo2507/prediccion-matricula-lemas/actions/workflows/tests.yml)
+![Estado](https://img.shields.io/badge/estado-entrega%20final-blue)
 ![Streamlit](https://img.shields.io/badge/app-Streamlit-FF4B4B)
 
 Sistema de IA que identifica, al **20 de febrero** de cada año, a las familias con reserva aprobada que podrían **no concretar la matrícula** antes del **30 de abril**. Entrega a Secretaría y Admisiones de la Unidad Educativa LEMAS una lista priorizada de contactos ajustada a su capacidad real y una proyección de matrícula por sede y subnivel. En la prueba final con datos reales, la priorización encontró **casi el doble** de familias que no se matricularon que una selección al azar (Lift@k = 1,97, IC 95 % [1,24; 2,56]).
@@ -42,9 +42,11 @@ Cada año, entre septiembre y noviembre, las familias de LEMAS reservan un cupo 
 |---|---|
 | Fuente | Registros institucionales de LEMAS, ciclos 2021–2022 a 2026–2027 |
 | Unidad | Estudiante antiguo con reserva aprobada para el ciclo siguiente |
-| Cohortes | C1–C3 entrenamiento (C1 condicionada a la auditoría de comparabilidad), C4 selección, C5 prueba final evaluada una sola vez |
+| Tamaño | 9.031 registros (estudiante × ciclo) de 2.733 estudiantes y 2.017 representantes; 6.361 estudiantes modelables en cinco cohortes (C1 a C5) |
+| Cohortes | C2–C3 entrenamiento, C4 selección y C5 prueba final evaluada una sola vez. C1 se excluyó en la auditoría de comparabilidad (D14) |
 | Variables | Sede, subnivel, curso, años de permanencia, promedio, conducta, beca, pensiones pagadas tarde, tipo de reserva, hermanos en LEMAS, puntualidad de la matrícula anterior |
-| Etiqueta | 1 = no pagó matrícula entre el 20-feb y el 30-abr del año de destino |
+| Etiqueta | 1 = no pagó matrícula entre el 20-feb y el 30-abr del año de destino (8,3 % de los casos: clases desbalanceadas) |
+| Licencia y acceso | Datos **propiedad de LEMAS**, usados con autorización institucional para este estudio; no son públicos ni se redistribuyen. La base sintética de `data/synthetic/` se publica bajo la licencia MIT del repositorio |
 
 **Privacidad.** Los datos reales contienen información de menores y **no se publican**. Se seudonimizan con HMAC-SHA256 y clave custodiada por LEMAS (`tools/seudonimizar.py`), y se procesan solo en el entorno autorizado. Este repositorio incluye un **dataset sintético** (`data/synthetic/`) con la misma estructura, calibrado únicamente con totales agregados. Sirve para ejecutar el código, **no** para sacar conclusiones sobre LEMAS. Detalle en [`data/README.md`](data/README.md).
 
@@ -54,7 +56,9 @@ Cada año, entre septiembre y noviembre, las familias de LEMAS reservan un cupo 
 - **Preprocesamiento:** limpieza, derivación de variables conocidas en t0 y guardas automáticas anti-fuga (`src/data_processing.py`).
 - **Auditoría de datos:** conteo de eventos de no matrícula por cohorte y comparabilidad de C1. Se entrena con y sin C1, se evalúa en C4 y C1 se incluye solo si no degrada la priorización (`src/auditoria.py`).
 - **Optimización:** Optuna (TPE, 60 trials por modelo) con validación interna temporal C2 → C3; selección en C4; calibración de Platt; sistema congelado (SHA-256) y prueba única en C5. Ver [`docs/optimizacion.md`](docs/optimizacion.md).
-- **Métricas:** Precision@k y Lift@k por sede (métrica principal, con k igual a la capacidad de contacto), Recall@k, PR-AUC, ROC-AUC, Brier, matriz de confusión e intervalos bootstrap por familia.
+- **Métricas:** Precision@k y Lift@k por sede (métrica principal, con k igual a la capacidad de contacto), Recall@k, PR-AUC, ROC-AUC, Brier e intervalos bootstrap por familia. **No se reporta exactitud ni F1:** con 8,3 % de casos, decir «todas se matriculan» acierta el 92 %, y la lista no usa un umbral sino un número fijo de llamadas ([`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) §3).
+- **Análisis de sensibilidad de hiperparámetros:** importancia por fANOVA, dependencia parcial e interacciones sobre las 180 pruebas de Optuna (D58).
+- **Robustez:** escenarios críticos con datos dañados a propósito (errores de registro, faltantes, desbalance, cambio de distribución y señal caída) sobre C4 ([`docs/escenarios_criticos.md`](docs/escenarios_criticos.md)).
 
 ## Resultados
 Prueba final en **C5** (matrícula 2026–2027), evaluada **una sola vez** con el sistema congelado. k = 118 familias en Mucho Lote 1 y 47 en Mucho Lote 2 (≈ 15 % de 1.093 familias). Solo cifras agregadas.
@@ -70,6 +74,8 @@ Prueba final en **C5** (matrícula 2026–2027), evaluada **una sola vez** con e
 - **Los modelos de aprendizaje automático no superaron a la regla** con 193 eventos de entrenamiento: el gradient boosting se sobreajustó y los modelos lineales se quedaron cortos. Es un resultado válido y está documentado.
 - **Calibración y proyección:** la logística híbrida calibrada iguala a la tasa histórica (Brier 0,0648 frente a 0,0647; MAPE 2,8 % en ambos).
 - **Equidad:** menor detección en familias becadas (recall 0,18 frente a 0,32), que se advierte en la app.
+
+![Prueba final en C5](results/figures/real_12_prueba_c5.png)
 
 Detalle en [`docs/analisis_datos.md`](docs/analisis_datos.md) y [`docs/modelado.md`](docs/modelado.md).
 
@@ -124,6 +130,14 @@ streamlit run app/app.py                          # demo
 bash iniciar_lemas.sh                             # macOS / Linux
 python tools/generar_excel_ejemplo.py             # Excel y clave FICTICIOS para practicar
 ```
+**Capturas** (modo demostración, datos inventados):
+
+| Lista de contactos con el motivo de cada familia | Formulario: prioridad y probabilidad | Manejo de errores |
+|---|---|---|
+| ![Lista de contactos](docs/img/app/02_lista.png) | ![Evaluar un estudiante](docs/img/app/06_estudiante.png) | ![Archivo rechazado](docs/img/app/08_error.png) |
+
+**Cómo usarla:** 1) pulse **▶️ Prueba con ejemplo**; 2) revise k por sede; 3) pulse **Generar lista** y descárguela; 4) recorra *Seguimiento*, *Proyección*, *Evaluar un estudiante* y *Acerca de*. Las ocho capturas anotadas están en el manual.
+
 Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño en [`docs/arquitectura.md`](docs/arquitectura.md).
 
 ## Estructura del proyecto
@@ -131,14 +145,23 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 |---|---|
 | `data/` | `raw/` y `processed/` (vacías en el repositorio público) y `synthetic/` con la base artificial |
 | `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (entrena, optimiza, calibra y evalúa una vez en C5), 04 optimización, 05 evaluación (análisis de resultados guardados), 06 alcance de la lista y 07 escenarios críticos, listos para Colab |
-| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `modeling` (entrenamiento, Optuna, calibración, evaluación), `inferencia` (lógica de la app), `synthetic` y `utils` |
-| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS); reporte de diagnóstico y costo esperado (`generar_costo.py`), que solo leen tablas agregadas de `results/metrics` |
+| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `modeling` (entrenamiento, Optuna, calibración, evaluación), `inferencia` (lógica de la app), `institucional`, `diagnostico`, `sensibilidad`, `alcance`, `costo`, `escenarios`, sus módulos de figuras (`graficos_*`), `synthetic` y `utils` |
+| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) y la sensibilidad de hiperparámetros (`generar_sensibilidad.py`), que solo leen tablas agregadas de `results/metrics` |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 179 pruebas: datos, métricas, modelado, diagnóstico de ajuste, alcance de la lista, interfaz y modo institucional |
+| `tests/` | 234 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
+
+**Equivalencias con la estructura de la guía del curso.** Algunos nombres cambian porque el proyecto trabaja con datos de menores: el modelo entrenado con datos reales nunca se publica.
+
+| La guía pide | En este repositorio | Motivo |
+|---|---|---|
+| `src/model.py` y `src/train.py` | `src/modeling.py`: definición de los modelos (`construir_modelo`), Optuna (`optimizar`), entrenamiento (`entrenar_candidatos`), calibración y congelamiento. Se ejecuta desde `notebooks/03_modelado.ipynb` | Un solo módulo para definir, entrenar y congelar con el mismo protocolo temporal |
+| `models/best_model.pkl` y `model_v1.pkl` | `models/sistema_sintetica.joblib` y `.json`, el sistema completo entrenado con la base sintética. El real (`sistema_real.joblib`) existe solo en LEMAS | Un modelo entrenado con datos reales puede memorizar casos; la solución final es la regla D2, que no necesita archivo de modelo |
+| `tests/test_model.py` | `tests/test_modeling.py` (más otras nueve pruebas por módulo) | Mismo nombre que el módulo que prueba |
+| `results/reports/` | Reportes en `docs/`: [`diagnostic_report.pdf`](docs/diagnostic_report.pdf) y el [workshop](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf); índice en [`results/reports/README.md`](results/reports/README.md) | Se entregan junto a la documentación que los explica |
 
 ### Documentación
 | Documento | Contenido |
@@ -146,7 +169,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D57 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
-| [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados y diagnóstico de ajuste |
+| [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados, análisis de sensibilidad (importancia, dependencia parcial e interacciones), antes/después y diagnóstico de ajuste |
 | [`docs/diagnostic_report.pdf`](docs/diagnostic_report.pdf) | Reporte técnico de la actividad de la semana 3: diagnóstico de sobreajuste y subajuste, curvas de aprendizaje y estrategias de mejora |
 | [`docs/modelado.md`](docs/modelado.md) | Selección en C4, prueba final en C5, calibración, explicabilidad y equidad |
 | [`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) | Por qué validación temporal y no validación cruzada aleatoria; qué técnicas de incertidumbre y comparación aplicamos y cuáles no; costo esperado y razón de equilibrio de las llamadas |
@@ -193,7 +216,18 @@ Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_et
 Código bajo licencia [MIT](LICENSE). Los datos reales de LEMAS están excluidos.
 
 ## Agradecimientos y referencias
-A la Unidad Educativa LEMAS por autorizar el uso seudonimizado de sus registros. Las referencias se listan en [`docs/planificacion.md`](docs/planificacion.md).
+A la Unidad Educativa LEMAS por autorizar el uso seudonimizado de sus registros, y a la docente del curso por sus observaciones durante el semestre.
+
+Referencias principales:
+- Akiba, T. et al. (2019). Optuna: A next-generation hyperparameter optimization framework. *KDD 2019*.
+- Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. *JMLR*, 12, 2825–2830.
+- Lundberg, S. y Lee, S.-I. (2017). A unified approach to interpreting model predictions (SHAP). *NeurIPS 2017*.
+- Hutter, F., Hoos, H. y Leyton-Brown, K. (2014). An efficient approach for assessing hyperparameter importance (fANOVA). *ICML 2014*.
+- Platt, J. (1999). Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods.
+- Mitchell, M. et al. (2019). Model cards for model reporting. *FAT\* 2019*; Gebru, T. et al. (2021). Datasheets for datasets. *CACM*, 64(12).
+- República del Ecuador (2021). *Ley Orgánica de Protección de Datos Personales*; UNESCO (2021). *Recomendación sobre la ética de la inteligencia artificial*.
+
+La lista completa está en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) (normativa, marcos y casos) y en [`docs/optimizacion.md`](docs/optimizacion.md) (métodos de optimización).
 
 ## Videos
 *Se agregan en la Fase 4.*

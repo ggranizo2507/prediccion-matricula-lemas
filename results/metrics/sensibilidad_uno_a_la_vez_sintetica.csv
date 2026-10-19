@@ -1,0 +1,15 @@
+modelo,hiperparametro,pr_auc_min,pr_auc_max,rango
+Regresión logística,C,0.075,0.133,0.058
+Regresión logística,l1_ratio,0.1295,0.1325,0.003
+Regresión logística,balanceado,0.1303,0.1325,0.0022
+Regresión logística,conjunto,0.1323,0.1325,0.0002
+Gradient boosting,max_depth,0.1144,0.1216,0.0072
+Gradient boosting,max_iter,0.118,0.123,0.0049
+Gradient boosting,learning_rate,0.1203,0.1216,0.0013
+Gradient boosting,conjunto,0.1209,0.1216,0.0007
+Gradient boosting,min_samples_leaf,0.1209,0.1215,0.0007
+Gradient boosting,max_leaf_nodes,0.1212,0.1217,0.0005
+Gradient boosting,l2_regularization,0.1213,0.1217,0.0004
+Gradient boosting,balanceado,0.1213,0.1216,0.0003
+Logística híbrida,C,0.1098,0.1157,0.0059
+Logística híbrida,balanceado,0.1169,0.1169,0.0

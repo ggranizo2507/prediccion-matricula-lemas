@@ -1,0 +1,4 @@
+modelo,primera_prueba,mediana_aleatorias,mediana_todas,mejor,prueba_mejor,ganancia_sobre_aleatorias,veces_azar_mejor
+Regresión logística,0.1306,0.1155,0.123,0.1349,46,0.0194,1.84
+Gradient boosting,0.12,0.1136,0.121,0.1248,55,0.0112,1.7
+Logística híbrida,0.1102,0.1109,0.1118,0.1172,49,0.0063,1.6

@@ -1,0 +1,24 @@
+{
+  "fuente": "real",
+  "pruebas_por_modelo": 60,
+  "validacion": "C2 → C3",
+  "tasa_validacion": 0.0621,
+  "semillas_importancia": [
+    42,
+    7,
+    123,
+    2024,
+    9
+  ],
+  "conclusiones": [
+    "Regresión logística: lo que más explica la variación de la PR-AUC es balanceado (58 %) y C (38 %) (fANOVA).",
+    "Gradient boosting: lo que más explica la variación de la PR-AUC es min_samples_leaf (90 %) y balanceado (4 %) (fANOVA).",
+    "Logística híbrida: lo que más explica la variación de la PR-AUC es balanceado (98 %) y C (2 %) (fANOVA).",
+    "Regresión logística: la interacción más fuerte es conjunto × l1_ratio (H² = 0,02, débil).",
+    "Gradient boosting: la interacción más fuerte es learning_rate × max_leaf_nodes (H² = 0,04, débil).",
+    "Logística híbrida: la interacción más fuerte es balanceado × C (H² = 0,16, moderada).",
+    "Regresión logística: la búsqueda pasó de una mediana de 0,079 en las 10 pruebas aleatorias a 0,106 en la mejor (+0,027).",
+    "Gradient boosting: la búsqueda pasó de una mediana de 0,075 en las 10 pruebas aleatorias a 0,089 en la mejor (+0,014).",
+    "Logística híbrida: la búsqueda pasó de una mediana de 0,086 en las 10 pruebas aleatorias a 0,088 en la mejor (+0,002)."
+  ]
+}

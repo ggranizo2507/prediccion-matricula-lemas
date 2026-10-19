@@ -32,6 +32,7 @@ flowchart LR
 | `src/diagnostico.py` · `src/graficos_diagnostico.py` | Actividad de la semana 3: seguimiento de métricas por iteración, curvas de aprendizaje de scikit-learn, diagnóstico cuantitativo de sobreajuste y subajuste (con la segunda etapa de D54), estrategias de un solo cambio con bootstrap, réplica y semillas, y sus figuras |
 | `src/alcance.py` · `src/graficos_alcance.py` | Análisis descriptivo del alcance de la lista (D50): desglose del evento, alcance según k y lista semanal frente a lista fija. No usa C5 ni cambia el sistema |
 | `src/costo.py` · `src/graficos_costo.py` · `tools/generar_costo.py` | Costo esperado de las llamadas (D56): razón de equilibrio cFN / cFP por escenario, precisión por tramo de la lista y beneficio neto según k. Solo usa tablas agregadas ya publicadas; no vuelve a evaluar C5 |
+| `src/sensibilidad.py` · `src/graficos_sensibilidad.py` · `tools/generar_sensibilidad.py` | Análisis de sensibilidad de hiperparámetros (D58): importancia fANOVA, dependencia parcial, interacciones (H² de Friedman) y antes/después, solo con el historial de Optuna |
 | `src/escenarios.py` · `src/graficos_escenarios.py` | Escenarios críticos (D57): errores de registro, datos faltantes, desbalance extremo, cambio de distribución y señal caída sobre C4, con límites operativos. Cuaderno `07_escenarios_criticos`. No usa C5 |
 | `src/inferencia.py` | Lógica de la aplicación (validación, población del ciclo, puntuación, lista, proyección y formulario), separada de Streamlit para poder probarla. `revisar_senales` avisa si una señal de D2 llega vacía o constante (D57) |
 | `src/institucional.py` | Modo institucional (D45): seudonimiza el Excel en memoria, verifica que no queden identificadores, arma el acta y construye la lista con nombres. Comprueba que la app se use en el mismo equipo |
@@ -139,4 +140,19 @@ flowchart TB
 - **Cuadernos listos para Colab**, que se pueden ejecutar de punta a punta con la base sintética. Siguen siendo la evidencia académica del proceso; el uso anual en LEMAS ya no los necesita.
 
 ## 7. Tecnologías
-Python 3.11+, pandas, NumPy, scikit-learn, Optuna, SHAP, Matplotlib/Seaborn, Plotly, Streamlit, openpyxl, pytest, ruff y GitHub Actions.
+
+Versiones exactas con las que se verificó el proyecto (`requirements-lock.txt`). `requirements.txt` fija las versiones mínimas compatibles con Colab, y `app/requirements.txt` las de la aplicación desplegada.
+
+| Uso | Librería | Versión |
+|---|---|---|
+| Lenguaje | Python | 3.11 o superior (GitHub Actions usa 3.12) |
+| Datos | pandas · NumPy · openpyxl · PyYAML | 3.0.2 · 2.4.4 · 3.1.5 · 6.0.3 |
+| Modelos | scikit-learn (regresión logística, HistGradientBoosting, calibración, `Pipeline`) | 1.8.0 |
+| Optimización | Optuna (TPE, `optuna.importance` para fANOVA) | 5.0.0 |
+| Explicabilidad y equidad | SHAP · Fairlearn | 0.52.0 · 0.14.0 |
+| Seguimiento de experimentos | MLflow | 3.16.1 |
+| Persistencia | joblib | 1.5.3 |
+| Figuras | Matplotlib · seaborn · Plotly | 3.10.8 · 0.13.2 · 7.1.0 |
+| Interfaz | Streamlit (Community Cloud para la demostración) | 1.64.0 |
+| Calidad | pytest · ruff (PEP 8) · GitHub Actions | 9.1.1 · 0.16.9 |
+| Reportes | reportlab (solo para `diagnostic_report.pdf`) | 4.0 o superior |
