@@ -30,7 +30,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
    - **Ciclo de origen:** el ciclo cuyas reservas se van a priorizar. Viene elegido el más reciente. Si elige uno anterior, la app avisa que el resultado es **retrospectivo**, porque esos ciclos se usaron para entrenar el sistema.
    - **Familias a contactar (k):** **no cambia al elegir otro ciclo**, porque representa la capacidad de contacto de cada sede y se calcula una sola vez con los ciclos de entrenamiento. Indica cuántas familias puede atender cada sede. El valor sugerido es el aprobado: el doble del promedio histórico de familias que no se matricularon. Puede cambiarlo según el personal disponible.
 4. Vaya a la pestaña **📋 Lista de contactos** y pulse **Generar lista**.
-   - Si aparece un aviso en rojo («Revise los datos antes de usar esta lista»), alguna señal llegó vacía o constante; vea la sección 7.
+   - Si aparece un aviso amarillo o rojo («Revise los datos…»), alguna señal llegó vacía o constante; vea la sección 7.
    - Las tarjetas muestran elegibles, familias, familias a contactar y cobertura.
    - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
    - Pulse **⬇️ Descargar lista (CSV)** para guardarla.
@@ -114,6 +114,7 @@ La lista del 20 de febrero llega a cerca de un tercio de las familias que no se 
 Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto sigue el protocolo de apoyo de la sección 6 y no es una gestión de cobro.
 
 ## 6. Protocolo sugerido para el contacto
+- Antes de llamar, confirmar en el sistema de Secretaría que el motivo de cada familia es correcto, sobre todo «pagó tarde la matrícula anterior». Un dato mal digitado es lo que más daña la lista y ninguna comprobación automática lo detecta ([escenarios_criticos.md](escenarios_criticos.md) §3.1).
 - Presentarse como apoyo: "Queremos saber si necesitan información o facilidades para la matrícula".
 - Ofrecer opciones (fechas, planes de pago y canales de atención); no hablar de deudas ni de la lista.
 - Registrar el resultado del contacto (contactado, sin respuesta, confirmó o no continuará) para evaluar el proceso en mayo.
@@ -138,7 +139,8 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 | "Se necesitan los dos archivos: el Excel y la clave" | Suba el archivo que falta |
 | "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
 | "La base no tiene suficientes ciclos para entrenar" | Incluya en el Excel las hojas de los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
-| "**Revise los datos antes de usar esta lista**" (aviso en rojo sobre la lista) | Una señal de la regla llegó vacía o constante: falta la hoja del ciclo anterior, faltan fechas de pago, los atrasos llegaron en cero o el tipo de reserva está vacío. Con eso la lista ordena casi al azar. Corrija el Excel (o pida a LEMAS que recalcule la columna) y vuelva a generar la lista antes de usarla ([escenarios_criticos.md](escenarios_criticos.md) §4) |
+| "**Revise los datos cuando pueda**" (aviso amarillo sobre la lista) | Una de las tres señales llegó vacía o constante (falta la hoja del ciclo anterior, faltan fechas de pago, los atrasos llegaron en cero o el tipo de reserva está vacío). La lista sigue ordenando casi igual, porque las otras dos señales la compensan, pero conviene corregir el Excel ([escenarios_criticos.md](escenarios_criticos.md) §4) |
+| "**Revise los datos antes de usar esta lista**" (aviso rojo sobre la lista) | Dos o más señales llegaron vacías o constantes: la lista se acerca a una selección al azar. Corrija el Excel (o pida a LEMAS que recalcule la columna) y vuelva a generar la lista antes de usarla |
 | "Ese ciclo no tiene estudiantes con reserva aprobada" | Elija otro ciclo: el actual aún no tiene reservas aprobadas o no está en el archivo |
 | "El archivo no registra pagos de matrícula del ciclo … entre el 20 de febrero y la fecha de corte" (pestaña *Seguimiento*) | El Excel no tiene la hoja del ciclo siguiente o no está actualizado. Expórtelo de nuevo. Con el ejemplo, elija un ciclo anterior |
 | `TypeError` en `lista_contactos` u otro error en rojo justo después de actualizar el repositorio (versión pública) | Streamlit quedó con código viejo en memoria. En share.streamlit.io abra la app y elija **⋮ → Reboot app**. Desde D51 la aplicación lo corrige sola |

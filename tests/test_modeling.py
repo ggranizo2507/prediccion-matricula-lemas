@@ -84,14 +84,17 @@ def test_arboles_monotonos_en_atrasos(dataset):
 
 def test_candidatos_no_usan_c5(dataset, config, k, monkeypatch):
     vistos = []
-    import src.modeling as modeling
-    original = modeling.construir_matriz_x
+    # Se espía el módulo donde vive `entrenar_candidatos`, no `src.modeling` de sys.modules:
+    # la prueba de recarga de test_app puede reemplazar ese módulo y el espía quedaría en
+    # otro objeto (fallo intermitente según el orden y la hora de los archivos).
+    globales = entrenar_candidatos.__globals__
+    original = globales["construir_matriz_x"]
 
     def espia(datos):
         vistos.extend(set(datos["cohorte"]))
         return original(datos)
 
-    monkeypatch.setattr(modeling, "construir_matriz_x", espia)
+    monkeypatch.setitem(globales, "construir_matriz_x", espia)
     entrenar_candidatos(dataset, config, ["C2", "C3"], k, n_trials=2)
     assert "C5" not in vistos and "C4" in vistos
 

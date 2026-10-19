@@ -182,7 +182,10 @@ def desbalance(datos: pd.DataFrame, tasa: float | None,
 def medir(datos: pd.DataFrame, puntuador: Puntuador, k_por_sede: dict, semilla: int) -> dict:
     """Lift@k, Recall@k, Precision@k y PR-AUC (y Brier si son probabilidades)."""
     m = metricas(datos, puntuador(datos), k_por_sede, semilla)
-    return {c: m.get(c, np.nan) for c in ("lift_k", "recall_k", "precision_k", "pr_auc", "brier")}
+    salida = {c: m.get(c, np.nan) for c in ("lift_k", "recall_k", "precision_k", "pr_auc", "brier")}
+    if puntuador is puntuador_d2:   # el puntaje de D2 no es una probabilidad
+        salida["brier"] = np.nan
+    return salida
 
 
 def _resumir(valores: list[dict]) -> dict:

@@ -75,5 +75,5 @@ senal_caida,reserva_extraordinaria,Logística híbrida,constante,50,1.5669,1.566
 senal_caida,atrasos_pension,D2 · señales administrativas,constante,50,1.0879,0.9206,1.2311,0.1984,0.1679,0.2245,0.1034,0.0875,0.1170,0.0871,0.0871,0.0871,,,,
 senal_caida,atrasos_pension,Logística híbrida,constante,50,1.3430,1.3430,1.3430,0.2449,0.2449,0.2449,0.1277,0.1277,0.1277,0.1243,0.1243,0.1243,0.0803,0.0803,0.0803,
 senal_caida,promedio,Logística híbrida,constante,50,1.3990,1.3990,1.3990,0.2551,0.2551,0.2551,0.1330,0.1330,0.1330,0.1126,0.1126,0.1126,0.0803,0.0803,0.0803,
-senal_caida,todas_d2,D2 · señales administrativas,constante,50,1.0073,0.5848,1.3178,0.1837,0.1066,0.2403,0.0957,0.0556,0.1253,0.0882,0.0882,0.0882,0.0882,0.0882,0.0882,
+senal_caida,todas_d2,D2 · señales administrativas,constante,50,1.0073,0.5848,1.3178,0.1837,0.1066,0.2403,0.0957,0.0556,0.1253,0.0882,0.0882,0.0882,,,,
 senal_caida,todas_d2,Logística híbrida,constante,50,1.3744,1.3430,1.3990,0.2506,0.2449,0.2551,0.1307,0.1277,0.1330,0.1243,0.1243,0.1243,0.0803,0.0803,0.0803,

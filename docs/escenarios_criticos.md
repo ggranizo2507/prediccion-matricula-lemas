@@ -39,35 +39,99 @@ Lo que esta prueba **no** cubre es lo que pasa cuando los datos de entrada llega
 | Cambio de distribución | La logística híbrida se entrena con C2 + C3 de un grupo, se calibra en C4 del mismo grupo y se prueba en C4 del otro: Mucho Lote 1 ↔ Mucho Lote 2 y no becados ↔ becados. Se compara con el modelo entrenado con todos | 4 direcciones |
 | Feature clave caída | Una señal llega constante: atrasos todos en cero, pago anterior todo «en plazo», ninguna reserva extraordinaria, o las tres a la vez | 5 casos |
 
-## 3. Resultados
+## 3. Resultados con los datos reales
 
-> **Pendiente:** la ejecución del cuaderno 07 con los datos reales. Sus agregados irán en `results/metrics/escenarios_*_real.*` y las figuras en `results/figures/real_29_*` y `real_30_*`. Esta sección se completará con esas cifras.
->
-> Con los **datos sintéticos** el código funciona de punta a punta (figuras `sintetica_29` y `sintetica_30`), pero sus cifras **no describen a LEMAS**. La base sintética no reproduce la fuerza de las señales: allí D2 tiene un Lift de 1,08 en C4, frente a 1,93 con los datos reales. Por eso no se sacan conclusiones de ellas.
+Fuente: cuaderno 07 ejecutado con la base seudonimizada (18-oct-2026); agregados en `results/metrics/escenarios_*_real.*` y figuras `results/figures/real_29_escenarios_criticos.png` y `real_30_cambio_distribucion.png`. La comprobación inicial reproduce la Fase 2 en C4 con la semilla fija (D2: Lift@k 1,93; logística híbrida: 1,53). **Sin perturbar**, la media de los 50 sorteos de empates da para D2 un Lift@k de **1,77** (del 1,60 al 1,93) y un Recall@k de 28 %.
 
-Qué se espera leer en la ejecución real, y por qué importa:
+Entre corchetes, el rango del percentil 5 al 95 de las repeticiones.
 
-1. **Errores de registro:** cuántos errores de digitación tolera la lista antes de caer bajo 1,20. Como D2 se apoya sobre todo en el pago tardío, que pocas familias tienen, un error que marque «tardío» a quien pagó en plazo puede llenar la lista de falsas alarmas.
-2. **Faltantes:** qué señal es la crítica. Se espera que sea el pago tardío de la matrícula anterior, que es la que más separa (22 frente a 6 de cada 100).
-3. **Desbalance:** con menos casos el Lift se vuelve muy inestable. Esto dice cuánto hay que desconfiar de la evaluación de un año con pocos casos.
-4. **Cambio de distribución:** si la logística híbrida se transfiere entre sedes y entre becados y no becados, y si sus probabilidades se descalibran. La regla D2 no aprende, así que no sufre este problema de la misma forma, aunque su capacidad de ordenar puede ser distinta en cada grupo (la lista ya encuentra menos casos entre los becados, [ficha_modelo.md](ficha_modelo.md)).
-5. **Señal caída:** cuánto pierde la lista si una columna no se calculó. Si las tres señales caen, D2 queda en el azar por construcción.
+### 3.1 Errores de registro: la debilidad principal
+
+| Probabilidad de error por señal | Lift@k de D2 | Logística híbrida | ¿Útil? |
+|---|---|---|---|
+| 0 % | 1,77 [1,60; 1,93] | 1,53 | Sí |
+| 1 % | 1,67 [1,43; 1,93] | 1,51 | Sí |
+| 5 % | 1,63 [1,40; 1,99] | 1,47 | Sí |
+| 10 % | 1,48 [1,23; 1,80] | 1,33 | Sí, al límite |
+| 20 % | 1,24 [0,89; 1,57] | 1,25 | **No** |
+
+Es el escenario que más daño hace, y el único que la aplicación no puede detectar sola: un dato mal digitado no deja rastro. Basta un 1 % de errores para bajar el Lift de 1,77 a 1,67. La razón es la forma de la regla: un «pagó tarde» puesto por error lleva a esa familia al primer grupo de la lista y ocupa el lugar de un caso real. La lista **tolera hasta un 10 % de errores** y deja de ser útil hacia el 20 %. El ruido gaussiano en el promedio afecta solo a la logística híbrida: con σ = 2 puntos baja de 1,53 a 1,28.
+
+### 3.2 Datos faltantes y señal caída: la regla es redundante
+
+| Señal | 50 % vacía (D2) | Constante (D2) | Constante (híbrida) |
+|---|---|---|---|
+| Ninguna (sin perturbar) | 1,77 | 1,77 | 1,53 |
+| Pago tardío de la matrícula anterior | 1,75 | 1,78 | 1,40 |
+| Reserva extraordinaria | 1,67 | 1,75 | **1,13** |
+| Pensiones pagadas tarde | 1,73 | 1,66 | 1,46 |
+| Las tres señales de D2 | — | **1,05** [0,73; 1,37] | **0,86** |
+
+Con **una sola** señal vacía hasta en la mitad de las filas, o incluso constante, la regla casi no cambia: su Lift queda entre 1,66 y 1,78, y el percentil 5 nunca baja de 1,43. Las tres señales se solapan. Las familias que pagaron tarde la matrícula suelen tener también pensiones atrasadas, así que si una señal falta, las otras la cubren. Esto **no significa** que el pago tardío no importe; significa que en C4 su información ya está en buena parte en los atrasos. Solo cuando caen **las tres** la lista queda en el azar (1,05).
+
+La logística híbrida es más frágil. Sin la reserva extraordinaria baja a 1,13, bajo el umbral, y con las tres señales caídas a 0,86, peor que el azar.
+
+### 3.3 Desbalance extremo: la lista sirve, la medición no
+
+| Tasa familiar del evento | Familias con caso (aprox.) | Lift@k de D2 | PR-AUC |
+|---|---|---|---|
+| 9,1 % (C4 real) | 95 | 1,77 [1,60; 1,93] | 0,137 |
+| 5 % | 50 | 1,85 [1,38; 2,24] | 0,083 |
+| 3 % | 29 | 1,77 [1,22; 2,45] | 0,057 |
+| 1 % | 10 | 1,87 [0,58; 2,90] | 0,032 |
+
+En promedio, la lista sigue encontrando casi el doble de casos que el azar aunque haya muy pocos. Lo que se rompe es la **medición**. Con 10 familias con caso, la misma lista puede parecer inútil (0,58) o excelente (2,90) según qué familias queden. El criterio de utilidad se cumple hasta una tasa del 3 %. La PR-AUC baja con la tasa porque depende de la prevalencia: no sirve para comparar años con tasas distintas, y por eso la métrica principal es el Lift.
+
+Consecuencia práctica: en un año con muy pocos casos, el control de mayo no debe decidir con un solo año. La regla ya lo prevé, pues solo se suspende el uso si la lista no supera al azar **dos años seguidos**.
+
+### 3.4 Cambio de distribución: la logística híbrida no se transfiere entre sedes
+
+| Origen → destino | PR-AUC transferida | PR-AUC entrenada con todos | Regla D2 | Observados / esperados (transferida) |
+|---|---|---|---|---|
+| Mucho Lote 1 → Mucho Lote 2 | **0,071** (ROC-AUC 0,40) | 0,183 | 0,134 | **0,74** |
+| Mucho Lote 2 → Mucho Lote 1 | 0,165 | 0,112 | 0,143 | **1,27** |
+| No becados → becados | 0,256 | 0,266 | 0,387 | 0,94 |
+| Becados → no becados | 0,109 | 0,122 | 0,133 | 0,93 |
+
+Cada PR-AUC se compara dentro de su fila, porque depende de la tasa de cada grupo.
+
+- **Entre sedes**, el modelo no se transfiere. Entrenado con Mucho Lote 1 ordena peor que el azar en Mucho Lote 2 (ROC-AUC 0,40) y sobrestima el riesgo: espera un 35 % más de casos de los que hubo. Entrenado con Mucho Lote 2 subestima el riesgo en Mucho Lote 1 (observados / esperados 1,27). El resultado de la dirección inversa, mejor que el modelo de todos, muestra lo inestable que es aprender con pocos casos por sede (en C4 hay 39 estudiantes con caso en Mucho Lote 2 y 83 en Mucho Lote 1).
+- **Entre becados y no becados**, sí se transfiere: la discriminación es parecida y la calibración se desvía menos de un 7 %.
+- **La regla D2 no se entrena**, así que no tiene este problema. En tres de las cuatro direcciones ordena igual o mejor que el modelo transferido. Para los becados, su PR-AUC alta (0,387) se apoya en solo 13 estudiantes con caso y es muy incierta.
+
+Es otro argumento a favor de usar una sola regla común en lugar de modelos por sede.
+
+### 3.5 Límites operativos
+
+| Escenario | La lista sigue siendo útil (Lift@k ≥ 1,20 en la media y el percentil 5) | Deja de serlo |
+|---|---|---|
+| Errores de registro | Hasta el 10 % | Hacia el 20 % |
+| Una señal vacía | Hasta el 50 %, todo el rango probado | — |
+| Una señal constante | Sí, cualquiera de las tres | — |
+| Las tres señales caídas | — | Siempre (1,05) |
+| Pocos casos en el año | Hasta una tasa del 3 % | Al 1 % la medición no es confiable |
+| Cambio entre sedes | Regla D2 común: sí | Un modelo por sede: no |
 
 ## 4. Qué hace el sistema cuando deja de ser útil
 
-**Antes de usar la lista (cada 20 de febrero).** La aplicación revisa las señales del ciclo cargado al generar la lista (`inferencia.revisar_senales`) y muestra un **aviso en rojo** si:
+**Antes de usar la lista (cada 20 de febrero).** Al generar la lista, la aplicación revisa las señales del ciclo cargado (`inferencia.revisar_senales`). Una señal cuenta como **afectada** si:
 
-- más del 80 % de los estudiantes figura como nuevo, porque falta la hoja del ciclo anterior y sin ella no se conoce el pago tardío;
-- falta la fecha de pago anterior en más del 20 % de los que no son nuevos;
-- ningún estudiante figura con pago tardío, cuando en todos los años revisados hubo casos;
-- la columna de atrasos está vacía en más del 20 % de las filas o llegó toda en cero;
-- el tipo de reserva está vacío en más del 20 % de las filas.
+- más del 80 % de los estudiantes figura como nuevo (falta la hoja del ciclo anterior), falta la fecha de pago anterior en más del 30 % de los que no son nuevos, o ningún estudiante figura con pago tardío;
+- la columna de atrasos está vacía en más del 30 % de las filas o llegó toda en cero;
+- el tipo de reserva está vacío en más del 30 % de las filas.
 
-El aviso explica que con una señal vacía o constante la lista se acerca a una selección al azar, y pide corregir el Excel antes de usarla. La lista se muestra igual, porque quien decide es una persona, pero no puede pasar inadvertido. Estas comprobaciones solo miran proporciones del ciclo cargado y no usan el resultado, que todavía no se conoce.
+El aviso tiene dos niveles, que siguen los resultados de la sección 3.2:
 
-Los umbrales están en `config.yaml` (`calidad_senales`) y son **provisionales**: se ajustarán con los límites de la sección 3 cuando esté la ejecución real.
+| Señales afectadas | Aviso | Por qué |
+|---|---|---|
+| Una | **Amarillo** («Revise los datos cuando pueda»). Dice que la lista sigue ordenando casi igual, pero que conviene corregir el Excel | Con una sola señal caída el Lift queda entre 1,66 y 1,78 |
+| Dos o más | **Rojo** («Revise los datos antes de usar esta lista»). Dice que la lista se acerca al azar y pide corregir el Excel y volver a generarla | Con las tres caídas el Lift es 1,05 |
 
-**Después de la campaña (cada mayo).** Con el resultado del ciclo se recalcula el Lift@k de la lista. Si baja de 1,20 se revisa la regla, y si no supera al azar dos años seguidos se suspende su uso ([ficha_modelo.md](ficha_modelo.md) §8). La persona que designe la Dirección decide la suspensión (decisión 5 de la presentación a la Dirección).
+La lista se muestra igual, porque quien decide es una persona, pero el aviso no puede pasar inadvertido. Las comprobaciones solo miran proporciones del ciclo cargado y no usan el resultado, que todavía no se conoce. Los umbrales están en `config.yaml` (`calidad_senales`). El 30 % deja margen: la simulación muestra que la regla aguanta hasta el 50 %, pero tantos vacíos casi siempre indican un error de exportación.
+
+**Contra los errores de registro**, que ninguna comprobación automática detecta, la medida es de procedimiento. Antes de llamar, quien tenga la lista confirma en el sistema de Secretaría que el motivo de cada familia es correcto, sobre todo «pagó tarde la matrícula anterior». La lista tiene 165 familias, así que la revisión es breve, y es justo donde un error hace más daño (sección 3.1).
+
+**Después de la campaña (cada mayo).** Con el resultado del ciclo se recalcula el Lift@k de la lista. Si baja de 1,20 se revisa la regla, y si no supera al azar dos años seguidos se suspende su uso ([ficha_modelo.md](ficha_modelo.md) §8). En un año con muy pocos casos (menos del 3 %), un solo año no basta para decidir (sección 3.3). La persona que designe la Dirección decide la suspensión (decisión 5 de la presentación a la Dirección).
 
 ## 5. Límites de la simulación
 
