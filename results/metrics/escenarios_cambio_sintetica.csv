@@ -1,0 +1,13 @@
+corte,origen,destino,estudiantes_destino,modelo,eventos,pr_auc,roc_auc,brier,observados_sobre_esperados
+sede,Mucho Lote 1,Mucho Lote 2,458,transferido,39,0.1041,0.4890,0.0797,0.9220
+sede,Mucho Lote 1,Mucho Lote 2,458,referencia (todos),39,0.1207,0.4927,0.0784,0.9580
+sede,Mucho Lote 1,Mucho Lote 2,458,regla D2 (sin aprendizaje),39,0.0983,0.5410,,
+sede,Mucho Lote 2,Mucho Lote 1,676,transferido,61,0.1579,0.6387,0.0817,1.0590
+sede,Mucho Lote 2,Mucho Lote 1,676,referencia (todos),61,0.1782,0.6469,0.0803,1.0280
+sede,Mucho Lote 2,Mucho Lote 1,676,regla D2 (sin aprendizaje),61,0.0972,0.5406,,
+beca,0,1,154,transferido,12,0.1172,0.4507,0.0734,0.8260
+beca,0,1,154,referencia (todos),12,0.1194,0.4583,0.0728,0.8530
+beca,0,1,154,regla D2 (sin aprendizaje),12,0.0745,0.4522,,
+beca,1,0,980,transferido,88,0.1453,0.6079,0.0816,1.1450
+beca,1,0,980,referencia (todos),88,0.1539,0.6038,0.0806,1.0240
+beca,1,0,980,regla D2 (sin aprendizaje),88,0.1008,0.5530,,

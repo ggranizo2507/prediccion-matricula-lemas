@@ -73,6 +73,8 @@ Lectura:
 
 **Límites.** La eficacia y la razón R son supuestos. La precisión por tramos de C4 se apoya en pocos casos (de 7 a 23 por tramo), y las cifras de C2–C4 describen, no validan: son las cohortes con las que se eligió la regla. El costo de una llamada a una familia que sí iba a pagar no es solo tiempo: si la llamada se percibe como cobranza, daña la relación. Por eso el protocolo de apoyo de [consideraciones_eticas.md](consideraciones_eticas.md) es parte del cálculo.
 
+La sensibilidad del sistema ante datos de entrada perturbados (errores de registro, faltantes, desbalance extremo, cambio de distribución y señal caída) está en [escenarios_criticos.md](escenarios_criticos.md) (D57).
+
 ## 4. Limitaciones
 
 - **No hay intervalo de la diferencia entre sistemas en C5.** Tenemos el intervalo de cada sistema por separado (D2: 1,97 [1,24; 2,56]; logística híbrida: 0,98 [0,47; 1,52]), pero no el de la diferencia D2 − híbrida. No lo calculamos ahora porque obligaría a volver a usar C5, que se evaluó una sola vez, y no cambiaría la decisión: la elección de D2 se tomó en C4.

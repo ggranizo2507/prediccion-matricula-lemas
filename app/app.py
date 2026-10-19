@@ -109,6 +109,7 @@ from src.inferencia import (  # noqa: E402
     preparar_base,
     proyeccion_actual,
     puntuar,
+    revisar_senales,
     seguimiento_al_corte,
     validar_entrada,
 )
@@ -385,6 +386,10 @@ with tab_lista:
                 st.stop()
             puntuados = puntuar(poblacion, SISTEMA)
             lista = lista_contactos(puntuados, k_editado, CONFIG["proyecto"]["semilla"])
+        avisos_senales = revisar_senales(poblacion, CONFIG)
+        if avisos_senales:   # D57: una señal caída hace que la lista ordene casi al azar
+            st.error("**Revise los datos antes de usar esta lista.**\n\n"
+                     + "\n".join(f"- {aviso}" for aviso in avisos_senales))
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Estudiantes elegibles", f"{resumen['elegibles']:,}".replace(",", "."))
         c2.metric("Familias (representantes)", f"{resumen['representantes']:,}".replace(",", "."))
