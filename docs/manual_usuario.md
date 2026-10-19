@@ -193,7 +193,7 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 
 | Tipo de consulta | A quién acudir |
 |---|---|
-| Uso de la aplicación, errores o instalación en el computador de LEMAS | Guillermo Granizo, responsable técnico del proyecto en LEMAS: **[correo de soporte por definir]** |
+| Uso de la aplicación, errores o instalación en el computador de LEMAS | Guillermo Granizo, responsable técnico del proyecto en LEMAS: [guillermo.granizov@uees.edu.ec](mailto:guillermo.granizov@uees.edu.ec) |
 | Datos personales, pedidos de las familias (ver, corregir u oponerse) o dudas legales | La persona que designe la Dirección de LEMAS para la protección de datos (decisión 3 de la presentación a la Dirección) |
 | Código, documentación o reporte de un fallo | Repositorio del proyecto: pestaña *Issues* en [github.com/ggranizo2507/prediccion-matricula-lemas](https://github.com/ggranizo2507/prediccion-matricula-lemas/issues) |
 
