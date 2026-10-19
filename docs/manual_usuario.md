@@ -30,6 +30,7 @@ Al **20 de febrero** de cada año, entre los estudiantes con **reserva aprobada*
    - **Ciclo de origen:** el ciclo cuyas reservas se van a priorizar. Viene elegido el más reciente. Si elige uno anterior, la app avisa que el resultado es **retrospectivo**, porque esos ciclos se usaron para entrenar el sistema.
    - **Familias a contactar (k):** **no cambia al elegir otro ciclo**, porque representa la capacidad de contacto de cada sede y se calcula una sola vez con los ciclos de entrenamiento. Indica cuántas familias puede atender cada sede. El valor sugerido es el aprobado: el doble del promedio histórico de familias que no se matricularon. Puede cambiarlo según el personal disponible.
 4. Vaya a la pestaña **📋 Lista de contactos** y pulse **Generar lista**.
+   - Si aparece un aviso en rojo («Revise los datos antes de usar esta lista»), alguna señal llegó vacía o constante; vea la sección 7.
    - Las tarjetas muestran elegibles, familias, familias a contactar y cobertura.
    - La tabla muestra, por sede y en orden, cada **familia (seudónimo)**, sus estudiantes y el **motivo** (por ejemplo, "pagó tarde la matrícula anterior; 4 pensiones pagadas tarde").
    - Pulse **⬇️ Descargar lista (CSV)** para guardarla.
@@ -137,6 +138,7 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 | "Se necesitan los dos archivos: el Excel y la clave" | Suba el archivo que falta |
 | "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
 | "La base no tiene suficientes ciclos para entrenar" | Incluya en el Excel las hojas de los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
+| "**Revise los datos antes de usar esta lista**" (aviso en rojo sobre la lista) | Una señal de la regla llegó vacía o constante: falta la hoja del ciclo anterior, faltan fechas de pago, los atrasos llegaron en cero o el tipo de reserva está vacío. Con eso la lista ordena casi al azar. Corrija el Excel (o pida a LEMAS que recalcule la columna) y vuelva a generar la lista antes de usarla ([escenarios_criticos.md](escenarios_criticos.md) §4) |
 | "Ese ciclo no tiene estudiantes con reserva aprobada" | Elija otro ciclo: el actual aún no tiene reservas aprobadas o no está en el archivo |
 | "El archivo no registra pagos de matrícula del ciclo … entre el 20 de febrero y la fecha de corte" (pestaña *Seguimiento*) | El Excel no tiene la hoja del ciclo siguiente o no está actualizado. Expórtelo de nuevo. Con el ejemplo, elija un ciclo anterior |
 | `TypeError` en `lista_contactos` u otro error en rojo justo después de actualizar el repositorio (versión pública) | Streamlit quedó con código viejo en memoria. En share.streamlit.io abra la app y elija **⋮ → Reboot app**. Desde D51 la aplicación lo corrige sola |

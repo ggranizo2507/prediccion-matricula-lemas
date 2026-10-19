@@ -1,0 +1,10 @@
+escenario,variable,sistema,umbral_lift,ultimo_nivel_util,primer_nivel_no_util,lift_base
+ruido,errores_registro,D2 · señales administrativas,1.2,,0.0,1.0845
+faltantes,pago_tardio,D2 · señales administrativas,1.2,,0.0,1.0845
+faltantes,reserva_extraordinaria,D2 · señales administrativas,1.2,,0.0,1.0845
+faltantes,atrasos_pension,D2 · señales administrativas,1.2,,0.0,1.0845
+desbalance,tasa_familiar,D2 · señales administrativas,1.2,,1.0,1.0845
+senal_caida,pago_tardio,D2 · señales administrativas,1.2,,constante,1.1517
+senal_caida,reserva_extraordinaria,D2 · señales administrativas,1.2,constante,,1.3912
+senal_caida,atrasos_pension,D2 · señales administrativas,1.2,,constante,1.0879
+senal_caida,todas_d2,D2 · señales administrativas,1.2,,constante,1.0073

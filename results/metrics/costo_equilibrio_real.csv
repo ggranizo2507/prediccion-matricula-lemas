@@ -1,0 +1,8 @@
+escenario,cohorte,descripcion,precision,razon_equilibrio_e10,razon_equilibrio_e25
+azar,C4,Llamar al azar a k familias,0.0912,109.6,43.9
+primera_mitad,C4,Primera mitad de la lista D2 (k/2),0.241,41.5,16.6
+lista_k,C4,Lista D2 completa (k),0.1758,56.9,22.8
+tramo_k_2k,C4,Alargar la lista de k a 2k,0.097,103.1,41.2
+pendientes_semana_5,C2–C4,Llamar a quienes siguen sin pagar en la semana 5,0.3757,26.6,10.6
+lista_k_c5,C5,"Lista D2 completa (k), prueba final ya publicada",0.1333,75.0,30.0
+azar_c5,C5,"Llamar al azar, prueba final ya publicada",0.0677,147.7,59.1

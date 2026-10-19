@@ -177,6 +177,54 @@ def puntuar(poblacion: pd.DataFrame, sistema: Sistema) -> pd.DataFrame:
     return datos
 
 
+def revisar_senales(poblacion: pd.DataFrame, config: dict) -> list[str]:
+    """Advertencias si una señal de D2 llega vacía o constante (D57).
+
+    La lista se genera igual, pero con una señal caída ordena casi al azar sin que nada lo
+    indique (docs/escenarios_criticos.md). Estas comprobaciones solo miran proporciones del
+    ciclo cargado; no usan el resultado, que aún no se conoce.
+    """
+    reglas = config.get("calidad_senales", {})
+    max_vacios = float(reglas.get("max_vacios", 0.20))
+    max_nuevos = float(reglas.get("max_nuevos", 0.80))
+    if len(poblacion) < int(reglas.get("min_filas", 50)):
+        return []
+    avisos = []
+    pago = poblacion["pago_origen"].astype(str)
+    nuevos = float((pago == "nuevo").mean())
+    con_historia = pago[pago != "nuevo"]
+    if nuevos > max_nuevos:
+        avisos.append(f"El {nuevos:.0%} de los estudiantes figura como nuevo. Revise que se "
+                      "haya cargado la hoja del ciclo anterior: sin ella no se conoce el pago "
+                      "tardío de la matrícula, que es la señal más fuerte.")
+    elif len(con_historia):
+        vacios = float((con_historia == "sin_dato").mean())
+        if vacios > max_vacios:
+            avisos.append(f"Falta la fecha de pago de la matrícula anterior en el {vacios:.0%} "
+                          "de los estudiantes que no son nuevos. La señal «pagó tarde» queda "
+                          "incompleta y la lista pierde capacidad de encontrar casos.")
+        elif not (con_historia == "tardio").any():
+            avisos.append("Ningún estudiante figura con pago tardío de la matrícula anterior. "
+                          "En los años revisados siempre hubo casos: verifique las fechas de "
+                          "pago del ciclo anterior.")
+    atrasos = pd.to_numeric(poblacion["atrasos_pension"], errors="coerce")
+    if float(atrasos.isna().mean()) > max_vacios:
+        avisos.append(f"La columna de pensiones pagadas tarde está vacía en el "
+                      f"{atrasos.isna().mean():.0%} de las filas.")
+    elif atrasos.notna().any() and float(atrasos.fillna(0).max()) == 0:
+        avisos.append("La columna de pensiones pagadas tarde llegó toda en cero. Verifique que "
+                      "LEMAS la haya calculado (mayo a enero del ciclo).")
+    if "tipo_reserva" in poblacion:
+        tipo = poblacion["tipo_reserva"]
+        if float(tipo.isna().mean()) > max_vacios:
+            avisos.append(f"El tipo de reserva está vacío en el {tipo.isna().mean():.0%} de "
+                          "las filas: esas reservas se leen como ordinarias.")
+    if avisos:
+        avisos.append("Con una señal vacía o constante la lista se acerca a una selección al "
+                      "azar. Corrija el Excel y vuelva a generarla antes de usarla.")
+    return avisos
+
+
 def _motivo(fila: pd.Series) -> str:
     """Explicación en lenguaje simple de por qué un estudiante sube en la lista D2."""
     partes = []

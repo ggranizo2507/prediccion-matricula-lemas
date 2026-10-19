@@ -1,0 +1,50 @@
+{
+  "fuente": "sintetica",
+  "cohortes_entrenamiento": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "perturbada": "C4",
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "repeticiones": 50,
+  "umbral_lift": 1.2,
+  "parametros_hibrido": {
+    "balanceado": false,
+    "C": 0.0013892527363885
+  },
+  "comprobacion_sin_perturbar": {
+    "D2 · señales administrativas": {
+      "lift_k": 1.0632,
+      "recall_k": 0.1939,
+      "precision_k": 0.1011,
+      "pr_auc": 0.095,
+      "brier": NaN
+    },
+    "Logística híbrida": {
+      "lift_k": 1.5109,
+      "recall_k": 0.2755,
+      "precision_k": 0.1436,
+      "pr_auc": 0.1433,
+      "brier": 0.0801
+    }
+  },
+  "conclusiones": [
+    "Sin perturbar, la regla D2 tiene en C4 un Lift@k de 1,08 y un Recall@k de 20 %.",
+    "Sin perturbar, la lista ya está por debajo del umbral de utilidad (Lift ≥ 1,20) en esta cohorte, así que no se pueden fijar límites operativos con estos datos; se describe solo cómo cambia.",
+    "Si la señal «pago tardío de la matrícula anterior» llega constante, el Lift@k pasa a 1,15 (Recall@k 21 %).",
+    "Si la señal «reserva extraordinaria» llega constante, el Lift@k pasa a 1,39 (Recall@k 25 %).",
+    "Si la señal «pensiones pagadas tarde» llega constante, el Lift@k pasa a 1,09 (Recall@k 20 %).",
+    "Si las tres señales llegan constantes, el Lift@k pasa a 1,01 (Recall@k 18 %).",
+    "Con una tasa familiar del 5 %, el Lift@k medio es 1,10 (del 0,75 al 1,49 según qué familias queden).",
+    "Con una tasa familiar del 3 %, el Lift@k medio es 1,07 (del 0,61 al 1,59 según qué familias queden).",
+    "Con una tasa familiar del 1 %, el Lift@k medio es 1,20 (del 0,25 al 2,53 según qué familias queden).",
+    "Logística híbrida entrenada con Mucho Lote 1 y probada con Mucho Lote 2: PR-AUC 0,104 frente a 0,121 del modelo entrenado con todos; observados / esperados = 0,92.",
+    "Logística híbrida entrenada con Mucho Lote 2 y probada con Mucho Lote 1: PR-AUC 0,158 frente a 0,178 del modelo entrenado con todos; observados / esperados = 1,06.",
+    "Logística híbrida entrenada con no becados y probada con becados: PR-AUC 0,117 frente a 0,119 del modelo entrenado con todos; observados / esperados = 0,83.",
+    "Logística híbrida entrenada con becados y probada con no becados: PR-AUC 0,145 frente a 0,154 del modelo entrenado con todos; observados / esperados = 1,15."
+  ]
+}

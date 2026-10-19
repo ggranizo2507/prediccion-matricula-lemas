@@ -42,6 +42,7 @@ Resumen de una página del sistema de priorización, con el formato de las ficha
 - **Brier** para las probabilidades y **MAPE** para la proyección por sede y subnivel.
 - Intervalos de confianza del 95 % con 2.000 réplicas bootstrap por representante.
 - Validación temporal por cohortes, no validación cruzada aleatoria: ver [evaluacion_robusta.md](evaluacion_robusta.md).
+- No se usan exactitud ni F1: con 6,8 % de casos, decir «todas se matriculan» acierta el 93 %. El número de llamadas lo fija la capacidad, no un umbral; el **costo esperado** se analiza con la razón de equilibrio cFN / cFP: con una eficacia supuesta de la llamada del 10 %, la lista compensa si un caso vale más de 75 llamadas, frente a 148 al azar (C5, conteos ya publicados; [evaluacion_robusta.md](evaluacion_robusta.md) §3).
 
 ## 5. Datos
 
@@ -98,5 +99,6 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
 - No se ha medido si la llamada cambia la decisión de la familia.
+- Con una señal de D2 vacía o constante (por ejemplo, atrasos todos en cero o sin la hoja del ciclo anterior), la lista se acerca al azar. La aplicación lo advierte en rojo antes de usarla. Los escenarios críticos, como errores de registro, faltantes, desbalance y cambio de distribución, están en [escenarios_criticos.md](escenarios_criticos.md).
 - Revalidar cada mayo con la cohorte que cierra. Si el Lift@k baja de 1,20, revisar la regla; si no supera al azar dos años seguidos, suspender su uso.
 - Antes de un uso operativo, LEMAS debe informar a las familias, confirmar la base legal para datos de menores y completar los pendientes de cumplimiento descritos en [consideraciones_eticas.md](consideraciones_eticas.md).
