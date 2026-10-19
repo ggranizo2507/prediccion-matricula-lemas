@@ -42,6 +42,23 @@
 - **Efecto de D29:** solo cambia C2 (ciclo 2022), que gana 12 contactos al separar a los estudiantes de la cédula genérica. Las demás cohortes no cambian. D28 tampoco modificó los elegibles: los estudiantes de "Tercer Curso" no tenían reserva aprobada.
 - **Variación:** la tasa cambia entre años sin una tendencia clara (de 6,2 % a 11,1 %). Esto hace que la tasa base de C5 sea distinta de la del entrenamiento.
 
+![Figura 1. Población modelable y casos de no matrícula por cohorte](../results/figures/real_01_embudo_cohortes.png)
+
+*Figura 1.* La población modelable crece de unos 1.000 estudiantes en C1 a 1.400 en C5, y los casos se mantienen entre 81 y 122 por cohorte. El evento es pequeño frente al total en todos los años.
+
+![Figura 2. Tasa de no matrícula por cohorte](../results/figures/real_02_tasa_cohorte.png)
+
+*Figura 2.* La tasa sube y baja sin tendencia (línea discontinua: media global de 8,3 %). Por eso se valida por años y no con particiones al azar: un año puede parecerse poco al anterior.
+
+### 3.1 Desbalance, datos faltantes y valores atípicos
+
+| Situación | Decisión | Por qué |
+|---|---|---|
+| **Desbalance** (8,3 % de casos) | No se usa la exactitud. Se mide con Lift@k, Precision@k, Recall@k y PR-AUC. El balanceo de clases (`class_weight`) entra como hiperparámetro en Optuna, y las probabilidades se calibran con Platt en C4 | Decir «todos se matriculan» acierta el 92 %. No se sobremuestrea (SMOTE) porque inventaría estudiantes y deformaría las probabilidades, con pocos casos y validación temporal |
+| **Datos faltantes** (menos del 0,2 % por columna en las cohortes usadas) | En el *pipeline*, las numéricas se imputan con la mediana y las categóricas con la etiqueta `SIN_DATO`, ajustadas solo con el entrenamiento. Un pago sin fecha cuenta como «sin pago» en el destino | Muy pocos vacíos, sin patrón por cohorte. La mediana no depende de valores extremos. Ajustarla solo con el entrenamiento evita fuga |
+| **Hoja 2026–2027** (17,5 % de vacíos) | Solo se usa como destino de C5 (fecha de pago) | Es el ciclo en curso: es esperable que no tenga notas ni reservas |
+| **Valores atípicos** | Las notas bajas del promedio (Figura 5) se conservan, porque son notas válidas. El representante con 39 estudiantes (cédula genérica) se trata como atípico (D29) | Quitar notas bajas eliminaría justo a estudiantes que importan. La cédula genérica inflaba la variable de hermanos |
+
 ## 4. Validación del calendario (t0 = 20-feb, H = 30-abr)
 
 Entre 2023 y 2026, el 99 % de los estudiantes **antiguos** pagó la matrícula dentro de la ventana [t0, H]. En 2022 la proporción fue del 95 %, con 50 pagos tardíos. Los pagos de antiguos antes de t0 son menos de 5 por año. Esto respalda el corte t0 = 20-feb (D01).
@@ -62,9 +79,33 @@ Los **nuevos** pagan sobre todo antes de t0 (entre 107 y 125 por año). No forma
 
 Las correlaciones de Spearman con el resultado son débiles (|ρ| ≤ 0,07). Ninguna variable separa los casos por sí sola, así que se espera una discriminación modesta.
 
+![Figura 3. Tasa de no matrícula por variable categórica](../results/figures/real_03_tasa_categoricas.png)
+
+*Figura 3.* El pago tardío de la matrícula anterior casi triplica la tasa (barra «tardio» frente a la línea de la media). La reserva extraordinaria y la Preparatoria también suben el riesgo. La sede y la beca casi no cambian nada.
+
+![Figura 4. Riesgo según atrasos en pensiones y hermanos](../results/figures/real_04_atrasos_hermanos.png)
+
+*Figura 4.* El riesgo crece con las pensiones pagadas tarde hasta 5 atrasos y se vuelve irregular desde 6, por eso se modela por tramos. Los hermanos casi no lo cambian.
+
+![Figura 5. Distribución de variables numéricas por resultado](../results/figures/real_05_numericas_resultado.png)
+
+*Figura 5.* El promedio y los años de permanencia se distribuyen casi igual entre quienes se matricularon y quienes no. Por separado no ayudan a ordenar.
+
+![Figura 6. Correlación de Spearman entre variables y el resultado](../results/figures/real_06_correlaciones.png)
+
+*Figura 6.* La correlación más alta con el resultado (`y_no_matricula`) es la de los atrasos (0,07). Entre predictores solo hay una relación moderada: promedio y años de permanencia (−0,29). No hay colinealidad que obligue a quitar variables.
+
+![Figura 7. Distribución de conducta por cohorte](../results/figures/real_07_deriva_conducta.png)
+
+*Figura 7.* En la cohorte C2 (ciclo 2022) hay un 18 % de notas B, frente a 2–3 % en los demás años. El equipo confirmó que la conversión es correcta (D34). Es un cambio en la distribución de una entrada entre años; la conducta se evalúa como «A / no A».
+
 ## 6. Comparabilidad de C1 y decisión
 
 - **Diferencias estandarizadas (Figura 8):** al normalizar los cursos, las diferencias por nombre de curso desaparecen. Quedan cinco diferencias reales que superan el umbral de 0,20: promedio (SMD ≈ +0,24; C1 tiene notas más altas), proporción de nuevos (≈ −0,23), sede (≈ ±0,22) y conducta (≈ +0,21).
+![Figura 8. Diferencias estandarizadas de C1 frente a C2–C4](../results/figures/real_08_comparabilidad_c1.png)
+
+*Figura 8.* Cinco variables superan la diferencia estandarizada de 0,20 (líneas discontinuas). C1 se parece menos a las cohortes posteriores, y por eso se evaluó su exclusión.
+
 - **Prueba en C4 con la regresión logística base y k duplicado:** con C1 (C1+C2+C3), Precision@k = 0,112; sin C1 (C2+C3), 0,139. La diferencia es de −0,027, mayor que la tolerancia de 0,02.
 - **Decisión (regla D14): C1 se excluye del entrenamiento.** Se entrena con C2+C3, se selecciona con C4 y se prueba con C5.
 - **Robustez:** el IC 95 % por bootstrap de la diferencia es [−0,061; +0,012] (2.000 réplicas). Incluye el 0, así que la evidencia contra C1 es débil, aunque la dirección es estable en las dos ejecuciones. Se aplica la regla registrada de antemano. En la Fase 2 se reportará, como análisis de sensibilidad, el modelo final entrenado también con C1.

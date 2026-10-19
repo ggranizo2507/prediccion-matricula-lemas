@@ -149,6 +149,17 @@ RESULTADOS = json.loads((RAIZ / "app/assets/resultados_validacion.json").read_te
 # Carga y procesamiento (en memoria; nada se guarda en disco)
 # --------------------------------------------------------------------------- #
 @st.cache_data(show_spinner=False)
+def pct(valor: float, decimales: int = 1, signo: bool = False) -> str:
+    """Porcentaje con coma decimal, como en el resto del proyecto (5,5 %)."""
+    texto = f"{100 * valor:{'+' if signo else ''}.{decimales}f}".replace(".", ",")
+    return f"{texto} %"
+
+
+def dec(valor: float, decimales: int = 2) -> str:
+    """Número con coma decimal (1,97)."""
+    return f"{valor:.{decimales}f}".replace(".", ",")
+
+
 def leer_csv(contenido: bytes) -> pd.DataFrame:
     return pd.read_csv(io.BytesIO(contenido), dtype=str)
 
@@ -276,8 +287,10 @@ with st.sidebar:
         if st.session_state.get("visto_csv") != firma_csv:   # archivo nuevo: usarlo
             st.session_state["visto_csv"] = firma_csv
             usar_datos(archivo.getvalue(), archivo.name)
+    # Se llena después de validar el archivo: verde si se pudo usar, rojo si se rechazó
+    AVISO_DATOS = st.empty()
     if "contenido" in st.session_state:
-        st.success(f"Datos: {st.session_state['origen']}")
+        AVISO_DATOS.info(f"Datos: {st.session_state['origen']} (validando…)")
     if INSTITUCIONAL:
         st.button("🧹 Borrar datos de la sesión", on_click=borrar_sesion,
                   use_container_width=True,
@@ -308,12 +321,15 @@ try:
     with st.spinner("Validando y preparando los datos…"):
         BASE, SISTEMA = preparar(hashlib.sha256(contenido).hexdigest(), contenido)
 except ErrorEntrada as error:
+    AVISO_DATOS.error(f"Archivo rechazado: {st.session_state['origen']}")
     st.error(f"No se pudo usar el archivo: {error}")
     st.stop()
 except Exception:   # mensaje amable, sin detalles técnicos para el usuario final
+    AVISO_DATOS.error(f"Archivo rechazado: {st.session_state['origen']}")
     st.error("El archivo no tiene la estructura esperada. Revise el manual de usuario "
              "(columnas obligatorias y formato de fechas) e intente de nuevo.")
     st.stop()
+AVISO_DATOS.success(f"Datos: {st.session_state['origen']}")
 
 DATOS_INSTITUCIONALES = st.session_state.get("institucional") if INSTITUCIONAL and LOCAL else None
 if DATOS_INSTITUCIONALES is not None:
@@ -397,7 +413,7 @@ with tab_lista:
         c1.metric("Estudiantes elegibles", f"{resumen['elegibles']:,}".replace(",", "."))
         c2.metric("Familias (representantes)", f"{resumen['representantes']:,}".replace(",", "."))
         c3.metric("Familias a contactar", len(lista))
-        c4.metric("Cobertura", f"{len(lista) / max(resumen['representantes'], 1):.0%}",
+        c4.metric("Cobertura", pct(len(lista) / max(resumen['representantes'], 1), 0),
                   help="Porcentaje de familias elegibles que entra en la lista.")
         st.markdown(
             "**Cómo se ordena:** regla **D2**, primero quien pagó tarde la matrícula anterior, "
@@ -630,10 +646,10 @@ with tab_estudiante:
         }, SISTEMA)
         r1, r2, r3 = st.columns(3)
         r1.metric("Prioridad D2", resultado["nivel"])
-        r2.metric("Prob. de no matrícula", f"{resultado['prob_no_matricula']:.1%}",
-                  delta=f"{resultado['prob_no_matricula'] - resultado['tasa_historica']:+.1%} "
-                        "vs. tasa histórica", delta_color="inverse")
-        r3.metric("Tasa histórica (B1)", f"{resultado['tasa_historica']:.1%}")
+        r2.metric("Prob. de no matrícula", pct(resultado["prob_no_matricula"]),
+                  delta=pct(resultado["prob_no_matricula"] - resultado["tasa_historica"],
+                            signo=True) + " vs. tasa histórica", delta_color="inverse")
+        r3.metric("Tasa histórica (B1)", pct(resultado["tasa_historica"]))
         st.markdown(f"**Señales:** {resultado['motivo']}.")
         st.caption("La probabilidad individual es orientativa: en la validación no superó a la "
                    "tasa histórica. Para decidir a quién contactar use la lista D2.")
@@ -654,8 +670,11 @@ Validación temporal: entrenamiento con los ciclos 2022–2023 y 2023–2024, se
 (regresión logística, gradient boosting y una logística híbrida) con reglas simples.
 """)
     c5 = pd.DataFrame(RESULTADOS["c5"])
-    c5["IC 95 %"] = c5["ic95"].map(lambda v: f"[{v[0]:.2f}; {v[1]:.2f}]" if v else "—")
-    st.dataframe(c5.drop(columns="ic95").rename(columns={
+    c5["IC 95 %"] = c5["ic95"].map(lambda v: f"[{dec(v[0])}; {dec(v[1])}]" if v else "—")
+    tabla_c5 = c5.drop(columns="ic95").assign(
+        lift=c5["lift"].map(dec), precision=c5["precision"].map(lambda v: dec(v, 3)),
+        recall=c5["recall"].map(dec))
+    st.dataframe(tabla_c5.rename(columns={
         "sistema": "Sistema", "lift": "Lift@k", "precision": "Precision@k",
         "recall": "Recall@k"}), hide_index=True, use_container_width=True)
     st.plotly_chart(px.bar(c5, x="lift", y="sistema", orientation="h",

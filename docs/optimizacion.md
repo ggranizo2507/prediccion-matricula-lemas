@@ -35,7 +35,7 @@ Los rangos son **conservadores a propósito**: árboles poco profundos, hojas gr
 | Modelo | Antes de optimizar | Después de optimizar | Diagnóstico |
 |---|---|---|---|
 | Regresión logística | **1,53** (base de la Fase 1, valores por defecto) | 1,40 | Subajuste: PR-AUC 0,140 en entrenamiento y 0,113 en C4 |
-| Gradient boosting | — | 1,06 | **Sobreajuste:** PR-AUC 0,245 en entrenamiento y 0,103 en C4 (brecha 0,14) |
+| Gradient boosting | — (sin ejecución por defecto en C4; ver «antes y después» en la validación interna, sección 2 bis) | 1,06 | **Sobreajuste:** PR-AUC 0,245 en entrenamiento y 0,103 en C4 (brecha 0,14) |
 | Logística híbrida | — | 1,53 | Estable: brecha 0,000 |
 | *Referencia: regla D2* | — | *1,93* | — |
 
@@ -60,6 +60,72 @@ Los rangos son **conservadores a propósito**: árboles poco profundos, hojas gr
 Las figuras 14 a 16 del cuaderno `04_optimizacion` muestran cada trial, el efecto de `C`, del balanceo y del tamaño de hoja, y el paso de C3 a C4.
 
 Archivo completo de los 180 trials: `results/metrics/optuna_historial_real.csv`. Contiene hiperparámetros y PR-AUC, sin datos de estudiantes.
+
+## 2 bis. Análisis de sensibilidad de los hiperparámetros (D58)
+
+El análisis parte del historial de Optuna ya guardado: 180 pruebas, cada una con sus hiperparámetros y la PR-AUC de la validación interna C2 → C3. Ese archivo no contiene datos de estudiantes, así que el análisis **no vuelve a entrenar ningún modelo ni usa C4 o C5**. Código: `src/sensibilidad.py` y `src/graficos_sensibilidad.py`. Para regenerarlo: `python tools/generar_sensibilidad.py --fuente real`. Tablas en `results/metrics/sensibilidad_*_real.csv`.
+
+Métodos:
+- **Importancia** por fANOVA, que descompone la varianza de la PR-AUC entre hiperparámetros con un bosque aleatorio (Hutter et al., 2014), y por disminución media de impureza. Ambas vienen de `optuna.importance` y se repiten con cinco semillas.
+- **Dependencia parcial** sobre un modelo sustituto: un bosque aleatorio entrenado con las 60 pruebas de cada modelo. Muestra cómo cambia en promedio la PR-AUC al mover un hiperparámetro, dejando los demás como en las pruebas observadas.
+- **Interacciones** con el estadístico H² de Friedman para cada par: qué parte de su efecto conjunto no se explica sumando los efectos por separado (0 = sin interacción). Se acompaña de la dependencia parcial 2D del par más fuerte.
+- **Sensibilidad de uno a la vez:** desde la mejor prueba, cuánto cambia la PR-AUC estimada al recorrer todo el rango de cada hiperparámetro.
+
+Con 60 pruebas por modelo y una validación de 81 eventos, el sustituto es aproximado: las cifras se leen como tendencias.
+
+### Ranking de importancia
+
+![Figura 31. Importancia de los hiperparámetros](../results/figures/real_31_importancia_hiperparametros.png)
+
+| Modelo | 1.º (fANOVA) | 2.º | Resto | Rango de PR-AUC al mover el 1.º (uno a la vez) |
+|---|---|---|---|---|
+| Regresión logística | `balanceado` 58 % | `C` 38 % | `l1_ratio` 3 %, `conjunto` 0 % | `C`: de 0,069 a 0,105 |
+| Gradient boosting | `min_samples_leaf` 90 % | `balanceado` 4 % | los otros seis, ≤ 2 % cada uno | `min_samples_leaf`: de 0,073 a 0,087 |
+| Logística híbrida | `balanceado` 98 % | `C` 2 % | — | `balanceado`: de 0,084 a 0,088 |
+
+Las desviaciones entre semillas son pequeñas (≤ 0,011), así que el orden es estable. Los dos métodos coinciden en el gradient boosting y en la logística híbrida, pero **no en la regresión logística**. Por impureza, `C` explica el 86 % y `balanceado` el 7 %; la sensibilidad de uno a la vez también pone a `C` primero, con un rango seis veces mayor que el de `balanceado` (0,036 frente a 0,006). La lectura coherente con las tres medidas es que **`C` decide si el modelo funciona**: con `C` < 0,03 la regularización lo aplana hacia la tasa base. El balanceo ajusta el resultado dentro de la zona buena. fANOVA reparte la importancia sobre todo el espacio y le da más peso a una variable binaria que divide las pruebas en dos grupos.
+
+### Dependencia parcial
+
+![Figura 32. Dependencia parcial de los hiperparámetros](../results/figures/real_32_dependencia_parcial.png)
+
+- **Regresión logística.** La PR-AUC sube de 0,070 a 0,103 al pasar de `C` = 0,001 a `C` ≈ 1, y desde ahí se mantiene: una meseta. Sin balanceo es algo mejor (0,098 frente a 0,094). `l1_ratio` casi no influye (0,096 a 0,098). El valor elegido, `C` = 2,75, está dentro de la meseta.
+- **Gradient boosting.** Hay un **escalón** en `min_samples_leaf`: con hojas de menos de unos 80 estudiantes la PR-AUC queda en 0,073, y con más sube a 0,083–0,085. Las hojas pequeñas memorizan casos (sobreajuste, sección 5). Los otros siete hiperparámetros mueven la PR-AUC menos de 0,002. El valor elegido, 101, está en la zona alta.
+- **Logística híbrida.** La respuesta es casi plana: entre 0,084 y 0,088 en todo el espacio. Con balanceo es algo mejor, y `C` apenas cambia nada. Con sus pocas variables fijas, no hay mucho que ajustar.
+
+### Interacciones
+
+![Figura 33. Interacciones entre hiperparámetros](../results/figures/real_33_interacciones.png)
+
+| Modelo | Par más fuerte | H² | Lectura |
+|---|---|---|---|
+| Regresión logística | `conjunto` × `l1_ratio` | 0,02 | Débil: los efectos se suman |
+| Gradient boosting | `learning_rate` × `max_leaf_nodes` | 0,04 | Débil |
+| Logística híbrida | `balanceado` × `C` | 0,16 | Moderada en proporción, pero sobre una variación muy pequeña: `C` solo importa algo cuando hay balanceo |
+
+En la regresión logística y el gradient boosting **las interacciones son débiles**. Optimizar cada hiperparámetro casi por separado habría llegado a lo mismo, y no hay combinaciones ocultas que la búsqueda haya podido pasar por alto.
+
+### Antes y después de la búsqueda (validación interna C2 → C3)
+
+Las 10 primeras pruebas de Optuna son aleatorias (fase inicial del TPE) y sirven como «antes». La mejor prueba es el «después».
+
+| Modelo | Primera prueba | Mediana de las 10 aleatorias | Mejor prueba (n.º) | Ganancia | Mejor frente al azar (0,062) |
+|---|---|---|---|---|---|
+| Regresión logística | 0,088 | 0,079 | **0,106** (52) | +0,027 | 1,70 veces |
+| Gradient boosting | 0,080 | 0,075 | **0,089** (28) | +0,014 | 1,44 veces |
+| Logística híbrida | 0,084 | 0,086 | **0,088** (10) | +0,002 | 1,41 veces |
+
+La búsqueda **sí mejoró la validación interna**, sobre todo en la regresión logística (+34 % sobre la mediana aleatoria). Esa ganancia no se trasladó a C4: la regresión logística pasó de Lift@k 1,53 con valores por defecto a 1,40 optimizada (tabla de la sección 2). Es la misma conclusión de la sección 3: el límite es de señal y de estabilidad entre cohortes, no de hiperparámetros.
+
+### Configuración final y justificación
+
+| Modelo | Configuración elegida | Por qué es razonable según la sensibilidad |
+|---|---|---|
+| Regresión logística | `C` = 2,75, `l1_ratio` = 0,87, sin balanceo, todas las variables | Está en la meseta de `C` y del lado sin balanceo, que es el mejor. `l1_ratio` y el conjunto casi no influyen |
+| Gradient boosting | `min_samples_leaf` = 101, `max_depth` = 3, `max_leaf_nodes` = 6, `learning_rate` = 0,035 | Las hojas grandes evitan la zona de sobreajuste. El resto casi no importa |
+| Logística híbrida | `C` = 9,0, con balanceo | La respuesta es plana: cualquier `C` da lo mismo, y el balanceo es lo único que cambia algo |
+
+**Lección para el proyecto:** los hiperparámetros que importan son los que controlan la capacidad del modelo, como la regularización `C` y el tamaño mínimo de hoja. Ninguno, en ningún valor, permite a los modelos superar a la regla D2 en C4. La optimización hizo su trabajo dentro de lo que los datos permiten.
 
 ## 3. Análisis: ¿por qué la optimización no mejoró la priorización?
 
@@ -127,3 +193,10 @@ El reporte se regenera con `python tools/generar_reporte_diagnostico.py --fuente
 - **Validación cruzada temporal con más cohortes** (2027 en adelante): con cada ciclo nuevo habrá más eventos para optimizar con menos ruido.
 - **Variables nuevas** con más señal: interacción con Secretaría, puntualidad mes a mes y motivos de no matrícula (con consentimiento).
 - **Optimizar directamente Lift@k** con varias ventanas temporales cuando haya al menos 3 cohortes de validación.
+
+## Referencias
+
+- Akiba, T., Sano, S., Yanase, T., Ohta, T. y Koyama, M. (2019). Optuna: A next-generation hyperparameter optimization framework. *KDD 2019*.
+- Hutter, F., Hoos, H. y Leyton-Brown, K. (2014). An efficient approach for assessing hyperparameter importance. *ICML 2014* (fANOVA).
+- Friedman, J. H. y Popescu, B. E. (2008). Predictive learning via rule ensembles. *The Annals of Applied Statistics*, 2(3) (estadístico H de interacción).
+- Friedman, J. H. (2001). Greedy function approximation: a gradient boosting machine. *The Annals of Statistics*, 29(5) (dependencia parcial).
