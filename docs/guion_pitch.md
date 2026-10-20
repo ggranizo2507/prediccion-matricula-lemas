@@ -21,7 +21,7 @@ Duración total: **5:00**. Presentación en línea (10 diapositivas), con las no
 
 **1 · Portada (Guillermo, 0:00–0:15).** Hola, somos Guillermo Granizo y José Ulloa. Presentamos "Continuidad estudiantil en LEMAS", un sistema de IA que ayuda a la Unidad Educativa LEMAS a decidir a qué familias llamar primero cuando una reserva aprobada todavía no se convierte en matrícula pagada.
 
-**2 · Problema (Guillermo, 0:15–0:30).** Cada año, entre el 6 y el 11 % de los estudiantes con reserva aprobada no paga la matrícula a tiempo. La institución se entera tarde. Tenemos 69 días, del 20 de febrero al 30 de abril, y solo 10 personas para las dos sedes. La pregunta es simple: ¿a quién llamar primero?
+**2 · Problema (Guillermo, 0:15–0:30).** Cada año, entre 6 y 11 de cada 100 estudiantes con reserva aprobada no pagan la matrícula a tiempo, y el colegio se entera tarde. Hay 69 días y 10 personas para dos sedes. ¿A quién llamar primero?
 
 **3 · Datos (José, 0:30–1:00).** Trabajamos con datos reales de LEMAS, autorizados: 9.031 registros de seis ciclos, 2.733 estudiantes y 2.017 familias. Antes de tocarlos, reemplazamos las cédulas con HMAC-SHA256; la clave queda solo con el custodio. En la limpieza encontramos tres problemas que cambiaban los resultados: dos formatos de nombre de curso, un último curso que no se reconocía y una cédula genérica usada para familias extranjeras. Solo publicamos agregados.
 
@@ -31,15 +31,14 @@ Duración total: **5:00**. Presentación en línea (10 diapositivas), con las no
 
 **6 · Demo (Guillermo, 2:15–3:15).** Se reproduce la grabación de pantalla (ver sección 2). Narración sugerida: "Esta es la aplicación pública, que solo trabaja con datos sintéticos. Con un clic genera la lista de familias por sede, cada una con su motivo. En Proyección vemos las matrículas esperadas frente a la tasa histórica. Aquí evaluamos un estudiante con pago tardío y reserva extraordinaria: prioridad alta; y otro sin señales: prioridad baja. Si alguien intenta subir un archivo con cédulas, la aplicación lo rechaza."
 
-**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. Llamando al 15 % de las familias, LEMAS llega al 30 % de los casos: 7,5 llamadas por caso encontrado, la mitad que al azar. Superamos la meta de 1,20 que nos pusimos.
+**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, hecha una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97. Hasta el extremo bajo del intervalo, 1,24, supera nuestra meta de 1,20. Llamando al 15 % de las familias llegamos al 30 % de los casos: 7,5 llamadas por caso, la mitad que al azar.
 
-**8 · Alcance (Guillermo, 3:40–4:00).** La regla supera al azar en los cuatro ciclos, de 1,4 a 2,0. Una regla aún más simple, más atrasos primero, rinde casi igual; preferimos D2 porque explica el motivo de cada llamada. No llega al 70 % de los casos: el 20 de febrero los datos no los distinguen. Y los modelos de IA no superaron a la regla: sirvieron para comprobar que no había más señal y para medir la incertidumbre.
+**8 · Alcance (Guillermo, 3:40–4:00).** Supera al azar en los cuatro ciclos, de 1,4 a 2,0. «Más atrasos primero» rinde casi igual; elegimos D2 porque explica cada llamada. No llega al 70 % de los casos: al 20 de febrero los datos no los distinguen. Los modelos de IA no superaron a la regla, pero confirmaron que no había más señal.
 
-> *Cambio de la revisión final (D59):* la frase sobre «más atrasos primero» responde a que, en C4, la diferencia entre D2 y D es 0,00 [IC 95 %: −0,62; 0,62] ([modelado.md, sección 9.3](modelado.md#93-d2-frente-a-d)). Esta diapositiva queda unos 5 segundos más larga: ensayarla para que no pase de 4:05.
 
-**9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores, así que la ética guió el diseño. Sesgos: los atrasos reflejan la situación económica y la regla detecta menos casos entre familias becadas. Impacto: bien usada, la lista lleva ayuda a tiempo; usada para cobrar, dañaría a quienes más la necesitan, y por eso ese uso está prohibido. Mitigaciones: seudónimos con clave custodiada, una app pública que solo acepta datos sintéticos, la nacionalidad nunca se usa y siempre decide una persona. Limitaciones: las familias aún no fueron informadas, y es un requisito pendiente antes de usarla en la práctica; hay pocos casos por grupo y no medimos si la llamada cambia la decisión.
+**9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores. Sesgos: los atrasos reflejan la situación económica, y la regla parece detectar menos casos entre becadas, 18 frente a 32 %; con solo 11 casos no es concluyente, así que lo vigilamos cada año. Impacto: bien usada, la lista lleva ayuda a tiempo; usada para cobrar, dañaría a quienes más la necesitan, y ese uso está prohibido. Mitigaciones: seudónimos con clave custodiada, app pública solo con datos sintéticos, sin nacionalidad, y siempre decide una persona. Limitaciones: falta informar a las familias antes de usarla, hay pocos casos por grupo y no medimos si la llamada cambia la decisión.
 
-**10 · Cierre (Guillermo, 4:45–5:00).** Nuestro logro: una regla validada con datos reales que LEMAS puede usar cada 20 de febrero. Lo siguiente: una segunda etapa a mitad de campaña con las familias que sigan sin pagar, por probar en 2027. Aquí están el repositorio y la aplicación. ¡Gracias!
+**10 · Cierre (Guillermo, 4:45–5:00).** Logramos una regla validada con datos reales que LEMAS puede usar cada 20 de febrero. Siguiente paso: una segunda llamada a mitad de campaña, por probar en 2027. Aquí están el repositorio y la aplicación. ¡Gracias!
 
 ## 2. Guion de la grabación de pantalla (60 s)
 
@@ -108,5 +107,7 @@ Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que 
 | Cerrar con una acción clara | Logro, siguiente paso y los dos QR | Hecho |
 | Preparar las preguntas | [Banco de 52 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
 | Cuidar audio e imagen | Micrófono externo, lugar silencioso, 1080p, zoom del navegador al 110–125 % | Por hacer |
+
+Ritmo comprobado: ninguna diapositiva pasa de unas 170 palabras por minuto y el total es de unas 650 palabras en 5 minutos.
 
 Errores frecuentes que conviene evitar: leer las diapositivas, pasarse de los 5 minutos, mostrar código, dejar la ética para una frase final y presentar el resultado como mejor de lo que es.
