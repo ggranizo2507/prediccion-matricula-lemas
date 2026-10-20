@@ -151,7 +151,7 @@ Versiones exactas con las que se verificó el proyecto (`requirements.txt`); `ap
 | Datos | pandas · NumPy · openpyxl · PyYAML | 3.0.2 · 2.4.4 · 3.1.5 · 6.0.3 |
 | Modelos | scikit-learn (regresión logística, HistGradientBoosting, calibración, `Pipeline`) | 1.8.0 |
 | Optimización | Optuna (TPE, `optuna.importance` para fANOVA) | 5.0.0 |
-| Explicabilidad | SHAP (más importancia por permutación de scikit-learn) | 0.52.0 |
+| Explicabilidad | SHAP (más importancia por permutación de scikit-learn) | 0.52.0 (0.51.0 con Python 3.11, porque la 0.52 exige 3.12) |
 | Equidad | Cálculo propio en `modeling.equidad` (razón de selección y diferencia de recall por grupo); no se usa Fairlearn | — |
 | Seguimiento de experimentos | Historial de Optuna en CSV, registro de decisiones y huella SHA-256 del sistema (no se usa MLflow) | — |
 | Persistencia | joblib | 1.5.3 |
