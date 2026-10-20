@@ -96,11 +96,17 @@ def test_huella_de_clave_es_estable_y_no_revela_la_clave(clave):
 def test_base_sin_identificadores_y_aceptada_por_la_app(resultado, tabla):
     base = resultado.base
     assert len(base) == len(tabla)
-    for columna in ("CI", "cedulap", "Codigo", "Nombre Completo",
-                    "Nombres completos padre de familia", "Orden"):
+    for columna in (
+        "CI",
+        "cedulap",
+        "Codigo",
+        "Nombre Completo",
+        "Nombres completos padre de familia",
+        "Orden",
+    ):
         assert columna not in base.columns
     assert seud.columnas_identificatorias(base) == []
-    validar_entrada(base, "institucional")          # no lanza
+    validar_entrada(base, "institucional")  # no lanza
     texto = resultado.csv.decode("utf-8")
     assert "Estudiante 0001" not in texto and "Representante 0001" not in texto
     assert tabla["CI"].iloc[0] not in texto
@@ -125,13 +131,16 @@ def test_acta_y_resumen(resultado):
     assert acta["filas"] == resultado.resumen["filas"] == len(resultado.base)
     assert acta["huella_clave"] == resultado.resumen["huella_clave"]
     assert len(resultado.resumen["hojas"]) == 6
-    json.dumps(acta)                                 # serializable
+    json.dumps(acta)  # serializable
     assert "Representante" not in json.dumps(acta, ensure_ascii=False)
 
 
 def test_elimina_columnas_identificatorias_no_previstas(tabla, clave, config):
-    con_extra = tabla[tabla["hoja"] == tabla["hoja"].iloc[0]].head(50).assign(
-        **{"Teléfono": "0990000000", "Correo electrónico": "x@ejemplo.ec"})
+    con_extra = (
+        tabla[tabla["hoja"] == tabla["hoja"].iloc[0]]
+        .head(50)
+        .assign(**{"Teléfono": "0990000000", "Correo electrónico": "x@ejemplo.ec"})
+    )
     salida = seudonimizar_excel(excel_ejemplo(con_extra), "e.xlsx", clave, config)
     assert "Teléfono" not in salida.base.columns
     assert "Correo electrónico" not in salida.base.columns
@@ -186,11 +195,20 @@ def test_lista_con_nombres_estudiante_inexistente(resultado, lista_y_anio):
 # --------------------------------------------------------------------------- #
 # Seguridad: equipo local e interfaz
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("host,esperado", [
-    ("localhost:8501", True), ("127.0.0.1:8501", True), ("LOCALHOST", True),
-    ("[::1]:8501", True), (None, True), ("", True),
-    ("192.168.1.20:8501", False), ("continuidad-matricula-lemas.streamlit.app", False),
-    ("localhost.evil.com", False)])
+@pytest.mark.parametrize(
+    "host,esperado",
+    [
+        ("localhost:8501", True),
+        ("127.0.0.1:8501", True),
+        ("LOCALHOST", True),
+        ("[::1]:8501", True),
+        (None, True),
+        ("", True),
+        ("192.168.1.20:8501", False),
+        ("continuidad-matricula-lemas.streamlit.app", False),
+        ("localhost.evil.com", False),
+    ],
+)
 def test_es_equipo_local(host, esperado):
     assert es_equipo_local(host) is esperado
 
@@ -200,11 +218,32 @@ def test_linea_de_comandos_sigue_funcionando(tmp_path, excel):
     entrada, clave, salida = tmp_path / "base.xlsx", tmp_path / "c.key", tmp_path / "s.csv"
     entrada.write_bytes(excel)
     assert seud.main(["generar-clave", "--salida", str(clave)]) == 0
-    assert seud.main(["seudonimizar", "--entrada", str(entrada), "--salida", str(salida),
-                      "--clave", str(clave), "--col-estudiante", "CI",
-                      "--col-familia", "cedulap", "--derivar-anio-ingreso",
-                      "--col-codigo", "Codigo", "--eliminar", "Codigo", "Orden",
-                      "Nombre Completo", "Nombres completos padre de familia"]) == 0
+    assert (
+        seud.main(
+            [
+                "seudonimizar",
+                "--entrada",
+                str(entrada),
+                "--salida",
+                str(salida),
+                "--clave",
+                str(clave),
+                "--col-estudiante",
+                "CI",
+                "--col-familia",
+                "cedulap",
+                "--derivar-anio-ingreso",
+                "--col-codigo",
+                "Codigo",
+                "--eliminar",
+                "Codigo",
+                "Orden",
+                "Nombre Completo",
+                "Nombres completos padre de familia",
+            ]
+        )
+        == 0
+    )
     base = pd.read_csv(salida, dtype=str)
     assert {"id_seudonimo", "id_familia_seudonimo", "anio_ingreso"} <= set(base.columns)
     acta = json.loads(salida.with_suffix(".acta.json").read_text("utf-8"))
@@ -212,10 +251,28 @@ def test_linea_de_comandos_sigue_funcionando(tmp_path, excel):
     # reidentificación por línea de comandos
     lista = base[["id_familia_seudonimo"]].drop_duplicates().head(5)
     lista.to_csv(tmp_path / "lista.csv", index=False)
-    assert seud.main(["reidentificar", "--entrada", str(tmp_path / "lista.csv"),
-                      "--padron", str(entrada), "--clave", str(clave),
-                      "--col-seudonimo", "id_familia_seudonimo", "--col-padron", "cedulap",
-                      "--tipo", "FAM", "--salida", str(tmp_path / "interno.csv")]) == 0
+    assert (
+        seud.main(
+            [
+                "reidentificar",
+                "--entrada",
+                str(tmp_path / "lista.csv"),
+                "--padron",
+                str(entrada),
+                "--clave",
+                str(clave),
+                "--col-seudonimo",
+                "id_familia_seudonimo",
+                "--col-padron",
+                "cedulap",
+                "--tipo",
+                "FAM",
+                "--salida",
+                str(tmp_path / "interno.csv"),
+            ]
+        )
+        == 0
+    )
     interno = pd.read_csv(tmp_path / "interno.csv", dtype=str)
     assert interno["Nombres completos padre de familia"].notna().all()
 
@@ -233,7 +290,7 @@ def _app(monkeypatch, modo):
 def test_interfaz_demo_no_ofrece_excel_ni_nombres(monkeypatch):
     app = _app(monkeypatch, None)
     app.run()
-    app.sidebar.button[0].click().run()               # "Prueba con ejemplo"
+    app.sidebar.button[0].click().run()  # "Prueba con ejemplo"
     assert not app.exception
     assert "🪪 Lista con nombres" not in [t.label for t in app.tabs]
     assert not any("Borrar datos" in b.label for b in app.button)
@@ -242,7 +299,7 @@ def test_interfaz_demo_no_ofrece_excel_ni_nombres(monkeypatch):
 
 def test_interfaz_institucional_muestra_nombres_solo_tras_confirmar(monkeypatch, resultado):
     app = _app(monkeypatch, "institucional")
-    app.session_state["institucional"] = resultado      # equivale a subir Excel + clave
+    app.session_state["institucional"] = resultado  # equivale a subir Excel + clave
     app.session_state["contenido"] = resultado.csv
     app.session_state["origen"] = "ejemplo_institucional.xlsx (seudonimizado aquí)"
     app.run()
@@ -254,7 +311,7 @@ def test_interfaz_institucional_muestra_nombres_solo_tras_confirmar(monkeypatch,
     def tablas_con_nombres():
         return [d for d in app.dataframe if "Representante" in d.value.columns]
 
-    assert not tablas_con_nombres()                     # aún no confirmó
+    assert not tablas_con_nombres()  # aún no confirmó
     next(c for c in app.checkbox if "autorizado" in c.label).check().run()
     assert not app.exception
     tabla = tablas_con_nombres()[0].value
@@ -266,8 +323,7 @@ def test_interfaz_institucional_muestra_nombres_solo_tras_confirmar(monkeypatch,
     assert "contenido" not in app.session_state
 
 
-def test_interfaz_institucional_seguimiento_con_nombres_solo_tras_confirmar(monkeypatch,
-                                                                            resultado):
+def test_interfaz_institucional_seguimiento_con_nombres_solo_tras_confirmar(monkeypatch, resultado):
     """D51: el listado de familias pendientes también pide confirmación antes de dar nombres."""
     app = _app(monkeypatch, "institucional")
     app.session_state["institucional"] = resultado
@@ -275,32 +331,36 @@ def test_interfaz_institucional_seguimiento_con_nombres_solo_tras_confirmar(monk
     app.session_state["origen"] = "ejemplo_institucional.xlsx (seudonimizado aquí)"
     app.run()
     ciclo = app.sidebar.selectbox[0]
-    ciclo.set_value(ciclo.value - 1).run()              # ciclo con pagos del siguiente
+    ciclo.set_value(ciclo.value - 1).run()  # ciclo con pagos del siguiente
     next(b for b in app.button if b.label == "Generar lista").click().run()
     assert not app.exception
     assert "📅 Seguimiento" in [t.label for t in app.tabs]
 
     def tablas_de_seguimiento_con_nombres():
-        return [d for d in app.dataframe
-                if {"Representante", "En la lista del 20-feb"} <= set(d.value.columns)]
+        return [
+            d
+            for d in app.dataframe
+            if {"Representante", "En la lista del 20-feb"} <= set(d.value.columns)
+        ]
 
     assert not tablas_de_seguimiento_con_nombres()
     casillas = [c for c in app.checkbox if "autorizado" in c.label]
-    assert len(casillas) == 2                           # lista inicial y seguimiento
+    assert len(casillas) == 2  # lista inicial y seguimiento
     casillas[1].check().run()
     assert not app.exception
     tabla = tablas_de_seguimiento_con_nombres()[0].value
     assert tabla["Representante"].str.startswith("Representante").all()
     assert set(tabla["En la lista del 20-feb"]) <= {"Sí", "No"}
-    pendientes = next(int(str(m.value).replace(".", "")) for m in app.metric
-                      if m.label == "Siguen sin pagar")
+    pendientes = next(
+        int(str(m.value).replace(".", "")) for m in app.metric if m.label == "Siguen sin pagar"
+    )
     assert len(tabla) == pendientes
 
 
 def test_interfaz_institucional_sin_excel_no_muestra_nombres(monkeypatch):
     app = _app(monkeypatch, "institucional")
     app.run()
-    app.sidebar.button[0].click().run()                 # ejemplo sintético (sin nombres)
+    app.sidebar.button[0].click().run()  # ejemplo sintético (sin nombres)
     next(b for b in app.button if b.label == "Generar lista").click().run()
     assert not app.exception
     assert not any("autorizado" in c.label for c in app.checkbox)

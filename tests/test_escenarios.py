@@ -29,8 +29,9 @@ def config():
 
 @pytest.fixture(scope="module")
 def dataset(config):
-    datos, _ = construir_dataset(limpiar_base(generar(config, semilla=5).astype(str), config),
-                                 config)
+    datos, _ = construir_dataset(
+        limpiar_base(generar(config, semilla=5).astype(str), config), config
+    )
     return datos
 
 
@@ -80,8 +81,9 @@ def test_ruido_gaussiano_respeta_el_rango(c4):
     assert not np.allclose(valores, pd.to_numeric(c4["promedio"]).dropna())
 
 
-@pytest.mark.parametrize("senal", ["pago_tardio", "reserva_extraordinaria", "atrasos_pension",
-                                   "promedio"])
+@pytest.mark.parametrize(
+    "senal", ["pago_tardio", "reserva_extraordinaria", "atrasos_pension", "promedio"]
+)
 def test_faltantes_vacia_aproximadamente_la_fraccion(c4, senal):
     salida = es.faltantes(c4, senal, 0.30, rng())
     if senal == "pago_tardio":
@@ -104,7 +106,7 @@ def test_senal_caida_deja_la_senal_constante(c4):
     pago = es.senal_caida(c4, "pago_tardio")["pago_origen"]
     assert not (pago == "tardio").any()
     todas = es.senal_caida(c4, "todas_d2")
-    assert np.unique(es.puntuador_d2(todas)).size == 1      # D2 ya no ordena
+    assert np.unique(es.puntuador_d2(todas)).size == 1  # D2 ya no ordena
 
 
 def test_desbalance_llega_a_la_tasa_objetivo_y_quita_familias_enteras(c4):
@@ -122,6 +124,7 @@ def test_desbalance_llega_a_la_tasa_objetivo_y_quita_familias_enteras(c4):
 # --------------------------------------------------------------------------- #
 def test_sin_perturbar_reproduce_la_metrica_de_la_fase2(c4, sistemas):
     from src.modeling import metricas
+
     directo = metricas(c4, es.puntuador_d2(c4), K, SEMILLA)
     assert es.medir(c4, es.puntuador_d2, K, SEMILLA)["lift_k"] == directo["lift_k"]
 
@@ -142,13 +145,37 @@ def test_con_todas_las_senales_caidas_d2_queda_cerca_del_azar(c4, sistemas):
 
 
 def _resultados_de_prueba(lifts_ruido, lift_caida):
-    filas = [{"escenario": "ruido", "variable": "errores_registro", "sistema": es.REGLA,
-              "nivel": nivel, "lift_k": lift, "lift_k_p05": lift - 0.05}
-             for nivel, lift in zip(es.NIVELES_RUIDO, lifts_ruido, strict=True)]
-    filas.append({"escenario": "senal_caida", "variable": "ninguna", "sistema": es.REGLA,
-                  "nivel": "base", "lift_k": lifts_ruido[0], "recall_k": 0.3})
-    filas.append({"escenario": "senal_caida", "variable": "pago_tardio", "sistema": es.REGLA,
-                  "nivel": "constante", "lift_k": lift_caida, "recall_k": 0.15})
+    filas = [
+        {
+            "escenario": "ruido",
+            "variable": "errores_registro",
+            "sistema": es.REGLA,
+            "nivel": nivel,
+            "lift_k": lift,
+            "lift_k_p05": lift - 0.05,
+        }
+        for nivel, lift in zip(es.NIVELES_RUIDO, lifts_ruido, strict=True)
+    ]
+    filas.append(
+        {
+            "escenario": "senal_caida",
+            "variable": "ninguna",
+            "sistema": es.REGLA,
+            "nivel": "base",
+            "lift_k": lifts_ruido[0],
+            "recall_k": 0.3,
+        }
+    )
+    filas.append(
+        {
+            "escenario": "senal_caida",
+            "variable": "pago_tardio",
+            "sistema": es.REGLA,
+            "nivel": "constante",
+            "lift_k": lift_caida,
+            "recall_k": 0.15,
+        }
+    )
     return pd.DataFrame(filas)
 
 
@@ -175,16 +202,21 @@ def test_cambio_de_distribucion(entrenamiento, c4):
     esperados = {"transferido", "referencia (todos)", "regla D2 (sin aprendizaje)"}
     assert esperados <= set(cambio["modelo"])
     d2 = cambio[cambio["modelo"] == "regla D2 (sin aprendizaje)"]
-    assert d2["brier"].isna().all()                       # la regla no da probabilidades
+    assert d2["brier"].isna().all()  # la regla no da probabilidades
     visibles = cambio[cambio["eventos"].apply(lambda v: isinstance(v, (int, np.integer)))]
     assert (visibles["eventos"] >= 5).all()
 
 
 def test_figuras(c4, sistemas, entrenamiento):
-    resultados = pd.concat([es.escenario_ruido(c4, sistemas, K, SEMILLA, 2),
-                            es.escenario_faltantes(c4, sistemas, K, SEMILLA, 2),
-                            es.escenario_desbalance(c4, sistemas, K, SEMILLA, 2),
-                            es.escenario_caida(c4, sistemas, K, SEMILLA, 2)], ignore_index=True)
+    resultados = pd.concat(
+        [
+            es.escenario_ruido(c4, sistemas, K, SEMILLA, 2),
+            es.escenario_faltantes(c4, sistemas, K, SEMILLA, 2),
+            es.escenario_desbalance(c4, sistemas, K, SEMILLA, 2),
+            es.escenario_caida(c4, sistemas, K, SEMILLA, 2),
+        ],
+        ignore_index=True,
+    )
     assert len(ge.figura_degradacion(resultados).axes) == 4
     cambio = es.escenario_cambio(entrenamiento, c4, PARAMS, SEMILLA)
     assert len(ge.figura_cambio(cambio).axes) == 2
@@ -231,7 +263,7 @@ def test_pocos_vacios_no_avisan(poblacion, config):
     datos = poblacion.copy()
     no_nuevos = datos.index[datos["pago_origen"] != "nuevo"]
     datos.loc[no_nuevos[: int(0.2 * len(no_nuevos))], "pago_origen"] = "sin_dato"
-    assert revisar_senales(datos, config)["nivel"] == "ok"      # 20 % < umbral de 30 %
+    assert revisar_senales(datos, config)["nivel"] == "ok"  # 20 % < umbral de 30 %
 
 
 def test_avisa_si_falta_la_hoja_anterior(poblacion, config):

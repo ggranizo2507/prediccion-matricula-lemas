@@ -35,4 +35,4 @@ def test_resumen_de_resultados(tmp_path, monkeypatch):
     ruta = resumen.generar("real")
     texto = ruta.read_text(encoding="utf-8")
     assert "1,97 [1,24; 2,56]" in texto and "Prueba final en C5" in texto
-    assert "0.1" not in texto.replace("(0.076)", "")    # coma decimal en todo el reporte
+    assert "0.1" not in texto.replace("(0.076)", "")  # coma decimal en todo el reporte

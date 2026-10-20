@@ -25,8 +25,10 @@ C1 quedó fuera por la auditoría de comparabilidad de la Fase 1. Las cohortes s
 | **Stratified k-fold repetido** | No aplica | Los pliegues al azar mezclan años (sección 1) | — |
 | **GroupKFold** | Aplicada la idea | El grupo es la familia: evaluación por familia y bootstrap que remuestrea familias completas | `src/evaluate.py`, `src/modeling.bootstrap_ic`, `src/diagnostico.bootstrap_diferencia` |
 | **TimeSeriesSplit** | Aplicada la idea, por cohortes | Ventana creciente: C2 → C3, C2+C3 → C4 y C2+C3 → C5 | `src/diagnostico.py` (`particion_interna`, `particion_diagnostico`), `notebooks/03_modelado.ipynb` |
-| **Media ± desviación estándar** | En parte | Curvas por tamaño del entrenamiento con 5 submuestras por tamaño (banda de ±1 desviación); Lift de la regla D2 en cuatro cohortes (1,38, 1,49, 1,93 y 1,97); media de 100 sorteos de desempate (1,42, 1,57 y 1,75 en C2, C3 y C4) | `results/metrics/curvas_tamano_real.csv`, [alcance_lista.md](alcance_lista.md) |
+| **Media ± desviación estándar** | En parte | Curvas por tamaño del entrenamiento con 5 submuestras por tamaño (banda de ±1 desviación); Lift de la regla D2 en cuatro cohortes (1,38, 1,49, 1,93 y 1,97); media de 100 sorteos de desempate (1,42, 1,57 y 1,75 en C2, C3 y C4); con 500 sorteos en C4, 1,77 (D59) | `results/metrics/curvas_tamano_real.csv`, [alcance_lista.md](alcance_lista.md) |
 | **Intervalos por bootstrap** | Aplicada | IC 95 % con 2.000 réplicas que remuestrean familias dentro de cada sede (Lift@k de D2 en C5: 1,97 [1,24; 2,56]). En la semana 3, bootstrap **pareado** de la diferencia de PR-AUC entre cada estrategia y su modelo de partida | `src/modeling.bootstrap_ic`, `src/diagnostico.bootstrap_diferencia`, [modelado.md](modelado.md) §3 |
+| **Bootstrap pareado entre sistemas** | Aplicada en C4 | Diferencia de Lift@k D2 − D con las dos reglas sobre las mismas remuestras y un sorteo nuevo en cada una: 0,00 [−0,62; 0,62] (D59) | `src/revision.diferencia_pareada`, `notebooks/08_revision_final.ipynb` |
+| **Intervalos de Wilson y prueba exacta de Fisher** | Aplicada | IC 95 % de Wilson del Recall@k y del % seleccionado por grupo; Fisher para cada brecha (beca p = 0,49; sede p = 0,80) y razón de selección con IC de Katz (D60) | `src/incertidumbre.py`, `results/metrics/equidad_ic_real.csv` |
 | **Semillas aleatorias múltiples** | Aplicada | Cinco semillas (42, 7, 123, 2024, 9) en las estrategias de la semana 3; 100 sorteos para el desempate de la regla D2 | `config.yaml` (`diagnostico.semillas`), [alcance_lista.md](alcance_lista.md) |
 | **McNemar** | No aplica | Compara aciertos y errores caso por caso de dos clasificadores con un umbral. Nuestra métrica es una lista de k familias por sede (Lift@k); para comparar dos listas usamos el bootstrap pareado de la diferencia | — |
 | **Wilcoxon sobre pliegues pareados** | No aplica | Necesita muchos pliegues. Con 4 particiones temporales, el menor valor p bilateral posible es 2/2⁴ = 0,125: nunca podría salir significativo | — |
@@ -44,6 +46,8 @@ Con 122 eventos en C4, ninguna de las siete estrategias cumplió las cuatro.
 ## 3. Métrica de negocio: costo esperado
 
 En problemas de negocio y riesgo se recomienda elegir el umbral que minimiza el **costo esperado**, FP × cFP + FN × cFN, y no el que maximiza la exactitud. Aquí la exactitud sería engañosa: en C5, decir «todas se matriculan» acierta el 93 % (1.019 de 1.093 familias) sin encontrar ningún caso, y la lista D2 acierta el 82 % (898). Por eso reportamos Lift@k, Precision@k, Recall@k y PR-AUC, y no exactitud ni F1.
+
+**Carga operativa.** En C5, la lista necesitó **7,5 llamadas por cada familia en riesgo encontrada** (165 llamadas, 22 casos); al azar harían falta unas 15 (1 / 6,8 %). Es la forma más directa de expresar el beneficio para Secretaría (D60).
 
 **Por qué el umbral lo fija la capacidad.** Una llamada de más (cFP) cuesta minutos del personal y una molestia pequeña para la familia. Un estudiante que no continúa (cFN) cuesta un año de pensiones y la continuidad del niño. Como cFN es mucho mayor que cFP, el umbral de costo mínimo pediría llamar a más familias de las que el personal puede atender. Con la capacidad k como restricción, minimizar el costo equivale a encontrar el mayor número de casos con k llamadas, que es lo que mide Lift@k. Es el argumento formal de la métrica principal.
 
@@ -80,7 +84,7 @@ La sensibilidad del sistema ante datos de entrada perturbados (errores de regist
 - **No hay intervalo de la diferencia entre sistemas en C5.** Tenemos el intervalo de cada sistema por separado (D2: 1,97 [1,24; 2,56]; logística híbrida: 0,98 [0,47; 1,52]), pero no el de la diferencia D2 − híbrida. No lo calculamos ahora porque obligaría a volver a usar C5, que se evaluó una sola vez, y no cambiaría la decisión: la elección de D2 se tomó en C4.
 - **Pocas particiones independientes.** Solo hay cuatro cohortes comparables, y C4 y C3 ya intervinieron en decisiones (selección y optimización). La réplica C2 → C3 favorece al modelo que Optuna afinó ahí.
 - **El bootstrap mide la variación entre familias de una misma cohorte**, no el cambio entre años. La variación entre años se ve en el Lift de D2 por cohorte (de 1,4 a 2,0).
-- **Pocos eventos por grupo.** Los resultados por sede, beca o nivel tienen intervalos amplios ([ficha_modelo.md](ficha_modelo.md) §6).
+- **Pocos eventos por grupo.** Los resultados por sede, beca o nivel tienen intervalos amplios: con 11 eventos en becadas, el IC de Wilson del recall va de 5 % a 48 % ([consideraciones_eticas.md](consideraciones_eticas.md) §5).
 
 ## 5. Qué haríamos con la cohorte de 2027
 

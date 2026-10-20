@@ -177,11 +177,14 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 | "**Revise los datos antes de usar esta lista**" (aviso rojo sobre la lista) | Dos o más señales llegaron vacías o constantes: la lista se acerca a una selección al azar. Corrija el Excel (o pida a LEMAS que recalcule la columna) y vuelva a generar la lista antes de usarla |
 | "Ese ciclo no tiene estudiantes con reserva aprobada" | Elija otro ciclo: el actual aún no tiene reservas aprobadas o no está en el archivo |
 | "El archivo no registra pagos de matrícula del ciclo … entre el 20 de febrero y la fecha de corte" (pestaña *Seguimiento*) | El Excel no tiene la hoja del ciclo siguiente o no está actualizado. Expórtelo de nuevo. Con el ejemplo, elija un ciclo anterior |
-| `TypeError` en `lista_contactos` u otro error en rojo justo después de actualizar el repositorio (versión pública) | Streamlit quedó con código viejo en memoria. En share.streamlit.io abra la app y elija **⋮ → Reboot app**. Desde D51 la aplicación lo corrige sola |
+| Un error en rojo justo después de actualizar el repositorio (versión pública) | Streamlit quedó con código viejo en memoria. Quien administra la app la reinicia en share.streamlit.io (**⋮ → Reboot app**). Desde D51 la aplicación lo corrige sola |
+| "El archivo está vacío" | Se eligió un archivo sin contenido. Revise el archivo o use *Prueba con ejemplo* |
+| "No se pudo leer el archivo como CSV" | El archivo no es un CSV de texto. En Excel: **Guardar como → CSV UTF-8 (delimitado por comas)** |
+| "La columna fecha_pago no tiene ninguna fecha reconocible" | Las fechas deben ir como aaaa-mm-dd o dd/mm/aaaa. Compare con el archivo de ejemplo |
 | "El archivo no tiene la estructura esperada" | Verifique que sea un CSV generado por `00a`, con fechas en formato día/mes/año o año-mes-día |
 
 ## 8. Preguntas frecuentes
-- **¿Por qué no se usa el modelo de IA para ordenar la lista?** Porque en la prueba final la regla D2 fue mejor (Lift 1,97 frente a 0,98). El análisis con IA sirvió para descubrir y validar esa regla.
+- **¿Por qué no se usa el modelo de IA para ordenar la lista?** Porque en la prueba final la regla D2 fue mejor (Lift 1,97 frente a 0,98). La regla salió del análisis de datos; los modelos de IA sirvieron para comprobar que, con la información disponible al 20 de febrero, no había más señal que aprovechar.
 - **¿Puedo cambiar k?** Sí. Un k mayor encuentra más casos pero con menor proporción de aciertos.
 - **¿La app guarda los datos?** No. Procesa en memoria y no escribe en disco. Solo quedan los archivos que usted descargue.
 - **¿Necesito Colab?** No. En el modo institucional la app convierte el Excel directamente.

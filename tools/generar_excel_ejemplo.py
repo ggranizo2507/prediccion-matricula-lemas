@@ -23,10 +23,31 @@ import pandas as pd
 RAIZ = Path(__file__).resolve().parents[1]
 BASE_SINTETICA = RAIZ / "data/synthetic/base_sintetica.csv"
 CLAVE_EJEMPLO = "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
-COLUMNAS = ["anoa", "anos", "Sede", "Orden", "Nombre Completo", "CI", "Codigo", "Nivel",
-            "Paralelo", "cedulap", "Nombres completos padre de familia", "P.Académico",
-            "P.Conducta", "saldo", "deuda", "statusp", "fecha_pago", "Reserva", "RColegio",
-            "Fecha Reserva", "Tiempo", "beca", "# meses caído"]
+COLUMNAS = [
+    "anoa",
+    "anos",
+    "Sede",
+    "Orden",
+    "Nombre Completo",
+    "CI",
+    "Codigo",
+    "Nivel",
+    "Paralelo",
+    "cedulap",
+    "Nombres completos padre de familia",
+    "P.Académico",
+    "P.Conducta",
+    "saldo",
+    "deuda",
+    "statusp",
+    "fecha_pago",
+    "Reserva",
+    "RColegio",
+    "Fecha Reserva",
+    "Tiempo",
+    "beca",
+    "# meses caído",
+]
 
 
 def cedula_ficticia(numero: int) -> str:
@@ -46,8 +67,7 @@ def tabla_ejemplo(base: pd.DataFrame | None = None) -> pd.DataFrame:
     if base is None:
         base = pd.read_csv(BASE_SINTETICA, dtype=str)
     estudiantes = {s: i for i, s in enumerate(base["id_seudonimo"].dropna().unique(), start=1)}
-    familias = {f: i for i, f in enumerate(base["id_familia_seudonimo"].dropna().unique(),
-                                           start=1)}
+    familias = {f: i for i, f in enumerate(base["id_familia_seudonimo"].dropna().unique(), start=1)}
     num_est = base["id_seudonimo"].map(estudiantes)
     num_fam = base["id_familia_seudonimo"].map(familias)
     ingreso = pd.to_numeric(base["anio_ingreso"], errors="coerce")
@@ -55,14 +75,18 @@ def tabla_ejemplo(base: pd.DataFrame | None = None) -> pd.DataFrame:
     datos = base.copy()
     datos["CI"] = num_est.map(lambda n: cedula_ficticia(int(n)) if pd.notna(n) else None)
     datos["Nombre Completo"] = num_est.map(
-        lambda n: f"Estudiante {int(n):04d}" if pd.notna(n) else None)
+        lambda n: f"Estudiante {int(n):04d}" if pd.notna(n) else None
+    )
     datos["cedulap"] = num_fam.map(
-        lambda n: cedula_ficticia(5_000_000 + int(n)) if pd.notna(n) else None)
+        lambda n: cedula_ficticia(5_000_000 + int(n)) if pd.notna(n) else None
+    )
     datos["Nombres completos padre de familia"] = num_fam.map(
-        lambda n: f"Representante {int(n):04d}" if pd.notna(n) else None)
+        lambda n: f"Representante {int(n):04d}" if pd.notna(n) else None
+    )
     datos["Codigo"] = [
         f"{int(a) % 100:02d}{int(n):04d}" if pd.notna(a) and pd.notna(n) else None
-        for a, n in zip(ingreso, num_est, strict=True)]
+        for a, n in zip(ingreso, num_est, strict=True)
+    ]
     datos["Orden"] = datos.groupby("hoja").cumcount() + 1
     for vacia in ("saldo", "deuda", "statusp"):
         datos[vacia] = None
@@ -80,8 +104,9 @@ def excel_ejemplo(tabla: pd.DataFrame | None = None) -> bytes:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--salida", default="ejemplo_lemas", help="Carpeta de destino")
     args = parser.parse_args(argv)
     carpeta = Path(args.salida)

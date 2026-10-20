@@ -18,8 +18,15 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-__all__ = ["REGLA_D", "REGLA_D2", "PESOS_D2", "senales", "puntaje_d", "puntaje_d2",
-           "puntajes_reglas"]
+__all__ = [
+    "REGLA_D",
+    "REGLA_D2",
+    "PESOS_D2",
+    "senales",
+    "puntaje_d",
+    "puntaje_d2",
+    "puntajes_reglas",
+]
 
 REGLA_D = "D · más atrasos primero"
 REGLA_D2 = "D2 · señales administrativas"
@@ -31,10 +38,12 @@ def senales(datos: pd.DataFrame) -> dict[str, np.ndarray]:
     """Las tres señales administrativas como números (vacíos = 0)."""
     return {
         "pago_tardio": (datos["pago_origen"] == "tardio").to_numpy().astype(float),
-        "reserva_extraordinaria": pd.to_numeric(datos["reserva_extraordinaria"],
-                                                errors="coerce").fillna(0).to_numpy(),
-        "atrasos_pension": pd.to_numeric(datos["atrasos_pension"],
-                                         errors="coerce").fillna(0).to_numpy(),
+        "reserva_extraordinaria": pd.to_numeric(datos["reserva_extraordinaria"], errors="coerce")
+        .fillna(0)
+        .to_numpy(),
+        "atrasos_pension": pd.to_numeric(datos["atrasos_pension"], errors="coerce")
+        .fillna(0)
+        .to_numpy(),
     }
 
 

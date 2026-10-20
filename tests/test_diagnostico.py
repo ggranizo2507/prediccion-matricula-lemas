@@ -25,9 +25,16 @@ COHORTES = ["C2", "C3"]
 SEMILLA = 42
 PARAMETROS = {
     "logistica": {"conjunto": "reducido", "balanceado": False, "C": 0.05, "l1_ratio": 0.5},
-    "arboles": {"conjunto": "reducido", "balanceado": True, "learning_rate": 0.05,
-                "max_depth": 2, "max_leaf_nodes": 6, "min_samples_leaf": 60,
-                "l2_regularization": 1.0, "max_iter": 40},
+    "arboles": {
+        "conjunto": "reducido",
+        "balanceado": True,
+        "learning_rate": 0.05,
+        "max_depth": 2,
+        "max_leaf_nodes": 6,
+        "min_samples_leaf": 60,
+        "l2_regularization": 1.0,
+        "max_iter": 40,
+    },
     "hibrido": {"balanceado": False, "C": 0.05},
 }
 
@@ -39,8 +46,9 @@ def config():
 
 @pytest.fixture(scope="module")
 def dataset(config):
-    datos, _ = construir_dataset(limpiar_base(generar(config, semilla=5).astype(str), config),
-                                 config)
+    datos, _ = construir_dataset(
+        limpiar_base(generar(config, semilla=5).astype(str), config), config
+    )
     return datos
 
 
@@ -57,21 +65,25 @@ def interna(dataset):
 @pytest.fixture(scope="module")
 def k(dataset, config):
     entrenamiento = dataset[dataset["cohorte"].isin(COHORTES)]
-    return calcular_k_por_sede(consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
-                               config["capacidad"]["multiplicador_k"])
+    return calcular_k_por_sede(
+        consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
+        config["capacidad"]["multiplicador_k"],
+    )
 
 
 @pytest.fixture(scope="module")
 def seguimiento(particion):
-    return dg.seguir_boosting(PARAMETROS["arboles"], particion, SEMILLA, iteraciones=60,
-                              iteracion_fase2=40)
+    return dg.seguir_boosting(
+        PARAMETROS["arboles"], particion, SEMILLA, iteraciones=60, iteracion_fase2=40
+    )
 
 
 @pytest.fixture(scope="module")
 def estrategias(particion, interna, k):
     # Menos réplicas y semillas que en el cuaderno, para que las pruebas sean rápidas
-    return dg.evaluar_estrategias(PARAMETROS, particion, interna, SEMILLA, k,
-                                  semillas=(42, 7), repeticiones=200)
+    return dg.evaluar_estrategias(
+        PARAMETROS, particion, interna, SEMILLA, k, semillas=(42, 7), repeticiones=200
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -80,7 +92,7 @@ def estrategias(particion, interna, k):
 def test_particiones_respetan_el_orden_temporal_y_excluyen_c5(particion, interna):
     for p in (particion, interna):
         assert "prueba" not in set(p.datos_tr["rol"]) | set(p.datos_val["rol"])
-        assert p.datos_tr["cohorte"].max() < p.datos_val["cohorte"].min()   # C2 < C3 < C4
+        assert p.datos_tr["cohorte"].max() < p.datos_val["cohorte"].min()  # C2 < C3 < C4
     assert set(particion.datos_tr["cohorte"]) == {"C2", "C3"}
     assert set(particion.datos_val["cohorte"]) == {"C4"}
     assert (interna.etiqueta_tr, interna.etiqueta_val) == ("C2", "C3")
@@ -94,8 +106,9 @@ def test_el_diagnostico_no_depende_de_c5(dataset, particion, k):
     assert es_c5.any()
     alterado.loc[es_c5, "y_no_matricula"] = 1 - alterado.loc[es_c5, "y_no_matricula"]
     original = dg.tabla_diagnostico(PARAMETROS, particion, SEMILLA, k)
-    otra = dg.tabla_diagnostico(PARAMETROS, dg.particion_diagnostico(alterado, COHORTES),
-                                SEMILLA, k)
+    otra = dg.tabla_diagnostico(
+        PARAMETROS, dg.particion_diagnostico(alterado, COHORTES), SEMILLA, k
+    )
     pd.testing.assert_frame_equal(original, otra)
 
 
@@ -111,20 +124,30 @@ def test_mejores_parametros_lee_el_historial_guardado():
     filas = []
     for tipo, nombre in NOMBRES.items():
         for numero, valor in enumerate([0.10, 0.14, 0.14]):
-            fila = {"modelo": nombre, "number": numero, "value": valor,
-                    "params_balanceado": numero == 1, "params_C": 0.1 * (numero + 1)}
+            fila = {
+                "modelo": nombre,
+                "number": numero,
+                "value": valor,
+                "params_balanceado": numero == 1,
+                "params_C": 0.1 * (numero + 1),
+            }
             if tipo != "hibrido":
                 fila["params_conjunto"] = "reducido"
             if tipo == "logistica":
                 fila["params_l1_ratio"] = 0.3
             if tipo == "arboles":
-                fila.update(params_learning_rate=0.05, params_max_depth=3.0,
-                            params_max_leaf_nodes=8.0, params_min_samples_leaf=50.0,
-                            params_l2_regularization=1.0, params_max_iter=120.0)
+                fila.update(
+                    params_learning_rate=0.05,
+                    params_max_depth=3.0,
+                    params_max_leaf_nodes=8.0,
+                    params_min_samples_leaf=50.0,
+                    params_l2_regularization=1.0,
+                    params_max_iter=120.0,
+                )
             filas.append(fila)
     parametros = dg.mejores_parametros(pd.DataFrame(filas))
     assert set(parametros) == set(NOMBRES)
-    assert parametros["logistica"]["C"] == pytest.approx(0.2)      # primera de las mejores
+    assert parametros["logistica"]["C"] == pytest.approx(0.2)  # primera de las mejores
     assert parametros["logistica"]["balanceado"] is True
     assert isinstance(parametros["arboles"]["max_iter"], int)
     assert parametros["arboles"]["max_depth"] == 3
@@ -132,8 +155,9 @@ def test_mejores_parametros_lee_el_historial_guardado():
 
 
 def test_mejores_parametros_avisa_si_falta_un_modelo():
-    incompleto = pd.DataFrame([{"modelo": NOMBRES["hibrido"], "value": 0.1,
-                                "params_balanceado": True, "params_C": 1.0}])
+    incompleto = pd.DataFrame(
+        [{"modelo": NOMBRES["hibrido"], "value": 0.1, "params_balanceado": True, "params_C": 1.0}]
+    )
     with pytest.raises(ValueError, match="faltan"):
         dg.mejores_parametros(incompleto)
 
@@ -147,43 +171,49 @@ def test_registro_de_metricas():
         registro.registrar("m", paso, "entrenamiento", 0.6 / paso, 0.2)
         registro.registrar("m", paso, "validacion", 0.7, 0.15)
     assert len(registro.tabla()) == 4
-    registro.registrar("m", 2, "validacion", 0.65, 0.16)     # repetido: reemplaza, no duplica
+    registro.registrar("m", 2, "validacion", 0.65, 0.16)  # repetido: reemplaza, no duplica
     assert len(registro.tabla()) == 4
     ancho = registro.ancho()
     assert ancho["perdida_validacion"].iloc[-1] == pytest.approx(0.65)
     assert list(ancho["iteracion"]) == [1, 2]
-    assert {"perdida_entrenamiento", "perdida_validacion", "puntaje_entrenamiento",
-            "puntaje_validacion"} <= set(ancho.columns)
+    assert {
+        "perdida_entrenamiento",
+        "perdida_validacion",
+        "puntaje_entrenamiento",
+        "puntaje_validacion",
+    } <= set(ancho.columns)
 
 
 def test_seguimiento_registra_cada_iteracion(seguimiento):
     assert list(seguimiento["iteracion"]) == list(range(1, 61))
-    assert seguimiento["perdida_entrenamiento"].iloc[-1] < seguimiento[
-        "perdida_entrenamiento"].iloc[0]                 # el entrenamiento siempre mejora
-    assert seguimiento[["puntaje_entrenamiento", "puntaje_validacion"]].stack().between(
-        0, 1).all()
+    assert (
+        seguimiento["perdida_entrenamiento"].iloc[-1] < seguimiento["perdida_entrenamiento"].iloc[0]
+    )  # el entrenamiento siempre mejora
+    assert seguimiento[["puntaje_entrenamiento", "puntaje_validacion"]].stack().between(0, 1).all()
     assert (seguimiento["iteracion_fase2"] == 40).all()
 
 
 def test_seguimiento_coincide_con_el_modelo_final(particion, seguimiento):
     """La última iteración registrada es el mismo modelo que se evalúa de una vez."""
     final = dg.evaluar("arboles", {**PARAMETROS["arboles"], "max_iter": 60}, particion, SEMILLA)
-    assert seguimiento["puntaje_validacion"].iloc[-1] == pytest.approx(
-        final["puntaje_validacion"])
-    assert seguimiento["perdida_validacion"].iloc[-1] == pytest.approx(
-        final["perdida_validacion"])
+    assert seguimiento["puntaje_validacion"].iloc[-1] == pytest.approx(final["puntaje_validacion"])
+    assert seguimiento["perdida_validacion"].iloc[-1] == pytest.approx(final["perdida_validacion"])
 
 
 def test_resumen_detecta_que_la_validacion_empeora():
     iteraciones = np.arange(1, 101)
-    curva = pd.DataFrame({
-        "iteracion": iteraciones,
-        "perdida_entrenamiento": 0.7 - 0.005 * iteraciones,
-        "perdida_validacion": 0.7 - 0.01 * np.minimum(iteraciones, 20)
-        + 0.004 * np.maximum(iteraciones - 20, 0),
-        "puntaje_entrenamiento": 0.1 + 0.005 * iteraciones,
-        "puntaje_validacion": 0.15 - 0.0005 * np.abs(iteraciones - 20),
-        "iteracion_fase2": 60})
+    curva = pd.DataFrame(
+        {
+            "iteracion": iteraciones,
+            "perdida_entrenamiento": 0.7 - 0.005 * iteraciones,
+            "perdida_validacion": 0.7
+            - 0.01 * np.minimum(iteraciones, 20)
+            + 0.004 * np.maximum(iteraciones - 20, 0),
+            "puntaje_entrenamiento": 0.1 + 0.005 * iteraciones,
+            "puntaje_validacion": 0.15 - 0.0005 * np.abs(iteraciones - 20),
+            "iteracion_fase2": 60,
+        }
+    )
     resumen = dg.resumen_seguimiento(curva)
     assert resumen["iteracion_optima"] == 20 and not resumen["minimo_en_el_limite"]
     assert resumen["validacion_empeora"] and resumen["brecha_crece"]
@@ -195,20 +225,28 @@ def test_resumen_detecta_que_la_validacion_empeora():
 # --------------------------------------------------------------------------- #
 # Diagnóstico
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("tr,val,tasa,esperado", [
-    (0.60, 0.12, 0.08, "sobreajuste"),        # gran brecha
-    (0.09, 0.085, 0.08, "subajuste"),         # sin brecha, pero no supera al azar
-    (0.17, 0.16, 0.08, "ajuste adecuado"),    # brecha pequeña y el doble que el azar
-])
+@pytest.mark.parametrize(
+    "tr,val,tasa,esperado",
+    [
+        (0.60, 0.12, 0.08, "sobreajuste"),  # gran brecha
+        (0.09, 0.085, 0.08, "subajuste"),  # sin brecha, pero no supera al azar
+        (0.17, 0.16, 0.08, "ajuste adecuado"),  # brecha pequeña y el doble que el azar
+    ],
+)
 def test_diagnosticar(tr, val, tasa, esperado):
     assert dg.diagnosticar(tr, val, tasa)["diagnostico"] == esperado
 
 
 def test_resumen_avisa_si_el_minimo_esta_en_el_ultimo_paso():
-    curva = pd.DataFrame({"iteracion": [1, 2, 3], "perdida_entrenamiento": [0.7, 0.6, 0.5],
-                          "perdida_validacion": [0.7, 0.65, 0.62],
-                          "puntaje_entrenamiento": [0.1, 0.2, 0.3],
-                          "puntaje_validacion": [0.1, 0.12, 0.14]})
+    curva = pd.DataFrame(
+        {
+            "iteracion": [1, 2, 3],
+            "perdida_entrenamiento": [0.7, 0.6, 0.5],
+            "perdida_validacion": [0.7, 0.65, 0.62],
+            "puntaje_entrenamiento": [0.1, 0.2, 0.3],
+            "puntaje_validacion": [0.1, 0.12, 0.14],
+        }
+    )
     resumen = dg.resumen_seguimiento(curva)
     assert resumen["minimo_en_el_limite"] and not resumen["validacion_empeora"]
     assert "iteracion_fase2" not in resumen
@@ -222,8 +260,10 @@ def test_diagnostico_indeterminado_sin_datos():
 
 def test_umbrales_configurables():
     assert dg.diagnosticar(0.20, 0.16, 0.08)["diagnostico"] == "ajuste adecuado"
-    assert dg.diagnosticar(0.20, 0.16, 0.08, {"brecha_relativa_max": 0.1}
-                           )["diagnostico"] == "sobreajuste"
+    assert (
+        dg.diagnosticar(0.20, 0.16, 0.08, {"brecha_relativa_max": 0.1})["diagnostico"]
+        == "sobreajuste"
+    )
 
 
 def test_los_controles_se_reconocen(particion, k):
@@ -233,18 +273,21 @@ def test_los_controles_se_reconocen(particion, k):
     assert tabla.loc[dg.CONTROL_RIGIDO, "mejora_sobre_azar"] == pytest.approx(1.0, abs=0.05)
     assert set(tabla["rol"]) == {"Fase 2", "control"}
     assert {"lift_k_validacion", "veces_azar_entrenamiento", "perdida_ponderada"} <= set(
-        tabla.columns)
+        tabla.columns
+    )
 
 
 def test_seguimiento_guarda_la_perdida_sin_ponderar(particion, seguimiento):
     """El gradient boosting de prueba es balanceado: las dos pérdidas difieren."""
     assert bool(seguimiento["perdida_ponderada"].iloc[0])
-    assert not np.allclose(seguimiento["perdida_validacion"],
-                           seguimiento["perdida_sin_ponderar_validacion"])
+    assert not np.allclose(
+        seguimiento["perdida_validacion"], seguimiento["perdida_sin_ponderar_validacion"]
+    )
     logistica = dg.seguir_logistica("logistica", PARAMETROS["logistica"], particion, SEMILLA)
-    assert not bool(logistica["perdida_ponderada"].iloc[0])         # sin pesos: son iguales
-    assert np.allclose(logistica["perdida_validacion"],
-                       logistica["perdida_sin_ponderar_validacion"])
+    assert not bool(logistica["perdida_ponderada"].iloc[0])  # sin pesos: son iguales
+    assert np.allclose(
+        logistica["perdida_validacion"], logistica["perdida_sin_ponderar_validacion"]
+    )
     tasa = particion.y_tr.mean()
     p = particion.y_val.mean()
     esperado = -(p * np.log(tasa) + (1 - p) * np.log(1 - tasa))
@@ -257,7 +300,7 @@ def test_perdida_ponderada_y_sin_ponderar():
     pesos = dg.pesos_de_clase(y, True)
     assert pesos == {0: pytest.approx(4 / 6), 1: pytest.approx(2.0)}
     assert dg.pesos_de_clase(y, False) is None
-    assert dg.perdida(y, prob, pesos) > dg.perdida(y, prob)   # el evento pesa más
+    assert dg.perdida(y, prob, pesos) > dg.perdida(y, prob)  # el evento pesa más
     assert np.isnan(dg.puntaje(np.zeros(4), prob))
 
 
@@ -265,20 +308,27 @@ def test_perdida_ponderada_y_sin_ponderar():
 # Curvas de scikit-learn
 # --------------------------------------------------------------------------- #
 def test_curva_por_tamano(particion):
-    curva = dg.curva_por_tamano("hibrido", PARAMETROS["hibrido"], particion, SEMILLA,
-                                fracciones=(0.3, 0.6, 1.0), repeticiones=2)
+    curva = dg.curva_por_tamano(
+        "hibrido",
+        PARAMETROS["hibrido"],
+        particion,
+        SEMILLA,
+        fracciones=(0.3, 0.6, 1.0),
+        repeticiones=2,
+    )
     puntajes = curva[curva["metrica"] == "puntaje"]
     assert list(puntajes["n"]) == sorted(puntajes["n"])
     assert puntajes["n"].iloc[-1] == len(particion.datos_tr)
-    assert puntajes["validacion_de"].iloc[-1] == pytest.approx(0)   # misma muestra completa
+    assert puntajes["validacion_de"].iloc[-1] == pytest.approx(0)  # misma muestra completa
     assert set(curva["metrica"]) == {"puntaje", "perdida"}
     assert (curva[curva["metrica"] == "perdida"]["validacion"] > 0).all()
 
 
 def test_curva_por_hiperparametro(particion):
     valores = [0.001, 0.1, 10.0]
-    curva = dg.curva_por_hiperparametro("logistica", PARAMETROS["logistica"], particion,
-                                        SEMILLA, "C", valores)
+    curva = dg.curva_por_hiperparametro(
+        "logistica", PARAMETROS["logistica"], particion, SEMILLA, "C", valores
+    )
     assert list(curva["valor"]) == valores
     assert (curva["valor_fase2"] == 0.05).all()
     # Con poca regularización el modelo se ajusta más al entrenamiento
@@ -290,10 +340,10 @@ def test_curva_por_hiperparametro(particion):
 # --------------------------------------------------------------------------- #
 def test_estrategias_antes_y_despues(estrategias):
     assert len(estrategias) == 9
-    assert list(estrategias["tipo_fila"]) == ["estrategia"] * 7 + ["referencia",
-                                                                   "contraprueba"]
-    assert list(estrategias["problema"]) == (["sobreajuste"] * 3 + ["subajuste"] * 4
-                                             + ["sobreajuste", "subajuste"])
+    assert list(estrategias["tipo_fila"]) == ["estrategia"] * 7 + ["referencia", "contraprueba"]
+    assert list(estrategias["problema"]) == (
+        ["sobreajuste"] * 3 + ["subajuste"] * 4 + ["sobreajuste", "subajuste"]
+    )
     gb = dg.NOMBRES_CORTOS["arboles"]
     # Las estrategias contra el sobreajuste parten del gradient boosting de la Fase 2
     assert set(estrategias.iloc[:3]["modelo_antes"]) == {gb}
@@ -302,17 +352,26 @@ def test_estrategias_antes_y_despues(estrategias):
     assert referencia["diagnostico_antes"] == "sobreajuste"
     assert referencia["brecha_despues"] < referencia["brecha_antes"]
     assert referencia["efecto_brecha"] == "reduce"
-    for columna in ("puntaje_validacion", "brecha", "lift_k_validacion", "diagnostico",
-                    "perdida_sin_ponderar_validacion"):
+    for columna in (
+        "puntaje_validacion",
+        "brecha",
+        "lift_k_validacion",
+        "diagnostico",
+        "perdida_sin_ponderar_validacion",
+    ):
         assert f"{columna}_antes" in estrategias and f"{columna}_despues" in estrategias
-    assert np.allclose(estrategias["cambio_puntaje_validacion"],
-                       estrategias["puntaje_validacion_despues"]
-                       - estrategias["puntaje_validacion_antes"])
-    assert set(estrategias["efecto_validacion"]) <= {"mejora", "empeora",
-                                                     "sin cambio apreciable"}
+    assert np.allclose(
+        estrategias["cambio_puntaje_validacion"],
+        estrategias["puntaje_validacion_despues"] - estrategias["puntaje_validacion_antes"],
+    )
+    assert set(estrategias["efecto_validacion"]) <= {"mejora", "empeora", "sin cambio apreciable"}
     assert set(estrategias["efecto_brecha"]) <= {"reduce", "aumenta", "sin cambio apreciable"}
-    assert set(estrategias["veredicto"]) <= {"mejora", "empeora", "sin diferencia demostrable",
-                                             "sin cambios en el modelo"}
+    assert set(estrategias["veredicto"]) <= {
+        "mejora",
+        "empeora",
+        "sin diferencia demostrable",
+        "sin cambios en el modelo",
+    }
     sin_cambios = estrategias[estrategias["modelo_sin_cambios"]]
     assert (sin_cambios["cambio_puntaje_validacion"] == 0).all()
     assert (sin_cambios["veredicto"] == "sin cambios en el modelo").all()
@@ -323,12 +382,17 @@ def test_el_efecto_respeta_el_cambio_minimo(estrategias):
     minimo = dg.UMBRALES["cambio_minimo"]
     for e in estrategias.itertuples():
         cambio = e.cambio_puntaje_validacion
-        esperado = ("sin cambio apreciable" if abs(cambio) < minimo
-                    else "mejora" if cambio > 0 else "empeora")
+        esperado = (
+            "sin cambio apreciable"
+            if abs(cambio) < minimo
+            else "mejora"
+            if cambio > 0
+            else "empeora"
+        )
         assert e.efecto_validacion == esperado
-        tamano = abs(e.brecha_despues) - abs(e.brecha_antes)      # se compara en valor absoluto
+        tamano = abs(e.brecha_despues) - abs(e.brecha_antes)  # se compara en valor absoluto
         assert e.cambio_brecha == pytest.approx(tamano)
-        if e.veredicto == "mejora":            # la regla nunca es más laxa que la lectura puntual
+        if e.veredicto == "mejora":  # la regla nunca es más laxa que la lectura puntual
             assert e.efecto_validacion == "mejora" and e.ic_inferior > 0
 
 
@@ -339,28 +403,40 @@ def _parametros_de(plan, nombre):
 def test_cada_estrategia_cambia_una_sola_cosa(interna):
     """Comentario de la calificación: E1, E4 y E6 no eran comparaciones limpias."""
     plan = dg.plan_estrategias(PARAMETROS, interna, SEMILLA)
-    arboles, logistica, hibrido = (PARAMETROS["arboles"], PARAMETROS["logistica"],
-                                   PARAMETROS["hibrido"])
+    arboles, logistica, hibrido = (
+        PARAMETROS["arboles"],
+        PARAMETROS["logistica"],
+        PARAMETROS["hibrido"],
+    )
 
     def distintos(a, b):
         return {clave for clave in set(a) | set(b) if a.get(clave) != b.get(clave)}
 
     e1 = _parametros_de(plan, "E1")
     assert e1.antes[2] == arboles and distintos(*[x[2] for x in (e1.antes, e1.despues)]) == {
-        "l2_regularization"}
+        "l2_regularization"
+    }
     e3 = _parametros_de(plan, "E3")
-    assert distintos(e3.antes[2], e3.despues[2]) <= {"max_depth", "max_leaf_nodes",
-                                                     "min_samples_leaf"}
+    assert distintos(e3.antes[2], e3.despues[2]) <= {
+        "max_depth",
+        "max_leaf_nodes",
+        "min_samples_leaf",
+    }
     e4a, e4b = _parametros_de(plan, "E4a"), _parametros_de(plan, "E4b")
     # E4a: mismos hiperparámetros de la regresión logística, otras variables
     assert e4a.antes[1] == "logistica" and e4a.despues[1] == "hibrido_elastico"
     assert all(e4a.despues[2][clave] == logistica[clave] for clave in ("C", "l1_ratio"))
     # E4b: mismas variables (parte de donde termina E4a), otros hiperparámetros
-    assert e4b.antes == e4a.despues and e4b.despues == (dg.NOMBRES_CORTOS["hibrido"],
-                                                        "hibrido", hibrido)
+    assert e4b.antes == e4a.despues and e4b.despues == (
+        dg.NOMBRES_CORTOS["hibrido"],
+        "hibrido",
+        hibrido,
+    )
     e6 = _parametros_de(plan, "E6")
     assert e6.antes[1:] == ("hibrido", hibrido) and e6.despues[1:] == (
-        "hibrido_interacciones", hibrido)
+        "hibrido_interacciones",
+        hibrido,
+    )
     contra = _parametros_de(plan, "Contraprueba")
     assert distintos(contra.antes[2], contra.despues[2]) == {"max_iter"}
     assert {e.tipo_fila for e in plan} == {"estrategia", "referencia", "contraprueba"}
@@ -374,7 +450,7 @@ def test_variantes_del_modelo_hibrido(particion):
     interacciones = dg.construir("hibrido_interacciones", PARAMETROS["hibrido"], SEMILLA)
     n_base = base[0].fit_transform(X).shape[1]
     n_inter = interacciones[0].fit_transform(X).shape[1]
-    assert n_inter == n_base + n_base * (n_base - 1) // 2     # todos los pares, sin cuadrados
+    assert n_inter == n_base + n_base * (n_base - 1) // 2  # todos los pares, sin cuadrados
 
 
 def test_estrategias_miden_la_robustez(estrategias, particion, interna, k):
@@ -382,14 +458,16 @@ def test_estrategias_miden_la_robustez(estrategias, particion, interna, k):
     logistica = PARAMETROS["logistica"]
     antes = dg.evaluar("logistica", logistica, interna, SEMILLA)
     despues = dg.evaluar("logistica", {**logistica, "C": logistica["C"] * 10}, interna, SEMILLA)
-    assert e5["cambio_replica"] == pytest.approx(despues["puntaje_validacion"]
-                                                 - antes["puntaje_validacion"])
+    assert e5["cambio_replica"] == pytest.approx(
+        despues["puntaje_validacion"] - antes["puntaje_validacion"]
+    )
     activas = estrategias[~estrategias["modelo_sin_cambios"]]
     assert (activas["ic_inferior"] <= activas["ic_superior"]).all()
     assert (activas["cambio_min_semillas"] <= activas["cambio_max_semillas"] + 1e-12).all()
     assert (estrategias["semillas"] == 2).all()
     assert {"cambio_lift_min_semillas", "cambio_lift_max_semillas", "nota_replica"} <= set(
-        estrategias.columns)
+        estrategias.columns
+    )
     e2 = estrategias[estrategias["estrategia"].str.startswith("E2")].iloc[0]
     assert "circular" in e2["nota_replica"]
 
@@ -397,50 +475,70 @@ def test_estrategias_miden_la_robustez(estrategias, particion, interna, k):
 def test_bootstrap_pareado_por_familia():
     rng = np.random.default_rng(0)
     y = np.array([1, 0, 0, 0, 1, 0, 0, 0] * 25)
-    familias = np.repeat(np.arange(100), 2)              # hermanos de dos en dos
+    familias = np.repeat(np.arange(100), 2)  # hermanos de dos en dos
     ruido = rng.random(len(y))
     assert dg.bootstrap_diferencia(y, ruido, ruido, familias, 100) == (0.0, 0.0)
-    bueno = y + 0.5 * ruido                              # ordena casi perfecto
+    bueno = y + 0.5 * ruido  # ordena casi perfecto
     inferior, superior = dg.bootstrap_diferencia(y, ruido, bueno, familias, 300)
     assert 0 < inferior <= superior
     # Con la misma semilla el intervalo se repite
-    assert dg.bootstrap_diferencia(y, ruido, bueno, familias, 50, 3) == \
-        dg.bootstrap_diferencia(y, ruido, bueno, familias, 50, 3)
+    assert dg.bootstrap_diferencia(y, ruido, bueno, familias, 50, 3) == dg.bootstrap_diferencia(
+        y, ruido, bueno, familias, 50, 3
+    )
 
 
-@pytest.mark.parametrize("valores, esperado", [
-    ((0.02, 0.004, 0.03, 0.01, 0.015, 0.025), "mejora"),
-    ((0.02, -0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),   # IC con el 0
-    ((0.02, 0.004, 0.03, -0.01, 0.015, 0.025), "sin diferencia demostrable"),   # réplica
-    ((0.02, 0.004, 0.03, 0.01, -0.001, 0.025), "sin diferencia demostrable"),   # una semilla
-    ((0.004, 0.001, 0.006, 0.01, 0.003, 0.005), "sin diferencia demostrable"),  # < mínimo
-    ((-0.02, -0.03, -0.004, -0.01, -0.025, -0.015), "empeora"),
-    ((float("nan"), 0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),
-])
+@pytest.mark.parametrize(
+    "valores, esperado",
+    [
+        ((0.02, 0.004, 0.03, 0.01, 0.015, 0.025), "mejora"),
+        ((0.02, -0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),  # IC con el 0
+        ((0.02, 0.004, 0.03, -0.01, 0.015, 0.025), "sin diferencia demostrable"),  # réplica
+        ((0.02, 0.004, 0.03, 0.01, -0.001, 0.025), "sin diferencia demostrable"),  # una semilla
+        ((0.004, 0.001, 0.006, 0.01, 0.003, 0.005), "sin diferencia demostrable"),  # < mínimo
+        ((-0.02, -0.03, -0.004, -0.01, -0.025, -0.015), "empeora"),
+        ((float("nan"), 0.004, 0.03, 0.01, 0.015, 0.025), "sin diferencia demostrable"),
+    ],
+)
 def test_veredicto_de_cuatro_condiciones(valores, esperado):
     assert dg.veredicto_estrategia(*valores, minimo=0.005) == esperado
 
 
 def test_refinar_distingue_capacidad_datos_y_senal():
-    tabla = pd.DataFrame({
-        "modelo": ["rigido", "datos", "senal", "sobre", "sin_curva"],
-        "diagnostico": ["subajuste", "subajuste", "subajuste", "sobreajuste", "subajuste"],
-        "puntaje_validacion": [0.10, 0.12, 0.12, 0.12, 0.12]})
-    curvas = pd.concat([
-        pd.DataFrame({"modelo": m, "hiperparametro": "C", "valor": [0.01, 0.1, 1.0, 10.0],
-                      "valor_fase2": 0.1, "puntaje_validacion": v})
-        for m, v in [("rigido", [0.30, 0.10, 0.14, 0.16]),      # más C ayuda
-                     ("datos", [0.20, 0.12, 0.122, 0.121]),     # solo un C menor ayudaría
-                     ("senal", [0.11, 0.12, 0.123, 0.12]),
-                     ("sobre", [0.11, 0.12, 0.20, 0.25])]])
-    ganancia = pd.DataFrame({"modelo": ["datos", "senal"], "ganancia": [0.03, 0.03],
-                             "concluyente": [True, False]})
+    tabla = pd.DataFrame(
+        {
+            "modelo": ["rigido", "datos", "senal", "sobre", "sin_curva"],
+            "diagnostico": ["subajuste", "subajuste", "subajuste", "sobreajuste", "subajuste"],
+            "puntaje_validacion": [0.10, 0.12, 0.12, 0.12, 0.12],
+        }
+    )
+    curvas = pd.concat(
+        [
+            pd.DataFrame(
+                {
+                    "modelo": m,
+                    "hiperparametro": "C",
+                    "valor": [0.01, 0.1, 1.0, 10.0],
+                    "valor_fase2": 0.1,
+                    "puntaje_validacion": v,
+                }
+            )
+            for m, v in [
+                ("rigido", [0.30, 0.10, 0.14, 0.16]),  # más C ayuda
+                ("datos", [0.20, 0.12, 0.122, 0.121]),  # solo un C menor ayudaría
+                ("senal", [0.11, 0.12, 0.123, 0.12]),
+                ("sobre", [0.11, 0.12, 0.20, 0.25]),
+            ]
+        ]
+    )
+    ganancia = pd.DataFrame(
+        {"modelo": ["datos", "senal"], "ganancia": [0.03, 0.03], "concluyente": [True, False]}
+    )
     salida = dg.refinar_diagnostico(tabla, curvas, ganancia).set_index("modelo")
     assert salida.loc["rigido", "diagnostico_detallado"] == "subajuste (falta capacidad)"
     assert salida.loc["rigido", "ganancia_por_capacidad"] == pytest.approx(0.06)
     assert salida.loc["datos", "diagnostico_detallado"] == "subajuste (faltan datos)"
     assert salida.loc["senal", "diagnostico_detallado"] == "límite de señal"
-    assert salida.loc["sobre", "diagnostico_detallado"] == "sobreajuste"   # no se toca
+    assert salida.loc["sobre", "diagnostico_detallado"] == "sobreajuste"  # no se toca
     assert salida.loc["sin_curva", "diagnostico_detallado"] == "subajuste"
     assert (salida["diagnostico"] == tabla.set_index("modelo")["diagnostico"]).all()
 
@@ -449,12 +547,18 @@ def test_el_control_rigido_se_reconoce_como_falta_de_capacidad(particion, k):
     """La segunda etapa debe reconocer un subajuste por rigidez en un caso claro."""
     tabla = dg.tabla_diagnostico(PARAMETROS, particion, SEMILLA, k)
     _, rigido = dg.parametros_control(PARAMETROS)[dg.CONTROL_RIGIDO]
-    curva = dg.curva_por_hiperparametro("logistica", rigido, particion, SEMILLA, "C",
-                                        [0.001, 0.01, 0.1, 1.0], modelo=dg.CONTROL_RIGIDO)
+    curva = dg.curva_por_hiperparametro(
+        "logistica",
+        rigido,
+        particion,
+        SEMILLA,
+        "C",
+        [0.001, 0.01, 0.1, 1.0],
+        modelo=dg.CONTROL_RIGIDO,
+    )
     assert set(curva["modelo"]) == {dg.CONTROL_RIGIDO}
     salida = dg.refinar_diagnostico(tabla, curva).set_index("modelo")
-    assert salida.loc[dg.CONTROL_RIGIDO, "diagnostico_detallado"] == \
-        "subajuste (falta capacidad)"
+    assert salida.loc[dg.CONTROL_RIGIDO, "diagnostico_detallado"] == "subajuste (falta capacidad)"
 
 
 def test_parada_temprana_solo_recorta_y_no_mira_c4(dataset, interna):
@@ -464,7 +568,8 @@ def test_parada_temprana_solo_recorta_y_no_mira_c4(dataset, interna):
     alterado.loc[es_c4, "y_no_matricula"] = 1 - alterado.loc[es_c4, "y_no_matricula"]
     original = dg.iteracion_parada_temprana(PARAMETROS["arboles"], interna, SEMILLA)
     otra = dg.iteracion_parada_temprana(
-        PARAMETROS["arboles"], dg.particion_interna(alterado, COHORTES), SEMILLA)
+        PARAMETROS["arboles"], dg.particion_interna(alterado, COHORTES), SEMILLA
+    )
     assert original == otra
     assert 10 <= original <= PARAMETROS["arboles"]["max_iter"]
     assert dg.iteracion_parada_temprana(PARAMETROS["arboles"], interna, SEMILLA, tope=15) <= 15
@@ -488,8 +593,7 @@ def test_seguimiento_logistico_termina_en_el_modelo_final(particion, tipo):
     final = dg.evaluar(tipo, PARAMETROS[tipo], particion, SEMILLA)
     assert curva["iteracion"].is_monotonic_increasing and len(curva) >= 3
     assert curva["puntaje_validacion"].iloc[-1] == pytest.approx(final["puntaje_validacion"])
-    assert curva["perdida_entrenamiento"].iloc[-1] == pytest.approx(
-        final["perdida_entrenamiento"])
+    assert curva["perdida_entrenamiento"].iloc[-1] == pytest.approx(final["perdida_entrenamiento"])
     assert curva["unidad"].iloc[0].startswith("iteración del optimizador")
 
 
@@ -515,19 +619,26 @@ def test_numero_con_coma_y_signo_menos():
     assert dg.numero(0.1234) == "0,123"
     assert dg.numero(-0.0191, signo=True) == "−0,019"
     assert dg.numero(0.02, signo=True) == "+0,020"
-    assert dg.numero(-0.0001) == "0,000"          # sin «−0,000»
+    assert dg.numero(-0.0001) == "0,000"  # sin «−0,000»
 
 
 def test_ganancia_por_datos_usa_la_variacion():
-    curva = pd.DataFrame({
-        "modelo": "m", "metrica": "puntaje", "n": [100, 200, 300, 400],
-        "entrenamiento": [0.3, 0.25, 0.22, 0.2], "entrenamiento_de": 0.0,
-        "validacion": [0.10, 0.12, 0.13, 0.15], "validacion_de": [0.02, 0.01, 0.01, 0.0]})
+    curva = pd.DataFrame(
+        {
+            "modelo": "m",
+            "metrica": "puntaje",
+            "n": [100, 200, 300, 400],
+            "entrenamiento": [0.3, 0.25, 0.22, 0.2],
+            "entrenamiento_de": 0.0,
+            "validacion": [0.10, 0.12, 0.13, 0.15],
+            "validacion_de": [0.02, 0.01, 0.01, 0.0],
+        }
+    )
     fila = dg.ganancia_por_datos(curva).iloc[0]
     assert (fila["n_mitad"], fila["n_todo"]) == (200, 400)
-    assert fila["ganancia"] == pytest.approx(0.03) and fila["concluyente"]       # 0,03 > 2 × 0,01
+    assert fila["ganancia"] == pytest.approx(0.03) and fila["concluyente"]  # 0,03 > 2 × 0,01
     ruidosa = curva.assign(validacion_de=[0.02, 0.02, 0.02, 0.0])
-    assert not dg.ganancia_por_datos(ruidosa).iloc[0]["concluyente"]             # 0,03 < 2 × 0,02
+    assert not dg.ganancia_por_datos(ruidosa).iloc[0]["concluyente"]  # 0,03 < 2 × 0,02
 
 
 def test_reporte_pdf_se_genera_con_los_resultados_guardados(tmp_path):
@@ -539,12 +650,17 @@ def test_reporte_pdf_se_genera_con_los_resultados_guardados(tmp_path):
 
     ruta = construir("sintetica", tmp_path / "reporte.pdf")
     texto = "\n".join(pagina.extract_text() for pagina in PdfReader(str(ruta)).pages)
-    for seccion in ("1. Resumen ejecutivo", "2. Metodología utilizada",
-                    "3. Resultados del diagnóstico", "4. Análisis de curvas de aprendizaje",
-                    "5. Estrategias implementadas y resultados",
-                    "6. Conclusiones y recomendaciones futuras", "7. Referencias técnicas"):
+    for seccion in (
+        "1. Resumen ejecutivo",
+        "2. Metodología utilizada",
+        "3. Resultados del diagnóstico",
+        "4. Análisis de curvas de aprendizaje",
+        "5. Estrategias implementadas y resultados",
+        "6. Conclusiones y recomendaciones futuras",
+        "7. Referencias técnicas",
+    ):
         assert seccion in texto, seccion
-    assert "datos sintéticos" in texto          # la versión preliminar queda marcada
+    assert "datos sintéticos" in texto  # la versión preliminar queda marcada
 
 
 def test_reporte_real_usa_el_analisis_del_equipo(tmp_path):
@@ -570,8 +686,12 @@ CIFRAS_PERMITIDAS = {
     "0,10": "redondeo de la validación del gradient boosting",
     "0,306": "pérdida de validación de la regresión logística desde la iteración 6",
     "0,01": "valor de C en la rejilla",
-    "1,5": "umbral de subajuste", "30": "umbral de sobreajuste",
-    "2": "Fase 2", "3": "C3", "4": "C4", "5": "C5",
+    "1,5": "umbral de subajuste",
+    "30": "umbral de sobreajuste",
+    "2": "Fase 2",
+    "3": "C3",
+    "4": "C4",
+    "5": "C5",
 }
 
 
@@ -585,8 +705,9 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
             return
         if isinstance(dato, (int, float)):
             if not np.isnan(dato):
-                valores.extend([float(dato), abs(float(dato)), 100 * float(dato),
-                                100 * abs(float(dato))])
+                valores.extend(
+                    [float(dato), abs(float(dato)), 100 * float(dato), 100 * abs(float(dato))]
+                )
         elif isinstance(dato, dict):
             for valor in dato.values():
                 agregar(valor)
@@ -594,14 +715,20 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
             for valor in dato:
                 agregar(valor)
 
-    for nombre in ("diagnostico_modelos", "estrategias_mejora", "curvas_hiperparametros",
-                   "curvas_tamano", "curvas_seguimiento", "seleccion_C4"):
+    for nombre in (
+        "diagnostico_modelos",
+        "estrategias_mejora",
+        "curvas_hiperparametros",
+        "curvas_tamano",
+        "curvas_seguimiento",
+        "seleccion_C4",
+    ):
         tabla = pd.read_csv(carpeta / f"{nombre}_{fuente}.csv")
         for columna in tabla.select_dtypes("number"):
             agregar(tabla[columna].dropna().tolist())
     resumen = json.loads((carpeta / f"diagnostico_semana3_{fuente}.json").read_text("utf-8"))
     agregar(resumen)
-    campana = carpeta / f"alcance_campana_{fuente}.csv"     # nota posterior: sorteo en D2
+    campana = carpeta / f"alcance_campana_{fuente}.csv"  # nota posterior: sorteo en D2
     if campana.exists():
         fija = pd.read_csv(campana).query("estrategia == 'fija_inicio_d2'")
         seleccion = pd.read_csv(carpeta / f"seleccion_C4_{fuente}.csv")
@@ -609,11 +736,15 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
         lift_d2 = float(seleccion.loc[es_d2, "lift_k"].iloc[0])
         for fila in fija.itertuples():
             agregar([fila.recall, fila.recall_min, fila.recall_max, fila.recall_medio])
-            if fila.cohorte == resumen["validacion"]:       # Lift@k equivalente de cada sorteo
-                agregar([lift_d2 * fila.recall_min / fila.recall,
-                         lift_d2 * fila.recall_max / fila.recall,
-                         lift_d2 * fila.recall_medio / fila.recall])
-    for particion in resumen["particiones"]:                # tasas de evento por partición
+            if fila.cohorte == resumen["validacion"]:  # Lift@k equivalente de cada sorteo
+                agregar(
+                    [
+                        lift_d2 * fila.recall_min / fila.recall,
+                        lift_d2 * fila.recall_max / fila.recall,
+                        lift_d2 * fila.recall_medio / fila.recall,
+                    ]
+                )
+    for particion in resumen["particiones"]:  # tasas de evento por partición
         agregar(particion["eventos_entrenamiento"] / particion["n_entrenamiento"])
         agregar(particion["eventos_validacion"] / particion["n_validacion"])
     return valores
@@ -622,7 +753,8 @@ def _cifras_de_resultados(fuente: str) -> list[float]:
 def test_narrativa_real_coincide_con_los_datos():
     """Cada cifra citada en el análisis escrito existe en los resultados guardados."""
     narrativa = json.loads(
-        (RAIZ / "docs" / "diagnostic_report_narrativa_real.json").read_text("utf-8"))
+        (RAIZ / "docs" / "diagnostic_report_narrativa_real.json").read_text("utf-8")
+    )
     valores = np.array(_cifras_de_resultados("real"))
     sin_respaldo = []
     for clave, contenido in narrativa.items():
@@ -634,12 +766,12 @@ def test_narrativa_real_coincide_con_los_datos():
                 sin_signo = cifra.lstrip("+−±-")
                 if sin_signo in CIFRAS_PERMITIDAS:
                     continue
-                if "." in sin_signo and "," not in sin_signo:      # separador de miles: 2.541
+                if "." in sin_signo and "," not in sin_signo:  # separador de miles: 2.541
                     numero, decimales = float(sin_signo.replace(".", "")), 0
                 else:
                     numero = float(sin_signo.replace(",", "."))
                     decimales = len(sin_signo.split(",")[1]) if "," in sin_signo else 0
-                tolerancia = 0.5 * 10 ** -decimales + 1e-9
+                tolerancia = 0.5 * 10**-decimales + 1e-9
                 if not (np.abs(valores - numero) <= tolerancia).any():
                     sin_respaldo.append((clave, cifra, texto[:60]))
     assert not sin_respaldo, sin_respaldo
@@ -652,17 +784,23 @@ def test_figuras_a_300_dpi(tmp_path, particion, seguimiento, estrategias):
     from PIL import Image
 
     tasa = float(particion.y_val.mean())
-    tamano = dg.curva_por_tamano("hibrido", PARAMETROS["hibrido"], particion, SEMILLA,
-                                 fracciones=(0.5, 1.0), repeticiones=2)
-    hiper = dg.curva_por_hiperparametro("hibrido", PARAMETROS["hibrido"], particion, SEMILLA,
-                                        "C", [0.01, 0.1, 1.0])
+    tamano = dg.curva_por_tamano(
+        "hibrido", PARAMETROS["hibrido"], particion, SEMILLA, fracciones=(0.5, 1.0), repeticiones=2
+    )
+    hiper = dg.curva_por_hiperparametro(
+        "hibrido", PARAMETROS["hibrido"], particion, SEMILLA, "C", [0.01, 0.1, 1.0]
+    )
     logistica = dg.seguir_logistica("hibrido", PARAMETROS["hibrido"], particion, SEMILLA)
-    curvas = {"Gradient boosting": seguimiento, "Logística híbrida": logistica,
-              "Otro": seguimiento}
+    curvas = {"Gradient boosting": seguimiento, "Logística híbrida": logistica, "Otro": seguimiento}
     figuras = {
-        "perdida": gd.figura_iteraciones(curvas, "perdida_sin_ponderar", "C2+C3", "C4",
-                                         comun=["Gradient boosting", "Logística híbrida"],
-                                         referencia=dg.perdida_de_referencia(particion)),
+        "perdida": gd.figura_iteraciones(
+            curvas,
+            "perdida_sin_ponderar",
+            "C2+C3",
+            "C4",
+            comun=["Gradient boosting", "Logística híbrida"],
+            referencia=dg.perdida_de_referencia(particion),
+        ),
         "perdida_ponderada": gd.figura_iteraciones(curvas, "perdida", "C2+C3", "C4"),
         "puntaje": gd.figura_iteraciones(curvas, "puntaje", "C2+C3", "C4", tasa),
         "tamano": gd.figura_tamano(tamano, "C2+C3", "C4", tasa),
@@ -677,7 +815,7 @@ def test_figuras_a_300_dpi(tmp_path, particion, seguimiento, estrategias):
     for nombre, figura in figuras.items():
         ejes = [ax for ax in figura.axes if ax.get_visible() and (ax.lines or ax.collections)]
         assert ejes and all(ax.get_title(loc="left") for ax in ejes), nombre
-        assert figura.legends, nombre                      # leyenda presente
+        assert figura.legends, nombre  # leyenda presente
         ruta = gd.guardar(figura, tmp_path / f"{nombre}.png", dpi=300)
         dpi = Image.open(ruta).info["dpi"]
         assert round(dpi[0]) == 300 and round(dpi[1]) == 300, nombre

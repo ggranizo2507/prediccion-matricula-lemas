@@ -41,14 +41,19 @@ def conteo_eventos(dataset: pd.DataFrame, config: dict) -> pd.DataFrame:
     for cohorte, datos in dataset.groupby("cohorte"):
         familias = datos.groupby("id_familia")["y_no_matricula"].max()
         eventos = int(datos["y_no_matricula"].sum())
-        filas.append({
-            "cohorte": cohorte, "rol": datos["rol"].iloc[0],
-            "estudiantes": len(datos), "eventos_estudiante": eventos,
-            "tasa_estudiante": round(eventos / len(datos), 4),
-            "familias": len(familias), "eventos_familia": int(familias.sum()),
-            "tasa_familiar": round(familias.mean(), 4),
-            "suficiente": eventos >= reglas["min_eventos_por_cohorte"],
-        })
+        filas.append(
+            {
+                "cohorte": cohorte,
+                "rol": datos["rol"].iloc[0],
+                "estudiantes": len(datos),
+                "eventos_estudiante": eventos,
+                "tasa_estudiante": round(eventos / len(datos), 4),
+                "familias": len(familias),
+                "eventos_familia": int(familias.sum()),
+                "tasa_familiar": round(familias.mean(), 4),
+                "suficiente": eventos >= reglas["min_eventos_por_cohorte"],
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -74,7 +79,9 @@ def _smd(a: pd.Series, b: pd.Series) -> float:
 
 
 def diferencias_estandarizadas(
-    dataset: pd.DataFrame, config: dict, comparada: str = "C1",
+    dataset: pd.DataFrame,
+    config: dict,
+    comparada: str = "C1",
     referencia: tuple[str, ...] | None = None,
 ) -> pd.DataFrame:
     """SMD de cada predictor numérico, de cada categoría y de la tasa del evento.
@@ -87,13 +94,21 @@ def diferencias_estandarizadas(
         referencia = tuple(config["auditoria"].get("referencia_comparabilidad", ["C2", "C3"]))
     grupo_a = dataset[dataset["cohorte"] == comparada]
     grupo_b = dataset[dataset["cohorte"].isin(referencia)]
-    filas = [{"variable": col, "nivel": "", "smd": _smd(grupo_a[col], grupo_b[col])}
-             for col in [*NUMERICAS, "y_no_matricula"]]
+    filas = [
+        {"variable": col, "nivel": "", "smd": _smd(grupo_a[col], grupo_b[col])}
+        for col in [*NUMERICAS, "y_no_matricula"]
+    ]
     for col in CATEGORICAS:
         for nivel in sorted(set(grupo_a[col].dropna()) | set(grupo_b[col].dropna())):
-            filas.append({"variable": col, "nivel": nivel,
-                          "smd": _smd((grupo_a[col] == nivel).astype(float),
-                                      (grupo_b[col] == nivel).astype(float))})
+            filas.append(
+                {
+                    "variable": col,
+                    "nivel": nivel,
+                    "smd": _smd(
+                        (grupo_a[col] == nivel).astype(float), (grupo_b[col] == nivel).astype(float)
+                    ),
+                }
+            )
     tabla = pd.DataFrame(filas)
     tabla["smd"] = tabla["smd"].round(3)
     tabla["relevante"] = tabla["smd"].abs() > umbral
@@ -105,11 +120,15 @@ def diferencias_estandarizadas(
 # --------------------------------------------------------------------------- #
 def _modelo_referencia(semilla: int) -> Pipeline:
     """Regresión logística balanceada: modelo base de la Ficha técnica."""
-    return Pipeline([
-        ("prep", construir_preprocesador(escalar=True)),
-        ("modelo", LogisticRegression(class_weight="balanced", max_iter=2000,
-                                      random_state=semilla)),
-    ])
+    return Pipeline(
+        [
+            ("prep", construir_preprocesador(escalar=True)),
+            (
+                "modelo",
+                LogisticRegression(class_weight="balanced", max_iter=2000, random_state=semilla),
+            ),
+        ]
+    )
 
 
 def comparar_configuraciones(dataset: pd.DataFrame, config: dict) -> pd.DataFrame:
@@ -128,28 +147,34 @@ def comparar_configuraciones(dataset: pd.DataFrame, config: dict) -> pd.DataFram
             log.warning("Configuración %s sin datos o sin ambas clases.", nombre)
             continue
         modelo = _modelo_referencia(semilla).fit(
-            construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"])
+            construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"]
+        )
         riesgo_entrenamiento = modelo.predict_proba(construir_matriz_x(entrenamiento))[:, 1]
         k_por_sede = calcular_k_por_sede(
             consolidar_familias(entrenamiento, riesgo_entrenamiento),
-            config["capacidad"].get("multiplicador_k", 1.0))
+            config["capacidad"].get("multiplicador_k", 1.0),
+        )
         riesgo = modelo.predict_proba(construir_matriz_x(seleccion))[:, 1]
         y = seleccion["y_no_matricula"].to_numpy()
         familias_c4 = consolidar_familias(seleccion, riesgo)
         resumen = precision_at_k_familiar(familias_c4, k_por_sede, semilla)
         total = resumen[resumen["sede"] == "TOTAL"].iloc[0]
-        filas.append({
-            "configuracion": nombre, "cohortes": "+".join(cohortes),
-            "n_entrenamiento": len(entrenamiento),
-            "eventos_entrenamiento": int(entrenamiento["y_no_matricula"].sum()),
-            "k_por_sede": k_por_sede,
-            "precision_k_C4": total["precision_k"], "lift_k_C4": total["lift_k"],
-            "recall_k_C4": total["recall_k"],
-            "pr_auc_C4": round(average_precision_score(y, riesgo), 4),
-            "roc_auc_C4": round(roc_auc_score(y, riesgo), 4),
-            # Brier informativo: el modelo balanceado aún no está calibrado (Fase 2)
-            "brier_C4": round(brier_score_loss(y, riesgo), 4),
-        })
+        filas.append(
+            {
+                "configuracion": nombre,
+                "cohortes": "+".join(cohortes),
+                "n_entrenamiento": len(entrenamiento),
+                "eventos_entrenamiento": int(entrenamiento["y_no_matricula"].sum()),
+                "k_por_sede": k_por_sede,
+                "precision_k_C4": total["precision_k"],
+                "lift_k_C4": total["lift_k"],
+                "recall_k_C4": total["recall_k"],
+                "pr_auc_C4": round(average_precision_score(y, riesgo), 4),
+                "roc_auc_C4": round(roc_auc_score(y, riesgo), 4),
+                # Brier informativo: el modelo balanceado aún no está calibrado (Fase 2)
+                "brier_C4": round(brier_score_loss(y, riesgo), 4),
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -171,20 +196,30 @@ def decidir_inclusion_c1(
     sin = resultados.loc["sin_C1", "precision_k_C4"]
     diferencia = round(con - sin, 4)
     if diferencia >= -tolerancia:
-        return True, (f"Se incluye C1: Precision@k en C4 {con:.3f} frente a {sin:.3f} "
-                      f"sin C1 (Δ = {diferencia:+.3f}).")
+        return True, (
+            f"Se incluye C1: Precision@k en C4 {con:.3f} frente a {sin:.3f} "
+            f"sin C1 (Δ = {diferencia:+.3f})."
+        )
     return False, f"Se excluye C1: Precision@k en C4 cae {abs(diferencia):.3f} (> {tolerancia})."
 
 
 # --------------------------------------------------------------------------- #
 # 3. Reporte obligatorio por cohorte (v5, sección 6.3)
 # --------------------------------------------------------------------------- #
-EXCLUSIONES = ["sin_reserva", "pendientes", "estado_no_reconocido", "reserva_despues_t0",
-               "terminales_excluidos", "confirmados_antes_t0"]
+EXCLUSIONES = [
+    "sin_reserva",
+    "pendientes",
+    "estado_no_reconocido",
+    "reserva_despues_t0",
+    "terminales_excluidos",
+    "confirmados_antes_t0",
+]
 
 
 def reporte_por_cohorte(
-    dataset: pd.DataFrame, reporte: pd.DataFrame, config: dict,
+    dataset: pd.DataFrame,
+    reporte: pd.DataFrame,
+    config: dict,
     incluir_c1: bool | None = None,
 ) -> pd.DataFrame:
     """Tabla de la sección 6.3 del documento v5, con la convención del documento.
@@ -198,29 +233,44 @@ def reporte_por_cohorte(
     for cohorte in conteo.index:
         n = int(conteo.loc[cohorte, "estudiantes"])
         u = int(conteo.loc[cohorte, "eventos_estudiante"])
-        exclusiones = int(sum(base.loc[cohorte].get(c, 0) or 0 for c in EXCLUSIONES
-                              if c in base.columns))
+        exclusiones = int(
+            sum(base.loc[cohorte].get(c, 0) or 0 for c in EXCLUSIONES if c in base.columns)
+        )
         if cohorte == "C1":
             comparable = "Por evaluar" if incluir_c1 is None else ("Sí" if incluir_c1 else "No")
         else:
             comparable = "Sí"
-        filas.append({
-            "Cohorte": cohorte, "N elegibles pendientes": n, "M matrículas": n - u,
-            "U no matrículas": u, "q = U/N": round(u / n, 4) if n else None,
-            "Familias F": int(conteo.loc[cohorte, "familias"]),
-            "Familias con no matrícula": int(conteo.loc[cohorte, "eventos_familia"]),
-            "q familiar": conteo.loc[cohorte, "tasa_familiar"],
-            "Exclusiones": exclusiones, "Comparable": comparable,
-            "Suficiente (≥ mínimo de eventos)": "Sí" if conteo.loc[cohorte, "suficiente"] else "No",
-        })
+        filas.append(
+            {
+                "Cohorte": cohorte,
+                "N elegibles pendientes": n,
+                "M matrículas": n - u,
+                "U no matrículas": u,
+                "q = U/N": round(u / n, 4) if n else None,
+                "Familias F": int(conteo.loc[cohorte, "familias"]),
+                "Familias con no matrícula": int(conteo.loc[cohorte, "eventos_familia"]),
+                "q familiar": conteo.loc[cohorte, "tasa_familiar"],
+                "Exclusiones": exclusiones,
+                "Comparable": comparable,
+                "Suficiente (≥ mínimo de eventos)": "Sí"
+                if conteo.loc[cohorte, "suficiente"]
+                else "No",
+            }
+        )
     return pd.DataFrame(filas)
 
 
 def suprimir_reporte(tabla: pd.DataFrame, minimo: int) -> pd.DataFrame:
     """Oculta conteos menores al mínimo antes de publicar la tabla."""
     salida = tabla.copy()
-    for col in ["N elegibles pendientes", "M matrículas", "U no matrículas", "Familias F",
-                "Familias con no matrícula", "Exclusiones"]:
+    for col in [
+        "N elegibles pendientes",
+        "M matrículas",
+        "U no matrículas",
+        "Familias F",
+        "Familias con no matrícula",
+        "Exclusiones",
+    ]:
         salida[col] = salida[col].astype(object).where(salida[col] >= minimo, f"<{minimo}")
     return salida
 
@@ -231,15 +281,24 @@ def sensibilidad_estados(base: pd.DataFrame, config: dict) -> pd.DataFrame:
     from src.data_processing import construir_dataset
 
     filas = []
-    escenarios = {"principal": config["elegibilidad"]["estados_aprobados"],
-                  "solo_Aprobar": config["elegibilidad"]["estados_sensibilidad"]}
+    escenarios = {
+        "principal": config["elegibilidad"]["estados_aprobados"],
+        "solo_Aprobar": config["elegibilidad"]["estados_sensibilidad"],
+    }
     for nombre, estados in escenarios.items():
         datos, _ = construir_dataset(base, config, estados)
         for cohorte, grupo in datos.groupby("cohorte"):
-            filas.append({"escenario": nombre, "cohorte": cohorte, "estudiantes": len(grupo),
-                          "tasa_no_matricula": round(grupo["y_no_matricula"].mean(), 4)})
-    tabla = pd.DataFrame(filas).pivot(index="cohorte", columns="escenario",
-                                      values=["estudiantes", "tasa_no_matricula"])
+            filas.append(
+                {
+                    "escenario": nombre,
+                    "cohorte": cohorte,
+                    "estudiantes": len(grupo),
+                    "tasa_no_matricula": round(grupo["y_no_matricula"].mean(), 4),
+                }
+            )
+    tabla = pd.DataFrame(filas).pivot(
+        index="cohorte", columns="escenario", values=["estudiantes", "tasa_no_matricula"]
+    )
     tabla.columns = [f"{a}_{b}" for a, b in tabla.columns]
     for col in [c for c in tabla.columns if c.startswith("estudiantes_")]:
         tabla[col] = tabla[col].fillna(0).astype(int)
@@ -250,8 +309,11 @@ def sensibilidad_estados(base: pd.DataFrame, config: dict) -> pd.DataFrame:
 # 3. Referencias (líneas base) en la cohorte de selección
 # --------------------------------------------------------------------------- #
 def evaluar_referencias(
-    dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
-    k_por_sede: dict[str, int], repeticiones_azar: int = 500,
+    dataset: pd.DataFrame,
+    config: dict,
+    cohortes_entrenamiento: list[str],
+    k_por_sede: dict[str, int],
+    repeticiones_azar: int = 500,
 ) -> pd.DataFrame:
     """Compara en C4 (selección) A (azar), las reglas D/D2 y la regresión logística base (RL).
 
@@ -265,33 +327,58 @@ def evaluar_referencias(
     filas = []
 
     def _fila(nombre, riesgo, pr_auc=None):
-        total = precision_at_k_familiar(consolidar_familias(seleccion, riesgo), k_por_sede,
-                                        semilla).query("sede == 'TOTAL'").iloc[0]
-        filas.append({"referencia": nombre, "precision_k_C4": total["precision_k"],
-                      "lift_k_C4": total["lift_k"], "recall_k_C4": total["recall_k"],
-                      "pr_auc_C4": round(pr_auc if pr_auc is not None
-                                         else average_precision_score(y, riesgo), 4)})
+        total = (
+            precision_at_k_familiar(consolidar_familias(seleccion, riesgo), k_por_sede, semilla)
+            .query("sede == 'TOTAL'")
+            .iloc[0]
+        )
+        filas.append(
+            {
+                "referencia": nombre,
+                "precision_k_C4": total["precision_k"],
+                "lift_k_C4": total["lift_k"],
+                "recall_k_C4": total["recall_k"],
+                "pr_auc_C4": round(
+                    pr_auc if pr_auc is not None else average_precision_score(y, riesgo), 4
+                ),
+            }
+        )
 
     rng = np.random.default_rng(semilla)
-    azar = [precision_at_k_familiar(consolidar_familias(seleccion, rng.random(len(seleccion))),
-                                    k_por_sede, semilla).query("sede == 'TOTAL'").iloc[0]
-            for _ in range(repeticiones_azar)]
-    filas.append({"referencia": "A · selección al azar de k familias",
-                  "precision_k_C4": round(float(np.mean([a["precision_k"] for a in azar])), 4),
-                  "lift_k_C4": round(float(np.mean([a["lift_k"] for a in azar])), 4),
-                  "recall_k_C4": round(float(np.mean([a["recall_k"] for a in azar])), 4),
-                  "pr_auc_C4": round(float(y.mean()), 4)})
+    azar = [
+        precision_at_k_familiar(
+            consolidar_familias(seleccion, rng.random(len(seleccion))), k_por_sede, semilla
+        )
+        .query("sede == 'TOTAL'")
+        .iloc[0]
+        for _ in range(repeticiones_azar)
+    ]
+    filas.append(
+        {
+            "referencia": "A · selección al azar de k familias",
+            "precision_k_C4": round(float(np.mean([a["precision_k"] for a in azar])), 4),
+            "lift_k_C4": round(float(np.mean([a["lift_k"] for a in azar])), 4),
+            "recall_k_C4": round(float(np.mean([a["recall_k"] for a in azar])), 4),
+            "pr_auc_C4": round(float(y.mean()), 4),
+        }
+    )
     for nombre, puntaje in puntajes_reglas(seleccion).items():
         _fila(nombre, puntaje)
-    modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
-                                             entrenamiento["y_no_matricula"])
-    _fila(f"RL · regresión logística base ({'+'.join(cohortes_entrenamiento)})",
-          modelo.predict_proba(construir_matriz_x(seleccion))[:, 1])
+    modelo = _modelo_referencia(semilla).fit(
+        construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"]
+    )
+    _fila(
+        f"RL · regresión logística base ({'+'.join(cohortes_entrenamiento)})",
+        modelo.predict_proba(construir_matriz_x(seleccion))[:, 1],
+    )
     return pd.DataFrame(filas)
 
 
 def bootstrap_diferencia_c1(
-    dataset: pd.DataFrame, config: dict, k_por_sede: dict[str, int], repeticiones: int = 2000,
+    dataset: pd.DataFrame,
+    config: dict,
+    k_por_sede: dict[str, int],
+    repeticiones: int = 2000,
 ) -> dict:
     """IC 95 % de Precision@k(con C1) − Precision@k(sin C1) en C4, remuestreando
     representantes de C4 por sede. Es informativo: la regla de decisión no cambia."""
@@ -300,18 +387,25 @@ def bootstrap_diferencia_c1(
     familias = {}
     for nombre, cohortes in config["auditoria"]["configuraciones_entrenamiento"].items():
         entrenamiento = dataset[dataset["cohorte"].isin(cohortes)]
-        modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
-                                                 entrenamiento["y_no_matricula"])
+        modelo = _modelo_referencia(semilla).fit(
+            construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"]
+        )
         riesgo = modelo.predict_proba(construir_matriz_x(seleccion))[:, 1]
         familias[nombre] = consolidar_familias(seleccion, riesgo).set_index("id_familia")
     con, sin = familias["con_C1"], familias["sin_C1"].loc[familias["con_C1"].index]
     rng = np.random.default_rng(semilla)
     diferencias = []
     for _ in range(repeticiones):
-        indices = np.concatenate([
-            rng.choice(np.flatnonzero(con["sede"].to_numpy() == sede),
-                       size=int((con["sede"] == sede).sum()), replace=True)
-            for sede in con["sede"].unique()])
+        indices = np.concatenate(
+            [
+                rng.choice(
+                    np.flatnonzero(con["sede"].to_numpy() == sede),
+                    size=int((con["sede"] == sede).sum()),
+                    replace=True,
+                )
+                for sede in con["sede"].unique()
+            ]
+        )
         muestra = []
         for tabla in (con, sin):
             remuestra = tabla.iloc[indices].reset_index(drop=True)
@@ -320,6 +414,8 @@ def bootstrap_diferencia_c1(
             muestra.append(total.query("sede == 'TOTAL'")["precision_k"].iloc[0])
         diferencias.append(muestra[0] - muestra[1])
     bajo, alto = np.percentile(diferencias, [2.5, 97.5])
-    return {"diferencia_media": round(float(np.mean(diferencias)), 4),
-            "ic95": [round(float(bajo), 4), round(float(alto), 4)],
-            "repeticiones": repeticiones}
+    return {
+        "diferencia_media": round(float(np.mean(diferencias)), 4),
+        "ic95": [round(float(bajo), 4), round(float(alto), 4)],
+        "repeticiones": repeticiones,
+    }

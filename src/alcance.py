@@ -36,13 +36,27 @@ from src.utils import Cohorte, celda_complementaria
 REGLA = "D2 · señales administrativas"
 TODAS = "Todas"
 MULTIPLICADORES = (0.5, 1.0, 1.5, 2.0, 3.0, 4.0)
-TIPOS = {"tardia": "Todos pagan, el último después del 30 de abril",
-         "parcial": "Paga por unos estudiantes y no por otros",
-         "sin_pago": "No registra ningún pago"}
+TIPOS = {
+    "tardia": "Todos pagan, el último después del 30 de abril",
+    "parcial": "Paga por unos estudiantes y no por otros",
+    "sin_pago": "No registra ningún pago",
+}
 
-__all__ = ["REGLA", "TODAS", "TIPOS", "sin_prueba", "numero", "tabla_familias", "seleccionar",
-           "desglose_evento", "alcance_por_k", "foto_semanal", "campana",
-           "presupuesto_semanal", "conclusiones"]
+__all__ = [
+    "REGLA",
+    "TODAS",
+    "TIPOS",
+    "sin_prueba",
+    "numero",
+    "tabla_familias",
+    "seleccionar",
+    "desglose_evento",
+    "alcance_por_k",
+    "foto_semanal",
+    "campana",
+    "presupuesto_semanal",
+    "conclusiones",
+]
 
 
 # --------------------------------------------------------------------------- #
@@ -66,10 +80,16 @@ def tabla_familias(datos: pd.DataFrame, cohortes: dict[str, Cohorte]) -> pd.Data
     for _, grupo in datos.groupby("cohorte", sort=True):
         partes.append(consolidar_familias(grupo, puntajes_reglas(grupo)[REGLA]))
     familias = pd.concat(partes, ignore_index=True)
-    pagos = datos.assign(_sin=datos["fecha_pago_destino"].isna()).groupby(
-        ["cohorte", "id_familia"]).agg(alguno_sin_pago=("_sin", "any"),
-                                       ninguno_paga=("_sin", "all"),
-                                       ultimo_pago=("fecha_pago_destino", "max")).reset_index()
+    pagos = (
+        datos.assign(_sin=datos["fecha_pago_destino"].isna())
+        .groupby(["cohorte", "id_familia"])
+        .agg(
+            alguno_sin_pago=("_sin", "any"),
+            ninguno_paga=("_sin", "all"),
+            ultimo_pago=("fecha_pago_destino", "max"),
+        )
+        .reset_index()
+    )
     familias = familias.merge(pagos, on=["cohorte", "id_familia"], how="left")
     t0 = familias["cohorte"].map(lambda c: cohortes[c].t0)
     h = familias["cohorte"].map(lambda c: cohortes[c].h)
@@ -78,7 +98,9 @@ def tabla_familias(datos: pd.DataFrame, cohortes: dict[str, Cohorte]) -> pd.Data
     familias["dia_resuelta"] = dias.where(~familias["alguno_sin_pago"])
     familias["tipo"] = np.select(
         [familias["evento"] == 0, familias["ninguno_paga"], familias["alguno_sin_pago"]],
-        ["en_plazo", "sin_pago", "parcial"], "tardia")
+        ["en_plazo", "sin_pago", "parcial"],
+        "tardia",
+    )
     tarde = (familias["ultimo_pago"] - h).dt.days.astype(float)
     familias["dias_tarde"] = tarde.where(familias["tipo"] == "tardia")
     return familias.drop(columns=["ultimo_pago", "alguno_sin_pago", "ninguno_paga"])
@@ -91,8 +113,9 @@ def _k(k_por_sede: dict, sede: str, multiplicador: float | None) -> int | None:
     return max(math.floor(k_por_sede.get(str(sede), 0) * multiplicador + 0.5), 0)
 
 
-def seleccionar(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
-                multiplicador: float | None = 1.0) -> pd.Series:
+def seleccionar(
+    familias: pd.DataFrame, k_por_sede: dict, semilla: int, multiplicador: float | None = 1.0
+) -> pd.Series:
     """Marca las familias que entran en la lista (misma función que la validación)."""
     elegidas: list = []
     for (_, sede), grupo in familias.groupby(["cohorte", "sede"]):
@@ -112,8 +135,14 @@ def _tasa(numerador: float, denominador: float) -> float:
     return round(numerador / denominador, 4) if denominador else np.nan
 
 
-def _ocultar(tabla: pd.DataFrame, columna: str, dependientes: list[str], minimo: int,
-             grupo: str | None = None, filas: pd.Series | None = None) -> None:
+def _ocultar(
+    tabla: pd.DataFrame,
+    columna: str,
+    dependientes: list[str],
+    minimo: int,
+    grupo: str | None = None,
+    filas: pd.Series | None = None,
+) -> None:
     """Oculta los conteos entre 1 y `minimo` − 1 de `columna` y las tasas que los delatan.
 
     Supresión complementaria: dentro de cada bloque de cohortes (el definido por `grupo`, o
@@ -141,8 +170,9 @@ def _ocultar(tabla: pd.DataFrame, columna: str, dependientes: list[str], minimo:
 # --------------------------------------------------------------------------- #
 # 1. ¿Qué hay dentro del evento?
 # --------------------------------------------------------------------------- #
-def desglose_evento(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
-                    minimo: int = 5) -> pd.DataFrame:
+def desglose_evento(
+    familias: pd.DataFrame, k_por_sede: dict, semilla: int, minimo: int = 5
+) -> pd.DataFrame:
     """Casos por tipo y cuántos de cada tipo están en la lista.
 
     Las columnas por tipo se publican por cohorte solo si ninguna celda (casos, aciertos o
@@ -153,9 +183,13 @@ def desglose_evento(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
     en_lista = seleccionar(familias, k_por_sede, semilla)
     filas = []
     for nombre, grupo in _por_cohorte(familias.assign(en_lista=en_lista)):
-        fila = {"cohorte": nombre, "familias": len(grupo), "eventos": int(grupo["evento"].sum()),
-                "en_lista": int(grupo["en_lista"].sum()),
-                "aciertos": int((grupo["en_lista"] & (grupo["evento"] == 1)).sum())}
+        fila = {
+            "cohorte": nombre,
+            "familias": len(grupo),
+            "eventos": int(grupo["evento"].sum()),
+            "en_lista": int(grupo["en_lista"].sum()),
+            "aciertos": int((grupo["en_lista"] & (grupo["evento"] == 1)).sum()),
+        }
         fila["recall"] = _tasa(fila["aciertos"], fila["eventos"])
         for tipo in TIPOS:
             del_tipo = grupo["tipo"] == tipo
@@ -167,8 +201,9 @@ def desglose_evento(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
         pronto, despues = int((tarde <= 30).sum()), int((tarde > 30).sum())
         publicable = min(pronto, despues) >= minimo or 0 in (pronto, despues)
         fila["mediana_dias_tarde"] = float(tarde.median()) if len(tarde) >= minimo else np.nan
-        fila["pct_tardia_hasta_30_dias"] = (_tasa(pronto, len(tarde))
-                                            if len(tarde) >= minimo and publicable else np.nan)
+        fila["pct_tardia_hasta_30_dias"] = (
+            _tasa(pronto, len(tarde)) if len(tarde) >= minimo and publicable else np.nan
+        )
         filas.append(fila)
     tabla = pd.DataFrame(filas)
 
@@ -176,15 +211,15 @@ def desglose_evento(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
     derivadas = [c for tipo in TIPOS for c in (f"recall_{tipo}", f"pct_{tipo}")]
     derivadas += ["mediana_dias_tarde", "pct_tardia_hasta_30_dias"]
     celdas = tabla[conteos].copy()
-    for tipo in TIPOS:                                   # también los casos fuera de la lista
+    for tipo in TIPOS:  # también los casos fuera de la lista
         celdas[f"fuera_{tipo}"] = tabla[tipo] - tabla[f"aciertos_{tipo}"]
     chica = ((celdas > 0) & (celdas < minimo)).any(axis=1)
     es_total = tabla["cohorte"] == TODAS
     tabla[conteos] = tabla[conteos].astype(object)
-    if chica[~es_total].any():                           # alguna cohorte con celdas pequeñas
+    if chica[~es_total].any():  # alguna cohorte con celdas pequeñas
         tabla.loc[~es_total, conteos] = OCULTO
         tabla.loc[~es_total, derivadas] = np.nan
-    if chica[es_total].any():                            # el total también
+    if chica[es_total].any():  # el total también
         _proteger_total(tabla, tabla.index[es_total][0], minimo)
     _ocultar(tabla, "aciertos", ["recall"], minimo)
     return tabla
@@ -227,9 +262,15 @@ def _proteger_total(tabla: pd.DataFrame, fila, minimo: int) -> None:
 # --------------------------------------------------------------------------- #
 # 2. ¿Y con más contactos?
 # --------------------------------------------------------------------------- #
-def alcance_por_k(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
-                  multiplicadores: tuple = MULTIPLICADORES, personal: int | None = None,
-                  semanas: int = 10, minimo: int = 5) -> pd.DataFrame:
+def alcance_por_k(
+    familias: pd.DataFrame,
+    k_por_sede: dict,
+    semilla: int,
+    multiplicadores: tuple = MULTIPLICADORES,
+    personal: int | None = None,
+    semanas: int = 10,
+    minimo: int = 5,
+) -> pd.DataFrame:
     """Recall, precisión y Lift de la lista D2 al cambiar el número de contactos.
 
     `multiplicador` se aplica al k aprobado de cada sede; la última fila («todas») es
@@ -248,16 +289,21 @@ def alcance_por_k(familias: pd.DataFrame, k_por_sede: dict, semilla: int,
             tasa = eventos / len(grupo)
             precision = _tasa(aciertos, contactos)
             campanas = n_cohortes if nombre == TODAS else 1
-            fila = {"cohorte": nombre,
-                    "multiplicador": "todas" if multiplicador is None else multiplicador,
-                    "contactos": contactos, "pct_familias": _tasa(contactos, len(grupo)),
-                    "aciertos": aciertos, "recall": _tasa(aciertos, eventos),
-                    "precision": precision,
-                    "lift": round(precision / tasa, 4) if tasa else np.nan,
-                    "recall_azar": _tasa(contactos, len(grupo))}
+            fila = {
+                "cohorte": nombre,
+                "multiplicador": "todas" if multiplicador is None else multiplicador,
+                "contactos": contactos,
+                "pct_familias": _tasa(contactos, len(grupo)),
+                "aciertos": aciertos,
+                "recall": _tasa(aciertos, eventos),
+                "precision": precision,
+                "lift": round(precision / tasa, 4) if tasa else np.nan,
+                "recall_azar": _tasa(contactos, len(grupo)),
+            }
             if personal:
                 fila["contactos_por_persona_semana"] = round(
-                    contactos / campanas / personal / semanas, 2)
+                    contactos / campanas / personal / semanas, 2
+                )
             filas.append(fila)
     tabla = pd.DataFrame(filas)
     _ocultar(tabla, "aciertos", ["recall", "precision", "lift"], minimo, grupo="multiplicador")
@@ -272,8 +318,9 @@ def _pendientes(familias: pd.DataFrame, dia: int) -> pd.Series:
     return familias["dia_resuelta"].isna() | (familias["dia_resuelta"] >= dia)
 
 
-def foto_semanal(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int = 10,
-                 minimo: int = 5) -> pd.DataFrame:
+def foto_semanal(
+    familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int = 10, minimo: int = 5
+) -> pd.DataFrame:
     """La misma lista de k familias, hecha cada semana solo con quienes siguen sin pagar.
 
     Quien paga sale del grupo, y quien no pagará en plazo sigue en él hasta el final: el
@@ -296,18 +343,27 @@ def foto_semanal(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas
         aciertos = int((en_lista & (pendientes["evento"] == 1)).sum())
         tasa = eventos / len(pendientes) if len(pendientes) else np.nan
         precision = _tasa(aciertos, contactos)
-        filas.append({"cohorte": TODAS, "semana": semana + 1, "dia": dia,
-                      "pendientes": len(pendientes),
-                      "pct_pendientes": _tasa(len(pendientes), len(familias)),
-                      "pendientes_por_campana": int(round(len(pendientes) / campanas)),
-                      "veces_k": round(len(pendientes) / k_total, 2) if k_total else np.nan,
-                      "pagaran_en_plazo": len(pendientes) - eventos,
-                      "eventos": eventos, "tasa_base": round(tasa, 4),
-                      "contactos": contactos, "aciertos": aciertos,
-                      "recall": _tasa(aciertos, eventos), "precision": precision,
-                      "lift": round(precision / tasa, 4) if tasa else np.nan,
-                      "recall_azar": _tasa(contactos, len(pendientes)),
-                      "dias_ventana_restante": int(familias["dias_ventana"].min()) - dia})
+        filas.append(
+            {
+                "cohorte": TODAS,
+                "semana": semana + 1,
+                "dia": dia,
+                "pendientes": len(pendientes),
+                "pct_pendientes": _tasa(len(pendientes), len(familias)),
+                "pendientes_por_campana": int(round(len(pendientes) / campanas)),
+                "veces_k": round(len(pendientes) / k_total, 2) if k_total else np.nan,
+                "pagaran_en_plazo": len(pendientes) - eventos,
+                "eventos": eventos,
+                "tasa_base": round(tasa, 4),
+                "contactos": contactos,
+                "aciertos": aciertos,
+                "recall": _tasa(aciertos, eventos),
+                "precision": precision,
+                "lift": round(precision / tasa, 4) if tasa else np.nan,
+                "recall_azar": _tasa(contactos, len(pendientes)),
+                "dias_ventana_restante": int(familias["dias_ventana"].min()) - dia,
+            }
+        )
     tabla = pd.DataFrame(filas)
     _ocultar(tabla, "aciertos", ["recall", "precision", "lift"], minimo)
 
@@ -322,8 +378,18 @@ def foto_semanal(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas
         conteos = ["pendientes", "pagaran_en_plazo", "contactos"]
         tabla[conteos] = tabla[conteos].astype(object)
         tabla.loc[ocultar, conteos] = OCULTO
-        tabla.loc[ocultar, ["pct_pendientes", "pendientes_por_campana", "veces_k", "tasa_base",
-                            "precision", "lift", "recall_azar"]] = np.nan
+        tabla.loc[
+            ocultar,
+            [
+                "pct_pendientes",
+                "pendientes_por_campana",
+                "veces_k",
+                "tasa_base",
+                "precision",
+                "lift",
+                "recall_azar",
+            ],
+        ] = np.nan
     return tabla
 
 
@@ -336,15 +402,23 @@ def presupuesto_semanal(k: int, semanas: int) -> list[int]:
 MEDIDAS = ("cupos", "llamadas", "aciertos", "aciertos_primera_mitad", "suma_margen")
 
 
-def _medir(cupos: int, llamadas: pd.DataFrame, semana_de_llamada: np.ndarray,
-           semanas: int) -> np.ndarray:
+def _medir(
+    cupos: int, llamadas: pd.DataFrame, semana_de_llamada: np.ndarray, semanas: int
+) -> np.ndarray:
     """Resume una campaña: cupos, llamadas hechas, aciertos, aciertos en la primera mitad de
     las semanas y suma de los días que faltaban hasta H al empezar la semana de cada acierto."""
     acierto = llamadas["evento"].to_numpy() == 1
     margen = llamadas["dias_ventana"].to_numpy() - 7 * semana_de_llamada
-    return np.array([cupos, len(llamadas), acierto.sum(),
-                     (acierto & (semana_de_llamada < semanas / 2)).sum(),
-                     margen[acierto].sum()], dtype=float)
+    return np.array(
+        [
+            cupos,
+            len(llamadas),
+            acierto.sum(),
+            (acierto & (semana_de_llamada < semanas / 2)).sum(),
+            margen[acierto].sum(),
+        ],
+        dtype=float,
+    )
 
 
 def _orden(grupo: pd.DataFrame, semilla: int, usar_regla: bool) -> pd.DataFrame:
@@ -364,7 +438,7 @@ def _fija_repartida(orden: pd.DataFrame, k: int, semanas: int) -> np.ndarray:
     el turno no se le llama, y su cupo queda sin usar."""
     lista = orden.head(k)
     semana = np.repeat(np.arange(semanas), presupuesto_semanal(len(lista), semanas))
-    sigue_pendiente = ~(lista["dia_resuelta"].to_numpy() < 7 * semana)     # NaN: pendiente
+    sigue_pendiente = ~(lista["dia_resuelta"].to_numpy() < 7 * semana)  # NaN: pendiente
     return _medir(k, lista[sigue_pendiente], semana[sigue_pendiente], semanas)
 
 
@@ -386,16 +460,21 @@ def _semanal(orden: pd.DataFrame, k: int, semanas: int) -> np.ndarray:
 
 ESTRATEGIAS = {
     "fija_inicio_d2": ("Lista fija, toda en la semana 1 · regla D2", _fija_inicio, True),
-    "fija_repartida_d2": ("Lista fija, repartida en la campaña · regla D2", _fija_repartida,
-                          True),
+    "fija_repartida_d2": ("Lista fija, repartida en la campaña · regla D2", _fija_repartida, True),
     "semanal_d2": ("Lista semanal · regla D2", _semanal, True),
     "fija_inicio_azar": ("Lista fija, toda en la semana 1 · al azar", _fija_inicio, False),
     "semanal_azar": ("Lista semanal · al azar", _semanal, False),
 }
 
 
-def campana(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int = 10,
-            repeticiones: int = 100, minimo: int = 5) -> pd.DataFrame:
+def campana(
+    familias: pd.DataFrame,
+    k_por_sede: dict,
+    semilla: int,
+    semanas: int = 10,
+    repeticiones: int = 100,
+    minimo: int = 5,
+) -> pd.DataFrame:
     """Compara tres formas de usar los mismos k contactos, con y sin regla.
 
     - Lista fija en la semana 1: el mejor caso del diseño actual (todo el margen de tiempo).
@@ -421,12 +500,14 @@ def campana(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int
     posicion = {m: i for i, m in enumerate(MEDIDAS)}
     for clave, (etiqueta, funcion, usar_regla) in ESTRATEGIAS.items():
         semillas = ([semilla] if usar_regla else []) + [
-            semilla + 1000 + r for r in range(repeticiones)]
+            semilla + 1000 + r for r in range(repeticiones)
+        ]
         resultados = {nombre: np.zeros((len(semillas), len(MEDIDAS))) for nombre in nombres}
         for i, s in enumerate(semillas):
             for (cohorte, sede), grupo in familias.groupby(["cohorte", "sede"]):
-                medidas = funcion(_orden(grupo, s, usar_regla),
-                                  int(k_por_sede.get(str(sede), 0)), semanas)
+                medidas = funcion(
+                    _orden(grupo, s, usar_regla), int(k_por_sede.get(str(sede), 0)), semanas
+                )
                 for nombre in (str(cohorte), TODAS):
                     resultados[nombre][i] += medidas
         for nombre in nombres:
@@ -435,30 +516,50 @@ def campana(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int
             medidas = dict(zip(MEDIDAS, valores, strict=True))
             recalls = resultados[nombre][:, posicion["aciertos"]] / max(eventos[nombre], 1)
             aciertos = medidas["aciertos"]
-            filas.append({
-                "cohorte": nombre, "estrategia": clave, "descripcion": etiqueta,
-                "con_regla": usar_regla, "cupos": int(medidas["cupos"]),
-                "llamadas": round(medidas["llamadas"], 1),
-                "cupos_sin_usar": round(medidas["cupos"] - medidas["llamadas"], 1),
-                "aciertos": round(aciertos, 1), "eventos": eventos[nombre],
-                "recall": _tasa(aciertos, eventos[nombre]),
-                "recall_medio": round(float(recalls.mean()), 4),
-                "recall_min": round(float(recalls.min()), 4),
-                "recall_max": round(float(recalls.max()), 4),
-                "precision": _tasa(aciertos, medidas["llamadas"]),
-                "aciertos_primera_mitad": round(medidas["aciertos_primera_mitad"], 1),
-                "recall_primera_mitad": _tasa(medidas["aciertos_primera_mitad"],
-                                              eventos[nombre]),
-                "margen_medio_dias": (round(medidas["suma_margen"] / aciertos, 1)
-                                      if aciertos else np.nan)})
+            filas.append(
+                {
+                    "cohorte": nombre,
+                    "estrategia": clave,
+                    "descripcion": etiqueta,
+                    "con_regla": usar_regla,
+                    "cupos": int(medidas["cupos"]),
+                    "llamadas": round(medidas["llamadas"], 1),
+                    "cupos_sin_usar": round(medidas["cupos"] - medidas["llamadas"], 1),
+                    "aciertos": round(aciertos, 1),
+                    "eventos": eventos[nombre],
+                    "recall": _tasa(aciertos, eventos[nombre]),
+                    "recall_medio": round(float(recalls.mean()), 4),
+                    "recall_min": round(float(recalls.min()), 4),
+                    "recall_max": round(float(recalls.max()), 4),
+                    "precision": _tasa(aciertos, medidas["llamadas"]),
+                    "aciertos_primera_mitad": round(medidas["aciertos_primera_mitad"], 1),
+                    "recall_primera_mitad": _tasa(
+                        medidas["aciertos_primera_mitad"], eventos[nombre]
+                    ),
+                    "margen_medio_dias": (
+                        round(medidas["suma_margen"] / aciertos, 1) if aciertos else np.nan
+                    ),
+                }
+            )
     tabla = pd.DataFrame(filas)
     # Solo los conteos reales (estrategias con regla); los promedios al azar no lo son
     reales = tabla["con_regla"]
-    _ocultar(tabla, "aciertos", ["recall", "recall_medio", "recall_min", "recall_max",
-                                 "precision", "margen_medio_dias"], minimo, grupo="estrategia",
-             filas=reales)
-    _ocultar(tabla, "aciertos_primera_mitad", ["recall_primera_mitad"], minimo,
-             grupo="estrategia", filas=reales)
+    _ocultar(
+        tabla,
+        "aciertos",
+        ["recall", "recall_medio", "recall_min", "recall_max", "precision", "margen_medio_dias"],
+        minimo,
+        grupo="estrategia",
+        filas=reales,
+    )
+    _ocultar(
+        tabla,
+        "aciertos_primera_mitad",
+        ["recall_primera_mitad"],
+        minimo,
+        grupo="estrategia",
+        filas=reales,
+    )
     return tabla.drop(columns="con_regla")
 
 
@@ -467,8 +568,9 @@ def campana(familias: pd.DataFrame, k_por_sede: dict, semilla: int, semanas: int
 # --------------------------------------------------------------------------- #
 def _hay(*valores) -> bool:
     """True si todos los valores son números publicables (ni texto ni NaN)."""
-    return all(isinstance(v, (int, float, np.integer, np.floating)) and np.isfinite(v)
-               for v in valores)
+    return all(
+        isinstance(v, (int, float, np.integer, np.floating)) and np.isfinite(v) for v in valores
+    )
 
 
 def _pct(valor: float, decimales: int = 0) -> str:
@@ -484,8 +586,9 @@ def _enumerar(partes: list[str]) -> str:
     return partes[0] if len(partes) == 1 else ", ".join(partes[:-1]) + " y " + partes[-1]
 
 
-def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFrame,
-                 estrategias: pd.DataFrame) -> dict[str, list[str]]:
+def conclusiones(
+    desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFrame, estrategias: pd.DataFrame
+) -> dict[str, list[str]]:
     """Frases que resumen cada análisis, escritas a partir de las cifras (fila «Todas»).
 
     Una frase solo se escribe si todas sus cifras son publicables, y las comparaciones dicen
@@ -494,35 +597,45 @@ def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFr
     textos: dict[str, list[str]] = {"desglose": [], "por_k": [], "semanal": [], "campana": []}
 
     total = desglose[desglose["cohorte"] == TODAS].iloc[0]
-    frases = {"tardia": ("pagaron todo después del 30 de abril", "pagan tarde"),
-              "parcial": ("pagaron por unos estudiantes y no por otros", "pagan en parte"),
-              "sin_pago": ("no registran ningún pago", "no registran ningún pago")}
+    frases = {
+        "tardia": ("pagaron todo después del 30 de abril", "pagan tarde"),
+        "parcial": ("pagaron por unos estudiantes y no por otros", "pagan en parte"),
+        "sin_pago": ("no registran ningún pago", "no registran ningún pago"),
+    }
     visibles = [t for t in TIPOS if _hay(total[t])]
     if not visibles:
-        textos["desglose"].append("Las celdas del desglose tienen menos casos que el mínimo "
-                                  "publicable; no se muestra.")
+        textos["desglose"].append(
+            "Las celdas del desglose tienen menos casos que el mínimo publicable; no se muestra."
+        )
     else:
-        partes = [f"{int(total[t])} ({_pct(total[f'pct_{t}'])}) {frases[t][0]}"
-                  for t in visibles]
-        frase = (f"De {int(total['eventos'])} familias que no pagaron en plazo, "
-                 f"{_enumerar(partes)}.")
+        partes = [f"{int(total[t])} ({_pct(total[f'pct_{t}'])}) {frases[t][0]}" for t in visibles]
+        frase = f"De {int(total['eventos'])} familias que no pagaron en plazo, {_enumerar(partes)}."
         ocultos = [t for t in TIPOS if t not in visibles]
         if ocultos:
             resto = int(total["eventos"]) - sum(int(total[t]) for t in visibles)
-            frase += (f" Las otras {resto} se reparten entre las que "
-                      f"{_enumerar([frases[t][1] for t in ocultos])}; el detalle no se publica "
-                      f"porque alguna celda es menor que el mínimo.")
+            frase += (
+                f" Las otras {resto} se reparten entre las que "
+                f"{_enumerar([frases[t][1] for t in ocultos])}; el detalle no se publica "
+                f"porque alguna celda es menor que el mínimo."
+            )
         textos["desglose"].append(frase)
-        partes = [f"al {_pct(total[f'recall_{t}'])} de las que {frases[t][1]}"
-                  for t in TIPOS if _hay(total[f"recall_{t}"])]
+        partes = [
+            f"al {_pct(total[f'recall_{t}'])} de las que {frases[t][1]}"
+            for t in TIPOS
+            if _hay(total[f"recall_{t}"])
+        ]
         if partes:
             textos["desglose"].append("La lista alcanza " + _enumerar(partes) + ".")
         if _hay(total["mediana_dias_tarde"]):
-            frase = (f"Quienes pagan tarde lo hacen a una mediana de "
-                     f"{int(total['mediana_dias_tarde'])} días después del 30 de abril")
+            frase = (
+                f"Quienes pagan tarde lo hacen a una mediana de "
+                f"{int(total['mediana_dias_tarde'])} días después del 30 de abril"
+            )
             if _hay(total["pct_tardia_hasta_30_dias"]):
-                frase += (f"; el {_pct(total['pct_tardia_hasta_30_dias'])} paga dentro de los "
-                          "30 días siguientes")
+                frase += (
+                    f"; el {_pct(total['pct_tardia_hasta_30_dias'])} paga dentro de los "
+                    "30 días siguientes"
+                )
             textos["desglose"].append(frase + ".")
 
     k_total = por_k[por_k["cohorte"] == TODAS].set_index("multiplicador")
@@ -531,24 +644,29 @@ def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFr
         textos["por_k"].append(
             f"Con el k aprobado se contacta al {_pct(actual['pct_familias'])} de las familias "
             f"y se alcanza al {_pct(actual['recall'])} de los casos (al azar: "
-            f"{_pct(actual['recall_azar'])}).")
+            f"{_pct(actual['recall_azar'])})."
+        )
     if _hay(doble["recall"], doble["precision"], actual["precision"]):
         textos["por_k"].append(
             f"Con el doble de contactos ({_pct(doble['pct_familias'])} de las familias) se "
             f"alcanza al {_pct(doble['recall'])} (al azar: {_pct(doble['recall_azar'])}); la "
-            f"precisión pasa de {numero(actual['precision'])} a {numero(doble['precision'])}.")
-    lifts = pd.to_numeric(por_k[(por_k["cohorte"] != TODAS)
-                                & (por_k["multiplicador"].astype(str) == "1.0")]["lift"],
-                          errors="coerce").dropna()
+            f"precisión pasa de {numero(actual['precision'])} a {numero(doble['precision'])}."
+        )
+    lifts = pd.to_numeric(
+        por_k[(por_k["cohorte"] != TODAS) & (por_k["multiplicador"].astype(str) == "1.0")]["lift"],
+        errors="coerce",
+    ).dropna()
     if len(lifts) > 1:
         textos["por_k"].append(
             f"Con el k aprobado, el Lift de la lista va de {numero(lifts.min(), 2)} a "
-            f"{numero(lifts.max(), 2)} según la cohorte.")
+            f"{numero(lifts.max(), 2)} según la cohorte."
+        )
     if "contactos_por_persona_semana" in k_total:
         textos["por_k"].append(
             f"Contactar a todas las familias equivale a "
             f"{numero(todas['contactos_por_persona_semana'], 1)} contactos por persona y semana; "
-            f"con el k aprobado son {numero(actual['contactos_por_persona_semana'], 1)}.")
+            f"con el k aprobado son {numero(actual['contactos_por_persona_semana'], 1)}."
+        )
 
     foto = semanal[semanal["cohorte"] == TODAS].set_index("semana")
     foto = foto[[_hay(*fila) for fila in foto[["tasa_base", "recall", "recall_azar"]].to_numpy()]]
@@ -559,54 +677,67 @@ def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFr
             f"de las familias, y en la {int(ultima.name)} el {_pct(ultima['pct_pendientes'])}. "
             f"La proporción de casos entre las pendientes pasa de {_pct(primera['tasa_base'], 1)} "
             f"en la semana {int(primera.name)} a {_pct(mitad['tasa_base'], 1)} y "
-            f"{_pct(ultima['tasa_base'], 1)}.")
+            f"{_pct(ultima['tasa_base'], 1)}."
+        )
         textos["semanal"].append(
             f"Una lista de k familias hecha en la semana {int(mitad.name)} contendría al "
             f"{_pct(mitad['recall'])} de los casos, frente al {_pct(primera['recall'])} de la "
             f"semana {int(primera.name)}. Elegir al azar entre las pendientes daría "
             f"{_pct(mitad['recall_azar'])}: la mayor parte de la diferencia viene de saber "
-            f"quién sigue sin pagar, no de la regla.")
+            f"quién sigue sin pagar, no de la regla."
+        )
 
-        parcial = (pd.to_numeric(foto["contactos"], errors="coerce")
-                   < pd.to_numeric(foto["pendientes"], errors="coerce"))   # la lista no cubre todo
+        parcial = pd.to_numeric(foto["contactos"], errors="coerce") < pd.to_numeric(
+            foto["pendientes"], errors="coerce"
+        )  # la lista no cubre todo
         mejor_azar = foto[parcial & (pd.to_numeric(foto["lift"], errors="coerce") <= 1.0)]
         if len(mejor_azar) and int(mejor_azar.index[0]) > int(primera.name):
             semana = int(mejor_azar.index[0])
             textos["semanal"].append(
                 f"Desde la semana {semana}, la regla ya no ordena mejor que el azar entre las "
-                f"familias que siguen sin pagar: su ventaja está al principio de la campaña.")
+                f"familias que siguen sin pagar: su ventaja está al principio de la campaña."
+            )
         if _hay(mitad.get("pendientes_por_campana"), mitad.get("veces_k")):
             textos["semanal"].append(
                 f"En la semana {int(mitad.name)} quedan unas "
                 f"{int(mitad['pendientes_por_campana'])} familias pendientes por año "
                 f"({numero(mitad['veces_k'], 1)} veces el k aprobado) y el "
                 f"{_pct(mitad['tasa_base'])} son casos. Contactarlas a todas alcanzaría a todos "
-                f"los casos con {int(mitad['dias_ventana_restante'])} días de margen.")
+                f"los casos con {int(mitad['dias_ventana_restante'])} días de margen."
+            )
 
     camp = estrategias[estrategias["cohorte"] == TODAS].set_index("estrategia")
-    inicio, repartida, movil = (camp.loc[c] for c in ("fija_inicio_d2", "fija_repartida_d2",
-                                                      "semanal_d2"))
+    inicio, repartida, movil = (
+        camp.loc[c] for c in ("fija_inicio_d2", "fija_repartida_d2", "semanal_d2")
+    )
     azar_inicio, azar_movil = camp.loc["fija_inicio_azar"], camp.loc["semanal_azar"]
-    if _hay(inicio["recall"], inicio["recall_min"], inicio["recall_max"],
-            inicio["recall_medio"]):
+    if _hay(inicio["recall"], inicio["recall_min"], inicio["recall_max"], inicio["recall_medio"]):
         textos["campana"].append(
             f"La lista fija llamada entera en la primera semana alcanza al "
             f"{_pct(inicio['recall'])} de los casos, todos con el margen completo. Según cómo "
             f"caiga el sorteo entre familias empatadas, va de {_pct(inicio['recall_min'])} a "
-            f"{_pct(inicio['recall_max'])} (media: {_pct(inicio['recall_medio'])}).")
+            f"{_pct(inicio['recall_max'])} (media: {_pct(inicio['recall_medio'])})."
+        )
     if _hay(repartida["cupos_sin_usar"], repartida["recall"]) and repartida["cupos"]:
         textos["campana"].append(
             f"Si esa misma lista se reparte en la campaña, el "
             f"{_pct(repartida['cupos_sin_usar'] / repartida['cupos'])} de sus familias ya habrá "
-            f"pagado cuando le llegue el turno. Esos cupos quedan sin usar.")
-    if _hay(movil["recall"], movil["recall_primera_mitad"], inicio["recall"],
-            azar_movil["recall"], movil["margen_medio_dias"]):
+            f"pagado cuando le llegue el turno. Esos cupos quedan sin usar."
+        )
+    if _hay(
+        movil["recall"],
+        movil["recall_primera_mitad"],
+        inicio["recall"],
+        azar_movil["recall"],
+        movil["margen_medio_dias"],
+    ):
         textos["campana"].append(
             f"La lista semanal da esos cupos a las siguientes familias pendientes y alcanza al "
             f"{_pct(movil['recall'])} en toda la campaña. Hay que leerlo con cuidado: cerca del "
             f"30 de abril casi todas las pendientes son casos (sin regla se llega al "
             f"{_pct(azar_movil['recall'])}) y el margen medio de un acierto baja a "
-            f"{numero(movil['margen_medio_dias'], 0)} días.")
+            f"{numero(movil['margen_medio_dias'], 0)} días."
+        )
         diferencia = _diferencia(movil["recall_primera_mitad"], inicio["recall"])
         if diferencia == 0:
             comparacion = "lo mismo que"
@@ -615,7 +746,8 @@ def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFr
         textos["campana"].append(
             f"En la primera mitad de las semanas, la lista semanal alcanza al "
             f"{_pct(movil['recall_primera_mitad'])} de los casos: {comparacion} la lista fija "
-            f"llamada al inicio ({_pct(inicio['recall'])}).")
+            f"llamada al inicio ({_pct(inicio['recall'])})."
+        )
     if _hay(movil["recall_primera_mitad"], azar_movil["recall_primera_mitad"]):
         aporte = _diferencia(movil["recall_primera_mitad"], azar_movil["recall_primera_mitad"])
         if aporte > 0:
@@ -627,9 +759,11 @@ def conclusiones(desglose: pd.DataFrame, por_k: pd.DataFrame, semanal: pd.DataFr
         textos["campana"].append(
             f"Aporte de la regla en la lista semanal, medido en la primera mitad: sin regla "
             f"se alcanza al {_pct(azar_movil['recall_primera_mitad'])} y con ella al "
-            f"{_pct(movil['recall_primera_mitad'])}; {lectura}.")
+            f"{_pct(movil['recall_primera_mitad'])}; {lectura}."
+        )
     if _hay(azar_inicio["recall"], inicio["recall"]):
         textos["campana"].append(
             f"En la lista fija, sin regla se alcanza al {_pct(azar_inicio['recall'])} y con "
-            f"ella al {_pct(inicio['recall'])}.")
+            f"ella al {_pct(inicio['recall'])}."
+        )
     return textos

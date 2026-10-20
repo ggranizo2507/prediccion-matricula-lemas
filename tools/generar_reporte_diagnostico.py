@@ -53,8 +53,20 @@ from src.utils import cargar_config  # noqa: E402
 
 VINO, TINTA, SUAVE, FONDO, LINEA = "#8B1E3F", "#1F2933", "#5B6670", "#F5F1F3", "#D9DDE2"
 ANCHO = A4[0] - 4 * cm
-MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
-         "septiembre", "octubre", "noviembre", "diciembre"]
+MESES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+]
 CODIGO = "<font face='Texto-Cursiva'>{}</font>"
 
 
@@ -64,11 +76,19 @@ CODIGO = "<font face='Texto-Cursiva'>{}</font>"
 def _fuentes() -> None:
     """DejaVu Sans (incluida con matplotlib): tiene tildes, flechas y el signo menos."""
     carpeta = Path(matplotlib.get_data_path()) / "fonts" / "ttf"
-    for nombre, archivo in {"Texto": "DejaVuSans.ttf", "Texto-Negrita": "DejaVuSans-Bold.ttf",
-                            "Texto-Cursiva": "DejaVuSans-Oblique.ttf"}.items():
+    for nombre, archivo in {
+        "Texto": "DejaVuSans.ttf",
+        "Texto-Negrita": "DejaVuSans-Bold.ttf",
+        "Texto-Cursiva": "DejaVuSans-Oblique.ttf",
+    }.items():
         pdfmetrics.registerFont(TTFont(nombre, str(carpeta / archivo)))
-    pdfmetrics.registerFontFamily("Texto", normal="Texto", bold="Texto-Negrita",
-                                  italic="Texto-Cursiva", boldItalic="Texto-Negrita")
+    pdfmetrics.registerFontFamily(
+        "Texto",
+        normal="Texto",
+        bold="Texto-Negrita",
+        italic="Texto-Cursiva",
+        boldItalic="Texto-Negrita",
+    )
 
 
 def _estilos() -> dict[str, ParagraphStyle]:
@@ -77,27 +97,49 @@ def _estilos() -> dict[str, ParagraphStyle]:
     suave = {**base, "textColor": colors.HexColor(SUAVE)}
     return {
         "titulo": ParagraphStyle("titulo", fontSize=19, leading=23, spaceAfter=4, **negrita),
-        "subtitulo": ParagraphStyle("subtitulo", fontSize=10, leading=14, spaceAfter=10,
-                                    **suave),
-        "h1": ParagraphStyle("h1", fontSize=13.5, leading=17, spaceBefore=14, spaceAfter=6,
-                             keepWithNext=1,
-                             **{**negrita, "textColor": colors.HexColor(VINO)}),
-        "h2": ParagraphStyle("h2", fontSize=10.5, leading=14, spaceBefore=9, spaceAfter=4,
-                             keepWithNext=1, **negrita),
-        "texto": ParagraphStyle("texto", fontSize=9.3, leading=13.2, spaceAfter=6,
-                                alignment=TA_JUSTIFY, **base),
-        "izquierda": ParagraphStyle("izquierda", fontSize=9.3, leading=13.2, spaceAfter=6,
-                                    **base),
-        "vineta": ParagraphStyle("vineta", fontSize=9.3, leading=13.2, spaceAfter=3.5,
-                                 leftIndent=12, bulletIndent=2, **base),
-        "pie": ParagraphStyle("pie", fontSize=8.2, leading=11, spaceAfter=10,
-                              **{**suave, "fontName": "Texto-Cursiva"}),
+        "subtitulo": ParagraphStyle("subtitulo", fontSize=10, leading=14, spaceAfter=10, **suave),
+        "h1": ParagraphStyle(
+            "h1",
+            fontSize=13.5,
+            leading=17,
+            spaceBefore=14,
+            spaceAfter=6,
+            keepWithNext=1,
+            **{**negrita, "textColor": colors.HexColor(VINO)},
+        ),
+        "h2": ParagraphStyle(
+            "h2", fontSize=10.5, leading=14, spaceBefore=9, spaceAfter=4, keepWithNext=1, **negrita
+        ),
+        "texto": ParagraphStyle(
+            "texto", fontSize=9.3, leading=13.2, spaceAfter=6, alignment=TA_JUSTIFY, **base
+        ),
+        "izquierda": ParagraphStyle("izquierda", fontSize=9.3, leading=13.2, spaceAfter=6, **base),
+        "vineta": ParagraphStyle(
+            "vineta",
+            fontSize=9.3,
+            leading=13.2,
+            spaceAfter=3.5,
+            leftIndent=12,
+            bulletIndent=2,
+            **base,
+        ),
+        "pie": ParagraphStyle(
+            "pie", fontSize=8.2, leading=11, spaceAfter=10, **{**suave, "fontName": "Texto-Cursiva"}
+        ),
         "celda": ParagraphStyle("celda", fontSize=8, leading=10.2, **base),
-        "cabecera": ParagraphStyle("cabecera", fontSize=8, leading=10.2,
-                                   **{**negrita, "textColor": colors.white}),
+        "cabecera": ParagraphStyle(
+            "cabecera", fontSize=8, leading=10.2, **{**negrita, "textColor": colors.white}
+        ),
         "aviso": ParagraphStyle("aviso", fontSize=9, leading=12.5, **base),
-        "referencia": ParagraphStyle("referencia", fontSize=8.6, leading=12, spaceAfter=4,
-                                     leftIndent=18, firstLineIndent=-18, **base),
+        "referencia": ParagraphStyle(
+            "referencia",
+            fontSize=8.6,
+            leading=12,
+            spaceAfter=4,
+            leftIndent=18,
+            firstLineIndent=-18,
+            **base,
+        ),
     }
 
 
@@ -113,37 +155,56 @@ def _tabla(encabezados: list[str], filas: list[list], anchos: list[float], e: di
     datos += [[Paragraph(str(c), e["celda"]) for c in fila] for fila in filas]
     total = sum(anchos)
     tabla = Table(datos, colWidths=[ANCHO * a / total for a in anchos], repeatRows=1)
-    tabla.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(VINO)),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor(FONDO)]),
-        ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor(LINEA)),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5), ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ]))
+    tabla.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(VINO)),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor(FONDO)]),
+                ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor(LINEA)),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
     return tabla
 
 
-def _figura(ruta: Path, pie: str, e: dict, titulo: str | None = None,
-            ancho: float = ANCHO) -> KeepTogether:
+def _figura(
+    ruta: Path, pie: str, e: dict, titulo: str | None = None, ancho: float = ANCHO
+) -> KeepTogether:
     """Figura con su pie. Si se da `titulo`, el encabezado queda en la misma página."""
     from PIL import Image as Lector
 
     with Lector.open(ruta) as imagen:
         proporcion = imagen.height / imagen.width
     piezas = [Paragraph(titulo, e["h2"])] if titulo else []
-    return KeepTogether(piezas + [Image(str(ruta), width=ancho, height=ancho * proporcion),
-                                  Spacer(1, 3), Paragraph(pie, e["pie"])])
+    return KeepTogether(
+        piezas
+        + [
+            Image(str(ruta), width=ancho, height=ancho * proporcion),
+            Spacer(1, 3),
+            Paragraph(pie, e["pie"]),
+        ]
+    )
 
 
 def _aviso(texto: str, e: dict, color: str = "#FFF4D6", borde: str = "#C98A00") -> Table:
     caja = Table([[Paragraph(texto, e["aviso"])]], colWidths=[ANCHO])
-    caja.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(color)),
-        ("LINEBEFORE", (0, 0), (0, -1), 3, colors.HexColor(borde)),
-        ("LEFTPADDING", (0, 0), (-1, -1), 9), ("RIGHTPADDING", (0, 0), (-1, -1), 9),
-        ("TOPPADDING", (0, 0), (-1, -1), 7), ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-    ]))
+    caja.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(color)),
+                ("LINEBEFORE", (0, 0), (0, -1), 3, colors.HexColor(borde)),
+                ("LEFTPADDING", (0, 0), (-1, -1), 9),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 9),
+                ("TOPPADDING", (0, 0), (-1, -1), 7),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+            ]
+        )
+    )
     return caja
 
 
@@ -156,8 +217,15 @@ def _lista(nombres: list[str]) -> str:
 # --------------------------------------------------------------------------- #
 # Frases calculadas con los resultados
 # --------------------------------------------------------------------------- #
-ESTADOS = ("sobreajuste", "subajuste (falta capacidad)", "subajuste (faltan datos)",
-           "límite de señal", "subajuste", "ajuste adecuado", "indeterminado")
+ESTADOS = (
+    "sobreajuste",
+    "subajuste (falta capacidad)",
+    "subajuste (faltan datos)",
+    "límite de señal",
+    "subajuste",
+    "ajuste adecuado",
+    "indeterminado",
+)
 
 
 def _columna_diagnostico(diag: pd.DataFrame) -> str:
@@ -181,22 +249,30 @@ def _controles(diag: pd.DataFrame) -> str:
     controles = diag[diag["rol"] == "control"]
     estados = list(controles["diagnostico"])
     if estados == ["sobreajuste", "subajuste"]:
-        frase = ("Los dos modelos de control, que son casos extremos, se clasifican como se "
-                 "esperaba (sobreajuste y subajuste). Esto comprueba la regla en casos claros, "
-                 "no en los casos cercanos a los umbrales.")
+        frase = (
+            "Los dos modelos de control, que son casos extremos, se clasifican como se "
+            "esperaba (sobreajuste y subajuste). Esto comprueba la regla en casos claros, "
+            "no en los casos cercanos a los umbrales."
+        )
         if "diagnostico_detallado" in controles:
             rigido = controles.iloc[-1]
             if rigido["diagnostico_detallado"] == "subajuste (falta capacidad)":
                 sube = numero(rigido["ganancia_por_capacidad"], signo=True)
-                frase += (" La segunda etapa reconoce que el control sobrerregularizado "
-                          "subajusta por falta de capacidad: con un C mayor su PR-AUC de "
-                          f"validación sube {sube}.")
+                frase += (
+                    " La segunda etapa reconoce que el control sobrerregularizado "
+                    "subajusta por falta de capacidad: con un C mayor su PR-AUC de "
+                    f"validación sube {sube}."
+                )
             else:
-                frase += (" Atención: la segunda etapa no reconoce la falta de capacidad del "
-                          f"control sobrerregularizado ({rigido['diagnostico_detallado']}).")
+                frase += (
+                    " Atención: la segunda etapa no reconoce la falta de capacidad del "
+                    f"control sobrerregularizado ({rigido['diagnostico_detallado']})."
+                )
         return frase
-    return ("Atención: los modelos de control no se clasificaron como se esperaba "
-            f"({_lista(estados)}); conviene revisar los umbrales.")
+    return (
+        "Atención: los modelos de control no se clasificaron como se esperaba "
+        f"({_lista(estados)}); conviene revisar los umbrales."
+    )
 
 
 def _propias(estrategias: pd.DataFrame) -> pd.DataFrame:
@@ -210,8 +286,9 @@ def _estrategias(estrategias: pd.DataFrame, val: str) -> list[str]:
     todas, estrategias = estrategias, _propias(estrategias)
     robusta = "veredicto" in estrategias
     activas = estrategias[~estrategias["modelo_sin_cambios"]]
-    sin_cambios = [n.split(" · ")[0] for n in
-                   estrategias[estrategias["modelo_sin_cambios"]]["estrategia"]]
+    sin_cambios = [
+        n.split(" · ")[0] for n in estrategias[estrategias["modelo_sin_cambios"]]["estrategia"]
+    ]
     if robusta:
         conteo = activas["veredicto"].value_counts()
         frases = [
@@ -219,60 +296,88 @@ def _estrategias(estrategias: pd.DataFrame, val: str) -> list[str]:
             f"PR-AUC en {val} mejora de forma demostrable en {int(conteo.get('mejora', 0))}, "
             f"empeora en {int(conteo.get('empeora', 0))} y queda sin diferencia demostrable "
             f"en {int(conteo.get('sin diferencia demostrable', 0))}"
-            + (f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
-               if sin_cambios else ".")]
+            + (
+                f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
+                if sin_cambios
+                else "."
+            )
+        ]
     else:
         conteo = activas["efecto_validacion"].value_counts()
         frases = [
             f"De las {len(estrategias)} estrategias evaluadas, la PR-AUC en {val} mejora en "
             f"{int(conteo.get('mejora', 0))}, empeora en {int(conteo.get('empeora', 0))} y no "
             f"cambia de forma apreciable en {int(conteo.get('sin cambio apreciable', 0))}"
-            + (f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
-               if sin_cambios else ".")]
+            + (
+                f"; {_lista(sin_cambios)} no modificó el modelo en esta ejecución."
+                if sin_cambios
+                else "."
+            )
+        ]
     mejor = estrategias.loc[estrategias["cambio_puntaje_validacion"].idxmax()]
     if (mejor["veredicto"] if robusta else mejor["efecto_validacion"]) == "mejora":
-        frase = (f"La de mayor efecto es <b>{mejor['estrategia']}</b>: de "
-                 f"{numero(mejor['puntaje_validacion_antes'])} a "
-                 f"{numero(mejor['puntaje_validacion_despues'])}")
+        frase = (
+            f"La de mayor efecto es <b>{mejor['estrategia']}</b>: de "
+            f"{numero(mejor['puntaje_validacion_antes'])} a "
+            f"{numero(mejor['puntaje_validacion_despues'])}"
+        )
         if "lift_k_validacion_antes" in mejor:
-            frase += (f" (Lift@k de {numero(mejor['lift_k_validacion_antes'], 2)} a "
-                      f"{numero(mejor['lift_k_validacion_despues'], 2)})")
+            frase += (
+                f" (Lift@k de {numero(mejor['lift_k_validacion_antes'], 2)} a "
+                f"{numero(mejor['lift_k_validacion_despues'], 2)})"
+            )
         frases.append(frase + ".")
-    fuera = [f.estrategia.split(" · ")[0] for f in activas.itertuples()
-             if not f.aplica_al_diagnostico]
+    fuera = [
+        f.estrategia.split(" · ")[0] for f in activas.itertuples() if not f.aplica_al_diagnostico
+    ]
     if fuera:
-        frases.append(f"En {_lista(fuera)} el modelo de partida no presentaba el problema "
-                      "que la estrategia busca corregir: esos resultados son comprobaciones, "
-                      "no correcciones.")
+        frases.append(
+            f"En {_lista(fuera)} el modelo de partida no presentaba el problema "
+            "que la estrategia busca corregir: esos resultados son comprobaciones, "
+            "no correcciones."
+        )
     contra = estrategias[estrategias["problema"] == "sobreajuste"]
-    frases.append(f"Reducen la brecha {int((contra['efecto_brecha'] == 'reduce').sum())} de "
-                  f"las {len(contra)} estrategias contra el sobreajuste.")
+    frases.append(
+        f"Reducen la brecha {int((contra['efecto_brecha'] == 'reduce').sum())} de "
+        f"las {len(contra)} estrategias contra el sobreajuste."
+    )
     cambian = estrategias[estrategias["diagnostico_antes"] != estrategias["diagnostico_despues"]]
     if len(cambian):
-        frases.append("Cambian el diagnóstico: " + "; ".join(
-            f"{f.estrategia.split(' · ')[0]} ({f.diagnostico_antes} → {f.diagnostico_despues})"
-            for f in cambian.itertuples()) + ".")
+        frases.append(
+            "Cambian el diagnóstico: "
+            + "; ".join(
+                f"{f.estrategia.split(' · ')[0]} ({f.diagnostico_antes} → {f.diagnostico_despues})"
+                for f in cambian.itertuples()
+            )
+            + "."
+        )
     if "tipo_fila" in todas:
         for f in todas[todas["tipo_fila"] != "estrategia"].itertuples():
             frases.append(
                 f"{f.estrategia}: PR-AUC de {numero(f.puntaje_validacion_antes)} a "
                 f"{numero(f.puntaje_validacion_despues)} y brecha de "
                 f"{numero(f.brecha_antes, signo=True)} a {numero(f.brecha_despues, signo=True)}"
-                + (f" (veredicto: {f.veredicto})." if robusta else "."))
+                + (f" (veredicto: {f.veredicto})." if robusta else ".")
+            )
     return frases
 
 
 def _mas_datos(ganancia: pd.DataFrame) -> str:
     concluyentes = ganancia[ganancia["concluyente"]]
     if concluyentes.empty:
-        return ("Al pasar de la mitad al total del entrenamiento, el cambio de la PR-AUC de "
-                "validación es menor que dos veces la variación entre submuestras en los "
-                "tres modelos: con estos datos no se puede afirmar que más datos ayuden ni "
-                "que no ayuden.")
-    partes = [f"{g.modelo.lower()} ({numero(g.ganancia, signo=True)})"
-              for g in concluyentes.itertuples()]
-    return ("Al pasar de la mitad al total del entrenamiento, la PR-AUC de validación cambia "
-            f"más del doble de la variación entre submuestras en: {_lista(partes)}.")
+        return (
+            "Al pasar de la mitad al total del entrenamiento, el cambio de la PR-AUC de "
+            "validación es menor que dos veces la variación entre submuestras en los "
+            "tres modelos: con estos datos no se puede afirmar que más datos ayuden ni "
+            "que no ayuden."
+        )
+    partes = [
+        f"{g.modelo.lower()} ({numero(g.ganancia, signo=True)})" for g in concluyentes.itertuples()
+    ]
+    return (
+        "Al pasar de la mitad al total del entrenamiento, la PR-AUC de validación cambia "
+        f"más del doble de la variación entre submuestras en: {_lista(partes)}."
+    )
 
 
 def _lectura_hiperparametros(hiper: pd.DataFrame) -> list[str]:
@@ -281,14 +386,16 @@ def _lectura_hiperparametros(hiper: pd.DataFrame) -> list[str]:
         d = d.sort_values("valor")
         mejor = d.loc[d["puntaje_validacion"].idxmax()]
         nombre = {"C": "C", "learning_rate": "la tasa de aprendizaje"}.get(
-            d["hiperparametro"].iloc[0], d["hiperparametro"].iloc[0])
+            d["hiperparametro"].iloc[0], d["hiperparametro"].iloc[0]
+        )
         fase2, extremo = d["valor_fase2"].iloc[0], d.iloc[-1]
         frases.append(
             f"<b>{modelo}</b>, al variar {nombre}: la validación es máxima en "
             f"{_g(mejor['valor'])} ({numero(mejor['puntaje_validacion'])}); la Fase 2 eligió "
             f"{_g(fase2)}. En el valor más alto ({_g(extremo['valor'])}), el entrenamiento "
             f"llega a {numero(extremo['puntaje_entrenamiento'])} y la validación queda en "
-            f"{numero(extremo['puntaje_validacion'])}.")
+            f"{numero(extremo['puntaje_validacion'])}."
+        )
     return frases
 
 
@@ -316,11 +423,12 @@ def construir(fuente: str, salida: Path) -> Path:
     except FileNotFoundError as error:
         raise FileNotFoundError(
             f"Faltan resultados de la fuente '{fuente}'. Ejecute primero "
-            "notebooks/overfitting_analysis.ipynb.") from error
+            "notebooks/overfitting_analysis.ipynb."
+        ) from error
 
     _fuentes()
     e = _estilos()
-    nar = _narrativa(fuente)          # análisis propio; sin él se usan frases calculadas
+    nar = _narrativa(fuente)  # análisis propio; sin él se usan frases calculadas
     val = resultado["validacion"]
     tr = "+".join(resultado["cohortes_entrenamiento"])
     u = resultado["umbrales"]
@@ -335,46 +443,81 @@ def construir(fuente: str, salida: Path) -> Path:
 
     # ---- Portada y resumen ejecutivo (una página) ---------------------------------
     h.append(Paragraph("Diagnóstico de sobreajuste y subajuste", e["titulo"]))
-    h.append(Paragraph(
-        "Reporte técnico · Actividad de la semana 3<br/>Proyecto: Predicción de matrícula y "
-        "continuidad estudiantil, Unidad Educativa LEMAS<br/>Guillermo Granizo y José Ulloa · "
-        f"Maestría en Inteligencia Artificial, UEES · {fecha}", e["subtitulo"]))
+    h.append(
+        Paragraph(
+            "Reporte técnico · Actividad de la semana 3<br/>Proyecto: Predicción de matrícula y "
+            "continuidad estudiantil, Unidad Educativa LEMAS<br/>Guillermo Granizo y José Ulloa · "
+            f"Maestría en Inteligencia Artificial, UEES · {fecha}",
+            e["subtitulo"],
+        )
+    )
     if sintetico:
-        h.append(_aviso(
-            "<b>Versión preliminar con datos sintéticos.</b> Las cifras de este documento "
-            "prueban el método y no describen a LEMAS. La versión final se genera con los "
-            "datos reales seudonimizados.", e))
+        h.append(
+            _aviso(
+                "<b>Versión preliminar con datos sintéticos.</b> Las cifras de este documento "
+                "prueban el método y no describen a LEMAS. La versión final se genera con los "
+                "datos reales seudonimizados.",
+                e,
+            )
+        )
         h.append(Spacer(1, 6))
     h.append(Paragraph("1. Resumen ejecutivo", e["h1"]))
-    h.append(Paragraph(
-        "<b>Qué hicimos.</b> En la Fase 2 de nuestro proyecto entrenamos tres modelos para "
-        "anticipar qué estudiantes con reserva aprobada no pagarán la matrícula: una regresión "
-        "logística regularizada, un gradient boosting y una logística híbrida. En esta "
-        "actividad revisamos si esos modelos memorizan los datos de entrenamiento o si no "
-        "aprenden lo suficiente. Registramos las métricas durante el entrenamiento, generamos "
-        "cuatro tipos de curvas de aprendizaje, medimos el ajuste con dos reglas y probamos "
-        + (f"{len(_propias(estrategias))} estrategias de mejora con comparación antes y "
-           "después, más dos filas de comprobación. Entrenamos " if "tipo_fila" in estrategias
-           else f"{n_estrategias} estrategias de mejora con comparación antes y después. "
-           "Entrenamos ")
-        + f"con {tr} y validamos con {val}. La cohorte de prueba (C5) no intervino, porque ya "
-        "la habíamos evaluado una sola vez en la Fase 2.", e["texto"]))
+    h.append(
+        Paragraph(
+            "<b>Qué hicimos.</b> En la Fase 2 de nuestro proyecto entrenamos tres modelos para "
+            "anticipar qué estudiantes con reserva aprobada no pagarán la matrícula: una regresión "
+            "logística regularizada, un gradient boosting y una logística híbrida. En esta "
+            "actividad revisamos si esos modelos memorizan los datos de entrenamiento o si no "
+            "aprenden lo suficiente. Registramos las métricas durante el entrenamiento, generamos "
+            "cuatro tipos de curvas de aprendizaje, medimos el ajuste con dos reglas y probamos "
+            + (
+                f"{len(_propias(estrategias))} estrategias de mejora con comparación antes y "
+                "después, más dos filas de comprobación. Entrenamos "
+                if "tipo_fila" in estrategias
+                else f"{n_estrategias} estrategias de mejora con comparación antes y después. "
+                "Entrenamos "
+            )
+            + f"con {tr} y validamos con {val}. La cohorte de prueba (C5) no intervino, porque ya "
+            "la habíamos evaluado una sola vez en la Fase 2.",
+            e["texto"],
+        )
+    )
     h.append(Paragraph("<b>Qué encontramos.</b>", e["texto"]))
-    h += _vinetas(nar.get("hallazgos") or [
-        _por_diagnostico(diag), _controles(diag), *_estrategias(estrategias, val),
-        _mas_datos(ganancia)], e)
+    h += _vinetas(
+        nar.get("hallazgos")
+        or [
+            _por_diagnostico(diag),
+            _controles(diag),
+            *_estrategias(estrategias, val),
+            _mas_datos(ganancia),
+        ],
+        e,
+    )
     h.append(Spacer(1, 4))
-    h.append(Paragraph(
-        "<b>Qué significa para el proyecto.</b> " + (nar.get("significado") or (
-            "Este análisis no cambia la decisión final, que es priorizar el contacto con la "
-            f"regla D2. Las diferencias observadas en {val} son indicios y no pruebas: {val} "
-            "ya se usó para seleccionar y calibrar en la Fase 2, y solo tiene "
-            f"{principal['eventos_validacion']} eventos.")), e["texto"]))
-    h.append(Paragraph(
-        f"<b>Entregables.</b> Cuaderno {CODIGO.format('overfitting_analysis.ipynb')}, módulos "
-        f"{CODIGO.format('src/diagnostico.py')} y {CODIGO.format('src/graficos_diagnostico.py')} "
-        "con pruebas automáticas, cinco figuras a 300 DPI y este reporte.", e["izquierda"]))
-    if nar.get("revision"):            # respuesta a la revisión de la primera versión
+    h.append(
+        Paragraph(
+            "<b>Qué significa para el proyecto.</b> "
+            + (
+                nar.get("significado")
+                or (
+                    "Este análisis no cambia la decisión final, que es priorizar el contacto con la "
+                    f"regla D2. Las diferencias observadas en {val} son indicios y no pruebas: {val} "
+                    "ya se usó para seleccionar y calibrar en la Fase 2, y solo tiene "
+                    f"{principal['eventos_validacion']} eventos."
+                )
+            ),
+            e["texto"],
+        )
+    )
+    h.append(
+        Paragraph(
+            f"<b>Entregables.</b> Cuaderno {CODIGO.format('overfitting_analysis.ipynb')}, módulos "
+            f"{CODIGO.format('src/diagnostico.py')} y {CODIGO.format('src/graficos_diagnostico.py')} "
+            "con pruebas automáticas, cinco figuras a 300 DPI y este reporte.",
+            e["izquierda"],
+        )
+    )
+    if nar.get("revision"):  # respuesta a la revisión de la primera versión
         h.append(Paragraph("Cambios respecto de la primera versión", e["h2"]))
         h += _vinetas(nar["revision"], e)
     else:
@@ -383,162 +526,305 @@ def construir(fuente: str, salida: Path) -> Path:
     # ---- Metodología ---------------------------------------------------------------
     h.append(Paragraph("2. Metodología utilizada", e["h1"]))
     h.append(Paragraph("2.1 Datos y particiones", e["h2"]))
-    h.append(Paragraph(
-        "Trabajamos con los registros seudonimizados de LEMAS. Cada fila es un estudiante con "
-        "reserva aprobada al 20 de febrero y el evento es no pagar la matrícula hasta el 30 "
-        "de abril. Respetamos el orden temporal en todas las particiones: entrenamos con "
-        "cohortes anteriores y validamos con la siguiente. No usamos particiones al azar "
-        "entre años porque filtrarían información del futuro.", e["texto"]))
-    h.append(_tabla(
-        ["Partición", "Entrena con", "Valida con", "N<br/>entr.", "Eventos<br/>entr.",
-         "N<br/>val.", "Eventos<br/>val.", "Uso"],
-        [["Diagnóstico", principal["entrenamiento"], principal["validacion"],
-          principal["n_entrenamiento"], principal["eventos_entrenamiento"],
-          principal["n_validacion"], principal["eventos_validacion"],
-          "Curvas, diagnóstico y medición de las estrategias"],
-         ["Interna", interna["entrenamiento"], interna["validacion"],
-          interna["n_entrenamiento"], interna["eventos_entrenamiento"],
-          interna["n_validacion"], interna["eventos_validacion"],
-          f"Elegir sin mirar {val} (parada temprana)"
-          + (" y réplica de las estrategias" if "robustez" in resultado else "")]],
-        [1.8, 1.9, 1.6, 1.0, 1.4, 1.0, 1.4, 3.6], e))
+    h.append(
+        Paragraph(
+            "Trabajamos con los registros seudonimizados de LEMAS. Cada fila es un estudiante con "
+            "reserva aprobada al 20 de febrero y el evento es no pagar la matrícula hasta el 30 "
+            "de abril. Respetamos el orden temporal en todas las particiones: entrenamos con "
+            "cohortes anteriores y validamos con la siguiente. No usamos particiones al azar "
+            "entre años porque filtrarían información del futuro.",
+            e["texto"],
+        )
+    )
+    h.append(
+        _tabla(
+            [
+                "Partición",
+                "Entrena con",
+                "Valida con",
+                "N<br/>entr.",
+                "Eventos<br/>entr.",
+                "N<br/>val.",
+                "Eventos<br/>val.",
+                "Uso",
+            ],
+            [
+                [
+                    "Diagnóstico",
+                    principal["entrenamiento"],
+                    principal["validacion"],
+                    principal["n_entrenamiento"],
+                    principal["eventos_entrenamiento"],
+                    principal["n_validacion"],
+                    principal["eventos_validacion"],
+                    "Curvas, diagnóstico y medición de las estrategias",
+                ],
+                [
+                    "Interna",
+                    interna["entrenamiento"],
+                    interna["validacion"],
+                    interna["n_entrenamiento"],
+                    interna["eventos_entrenamiento"],
+                    interna["n_validacion"],
+                    interna["eventos_validacion"],
+                    f"Elegir sin mirar {val} (parada temprana)"
+                    + (" y réplica de las estrategias" if "robustez" in resultado else ""),
+                ],
+            ],
+            [1.8, 1.9, 1.6, 1.0, 1.4, 1.0, 1.4, 3.6],
+            e,
+        )
+    )
     h.append(Spacer(1, 6))
-    h.append(Paragraph(
-        "<b>Puntaje y pérdida.</b> La actividad pide una curva de exactitud o de puntaje. La "
-        f"tasa de eventos en {val} es {numero(100 * resultado['tasa_validacion'], 1)} %, y "
-        "con clases tan desbalanceadas la exactitud no nos sirve: un modelo que nunca detecta "
-        "un caso acierta en casi todos. Por eso usamos como puntaje la <b>PR-AUC</b> "
-        "(precisión promedio), en la que un ordenamiento al azar obtiene la tasa de eventos. "
-        "Como <b>pérdida</b> usamos la entropía cruzada"
-        + (". La guardamos de dos formas: ponderada con los pesos de clase en los modelos "
-           "balanceados (lo que esos modelos minimizan) y sin ponderar en todos. La Figura 1 "
-           "usa la sin ponderar, con una escala común para los modelos de la Fase 2. Aun así, "
-           "su altura no sirve para elegir entre modelos: los entrenados con clases "
-           "balanceadas dan probabilidades infladas (sin calibrar) y por eso tienen más "
-           "pérdida. Entre modelos comparamos con la PR-AUC; la pérdida la leemos por su "
-           "forma: dónde es mínima y si después sube." if "perdida_referencia" in resultado
-           else ". En los modelos entrenados con clases balanceadas la ponderamos igual que en "
-           "el entrenamiento, así que la pérdida solo se puede comparar entre curvas del "
-           "mismo modelo."), e["texto"]))
+    h.append(
+        Paragraph(
+            "<b>Puntaje y pérdida.</b> La actividad pide una curva de exactitud o de puntaje. La "
+            f"tasa de eventos en {val} es {numero(100 * resultado['tasa_validacion'], 1)} %, y "
+            "con clases tan desbalanceadas la exactitud no nos sirve: un modelo que nunca detecta "
+            "un caso acierta en casi todos. Por eso usamos como puntaje la <b>PR-AUC</b> "
+            "(precisión promedio), en la que un ordenamiento al azar obtiene la tasa de eventos. "
+            "Como <b>pérdida</b> usamos la entropía cruzada"
+            + (
+                ". La guardamos de dos formas: ponderada con los pesos de clase en los modelos "
+                "balanceados (lo que esos modelos minimizan) y sin ponderar en todos. La Figura 1 "
+                "usa la sin ponderar, con una escala común para los modelos de la Fase 2. Aun así, "
+                "su altura no sirve para elegir entre modelos: los entrenados con clases "
+                "balanceadas dan probabilidades infladas (sin calibrar) y por eso tienen más "
+                "pérdida. Entre modelos comparamos con la PR-AUC; la pérdida la leemos por su "
+                "forma: dónde es mínima y si después sube."
+                if "perdida_referencia" in resultado
+                else ". En los modelos entrenados con clases balanceadas la ponderamos igual que en "
+                "el entrenamiento, así que la pérdida solo se puede comparar entre curvas del "
+                "mismo modelo."
+            ),
+            e["texto"],
+        )
+    )
 
     h.append(Paragraph("2.2 Seguimiento de métricas", e["h2"]))
-    h.append(Paragraph(
-        "Nuestros modelos son de scikit-learn. Programamos el seguimiento en "
-        f"{CODIGO.format('src/diagnostico.py')} y guardamos cada medición en un mismo registro "
-        f"({CODIGO.format('RegistroMetricas')}: una fila por modelo, paso y conjunto):",
-        e["izquierda"]))
-    h += _vinetas([
-        f"<b>Gradient boosting, por iteración.</b> {CODIGO.format('seguir_boosting')} mide la "
-        "pérdida y la PR-AUC de entrenamiento y de validación después de cada árbol añadido.",
-        f"<b>Regresiones logísticas, por iteración del optimizador.</b> scikit-learn no "
-        f"expone su estado intermedio, así que {CODIGO.format('seguir_logistica')} entrena "
-        "con un límite de iteraciones creciente hasta que el optimizador converge. Cada punto "
-        "es un entrenamiento completo y el último es el modelo final.",
-        f"<b>learning_curve</b> de scikit-learn, para el efecto del tamaño del entrenamiento "
-        f"({resultado['repeticiones']} submuestras por tamaño).",
-        "<b>validation_curve</b> de scikit-learn, para el efecto de un hiperparámetro con el "
-        "resto fijo.",
-    ], e)
+    h.append(
+        Paragraph(
+            "Nuestros modelos son de scikit-learn. Programamos el seguimiento en "
+            f"{CODIGO.format('src/diagnostico.py')} y guardamos cada medición en un mismo registro "
+            f"({CODIGO.format('RegistroMetricas')}: una fila por modelo, paso y conjunto):",
+            e["izquierda"],
+        )
+    )
+    h += _vinetas(
+        [
+            f"<b>Gradient boosting, por iteración.</b> {CODIGO.format('seguir_boosting')} mide la "
+            "pérdida y la PR-AUC de entrenamiento y de validación después de cada árbol añadido.",
+            f"<b>Regresiones logísticas, por iteración del optimizador.</b> scikit-learn no "
+            f"expone su estado intermedio, así que {CODIGO.format('seguir_logistica')} entrena "
+            "con un límite de iteraciones creciente hasta que el optimizador converge. Cada punto "
+            "es un entrenamiento completo y el último es el modelo final.",
+            f"<b>learning_curve</b> de scikit-learn, para el efecto del tamaño del entrenamiento "
+            f"({resultado['repeticiones']} submuestras por tamaño).",
+            "<b>validation_curve</b> de scikit-learn, para el efecto de un hiperparámetro con el "
+            "resto fijo.",
+        ],
+        e,
+    )
 
     h.append(Paragraph("2.3 Modelos analizados", e["h2"]))
     comprobacion = resultado.get("comprobacion_fase2", {})
     if not comprobacion.get("realizada"):
         frase = "No teníamos guardada la tabla de la Fase 2 para comprobar la coincidencia."
     elif comprobacion["coincide"]:
-        frase = ("Al reentrenarlos comprobamos que su PR-AUC en la validación coincide con la "
-                 "tabla de la Fase 2 (diferencia máxima "
-                 f"{numero(comprobacion['diferencia_maxima'], 4)}).")
+        frase = (
+            "Al reentrenarlos comprobamos que su PR-AUC en la validación coincide con la "
+            "tabla de la Fase 2 (diferencia máxima "
+            f"{numero(comprobacion['diferencia_maxima'], 4)})."
+        )
     else:
-        frase = ("Atención: al reentrenarlos, su PR-AUC en la validación difiere de la tabla "
-                 f"de la Fase 2 en hasta {numero(comprobacion['diferencia_maxima'], 4)}.")
-    h.append(Paragraph(
-        "Los modelos base son los tres de la Fase 2, con los hiperparámetros que eligió "
-        f"Optuna, que leímos del historial guardado. {frase} Añadimos dos modelos de control "
-        "que no son candidatos y que definimos antes de ver los resultados: un gradient "
-        "boosting sin regularizar, que debería sobreajustar, y una regresión logística con "
-        "penalización L1 extrema, que debería subajustar. Nos sirven para comprobar que las "
-        "reglas reconocen cada problema.", e["texto"]))
+        frase = (
+            "Atención: al reentrenarlos, su PR-AUC en la validación difiere de la tabla "
+            f"de la Fase 2 en hasta {numero(comprobacion['diferencia_maxima'], 4)}."
+        )
+    h.append(
+        Paragraph(
+            "Los modelos base son los tres de la Fase 2, con los hiperparámetros que eligió "
+            f"Optuna, que leímos del historial guardado. {frase} Añadimos dos modelos de control "
+            "que no son candidatos y que definimos antes de ver los resultados: un gradient "
+            "boosting sin regularizar, que debería sobreajustar, y una regresión logística con "
+            "penalización L1 extrema, que debería subajustar. Nos sirven para comprobar que las "
+            "reglas reconocen cada problema.",
+            e["texto"],
+        )
+    )
 
     h.append(Paragraph("2.4 Reglas de diagnóstico", e["h2"]))
-    h.append(_tabla(
-        ["Diagnóstico", "Patrón en las curvas", "Regla cuantitativa"],
-        [["Sobreajuste", "La brecha crece; el entrenamiento mejora y la validación se "
-          "estanca o empeora",
-          f"Brecha relativa de PR-AUC mayor que {numero(100 * u['brecha_relativa_max'], 0)} %"],
-         ["Subajuste", "Las dos curvas quedan juntas en un nivel pobre",
-          "Sin esa brecha, PR-AUC de validación menor que "
-          f"{numero(u['mejora_minima_sobre_azar'], 1)} veces el azar"],
-         ["Ajuste adecuado", "Brecha pequeña y estable en un nivel útil",
-          "Ninguna de las dos condiciones anteriores"]]
-        + ([["↳ Subajuste<br/>(falta capacidad)", "Con más capacidad la validación sube",
-             "Curva D: con C o tasa de aprendizaje mayores que los actuales, la PR-AUC de "
-             f"validación sube al menos {numero(u['cambio_minimo'], 3)}"],
-            ["↳ Subajuste<br/>(faltan datos)", "Con más datos la validación sube",
-             "Más capacidad no ayuda, pero la curva C muestra una ganancia concluyente"],
-            ["↳ Límite de señal", "Las curvas quedan juntas y bajas, y no suben ni con más "
-             "capacidad ni con más datos",
-             "Ninguna de las dos condiciones anteriores: falta información en las variables, "
-             "no flexibilidad en el modelo"]] if "diagnostico_detallado" in diag else []),
-        [1.9, 3.5, 3.4], e))
+    h.append(
+        _tabla(
+            ["Diagnóstico", "Patrón en las curvas", "Regla cuantitativa"],
+            [
+                [
+                    "Sobreajuste",
+                    "La brecha crece; el entrenamiento mejora y la validación se estanca o empeora",
+                    f"Brecha relativa de PR-AUC mayor que {numero(100 * u['brecha_relativa_max'], 0)} %",
+                ],
+                [
+                    "Subajuste",
+                    "Las dos curvas quedan juntas en un nivel pobre",
+                    "Sin esa brecha, PR-AUC de validación menor que "
+                    f"{numero(u['mejora_minima_sobre_azar'], 1)} veces el azar",
+                ],
+                [
+                    "Ajuste adecuado",
+                    "Brecha pequeña y estable en un nivel útil",
+                    "Ninguna de las dos condiciones anteriores",
+                ],
+            ]
+            + (
+                [
+                    [
+                        "↳ Subajuste<br/>(falta capacidad)",
+                        "Con más capacidad la validación sube",
+                        "Curva D: con C o tasa de aprendizaje mayores que los actuales, la PR-AUC de "
+                        f"validación sube al menos {numero(u['cambio_minimo'], 3)}",
+                    ],
+                    [
+                        "↳ Subajuste<br/>(faltan datos)",
+                        "Con más datos la validación sube",
+                        "Más capacidad no ayuda, pero la curva C muestra una ganancia concluyente",
+                    ],
+                    [
+                        "↳ Límite de señal",
+                        "Las curvas quedan juntas y bajas, y no suben ni con más "
+                        "capacidad ni con más datos",
+                        "Ninguna de las dos condiciones anteriores: falta información en las variables, "
+                        "no flexibilidad en el modelo",
+                    ],
+                ]
+                if "diagnostico_detallado" in diag
+                else []
+            ),
+            [1.9, 3.5, 3.4],
+            e,
+        )
+    )
     h.append(Spacer(1, 6))
-    h.append(Paragraph(
-        "Brecha relativa = (entrenamiento − validación) / entrenamiento. En las curvas "
-        "durante el entrenamiento medimos además el paso con menor pérdida de validación y "
-        "cuánto sube la pérdida después (lo contamos como deterioro si supera "
-        f"{numero(u['tolerancia_perdida'], 2)}). "
-        + ("Las filas con ↳ son una segunda etapa que solo se aplica a los modelos con "
-           "subajuste: separa un modelo demasiado rígido de uno que ya extrae lo que las "
-           "variables permiten, porque piden remedios distintos." if "diagnostico_detallado"
-           in diag else "Decimos que una estrategia mejora o empeora solo si la PR-AUC "
-           f"cambia al menos {numero(u['cambio_minimo'], 3)}."), e["texto"]))
-    h.append(Paragraph(
-        "<b>Alcance de estas reglas.</b> Son reglas prácticas, no pruebas estadísticas. "
-        f"Fijamos los umbrales en {CODIGO.format('config.yaml')} el 2 de octubre de 2026, "
-        "antes de ejecutar el cuaderno con datos reales, aunque ya conocíamos las PR-AUC de "
-        "entrenamiento y de C4 de la Fase 2. La brecha compara dos conjuntos cuya tasa de "
-        "eventos puede ser distinta, y por eso en la Tabla 1 mostramos también cuántas veces "
-        "supera al azar cada conjunto. En la Fase 2 habíamos usado una regla más simple "
-        "(brecha absoluta mayor que 0,10; entrenamiento menor que 0,15), que puede diferir "
-        "de esta en casos límite."
-        + (" La segunda etapa y la regla de veredicto de las estrategias (sección 5) las "
-           "añadimos el 17 de octubre de 2026 (decisión D54), después de la primera versión "
-           "de este reporte y antes de repetir el cuaderno con datos reales."
-           if "robustez" in resultado else ""), e["texto"]))
+    h.append(
+        Paragraph(
+            "Brecha relativa = (entrenamiento − validación) / entrenamiento. En las curvas "
+            "durante el entrenamiento medimos además el paso con menor pérdida de validación y "
+            "cuánto sube la pérdida después (lo contamos como deterioro si supera "
+            f"{numero(u['tolerancia_perdida'], 2)}). "
+            + (
+                "Las filas con ↳ son una segunda etapa que solo se aplica a los modelos con "
+                "subajuste: separa un modelo demasiado rígido de uno que ya extrae lo que las "
+                "variables permiten, porque piden remedios distintos."
+                if "diagnostico_detallado" in diag
+                else "Decimos que una estrategia mejora o empeora solo si la PR-AUC "
+                f"cambia al menos {numero(u['cambio_minimo'], 3)}."
+            ),
+            e["texto"],
+        )
+    )
+    h.append(
+        Paragraph(
+            "<b>Alcance de estas reglas.</b> Son reglas prácticas, no pruebas estadísticas. "
+            f"Fijamos los umbrales en {CODIGO.format('config.yaml')} el 2 de octubre de 2026, "
+            "antes de ejecutar el cuaderno con datos reales, aunque ya conocíamos las PR-AUC de "
+            "entrenamiento y de C4 de la Fase 2. La brecha compara dos conjuntos cuya tasa de "
+            "eventos puede ser distinta, y por eso en la Tabla 1 mostramos también cuántas veces "
+            "supera al azar cada conjunto. En la Fase 2 habíamos usado una regla más simple "
+            "(brecha absoluta mayor que 0,10; entrenamiento menor que 0,15), que puede diferir "
+            "de esta en casos límite."
+            + (
+                " La segunda etapa y la regla de veredicto de las estrategias (sección 5) las "
+                "añadimos el 17 de octubre de 2026 (decisión D54), después de la primera versión "
+                "de este reporte y antes de repetir el cuaderno con datos reales."
+                if "robustez" in resultado
+                else ""
+            ),
+            e["texto"],
+        )
+    )
 
     # ---- Resultados del diagnóstico ------------------------------------------------
     h.append(Paragraph("3. Resultados del diagnóstico", e["h1"]))
     detallado = "diagnostico_detallado" in diag
     filas = []
     for f in diag.itertuples():
-        if detallado:      # sin columna de rol: el nombre de los controles ya lo dice
-            filas.append([
-                f.modelo, numero(f.puntaje_entrenamiento), numero(f.puntaje_validacion),
-                numero(f.brecha, signo=True), f"{numero(100 * f.brecha_relativa, 0)} %",
-                f"{numero(f.veces_azar_entrenamiento, 2)} / {numero(f.mejora_sobre_azar, 2)}",
-                "—" if pd.isna(f.ganancia_por_capacidad)
-                else numero(f.ganancia_por_capacidad, signo=True),
-                f"<b>{f.diagnostico_detallado}</b>"])
+        if detallado:  # sin columna de rol: el nombre de los controles ya lo dice
+            filas.append(
+                [
+                    f.modelo,
+                    numero(f.puntaje_entrenamiento),
+                    numero(f.puntaje_validacion),
+                    numero(f.brecha, signo=True),
+                    f"{numero(100 * f.brecha_relativa, 0)} %",
+                    f"{numero(f.veces_azar_entrenamiento, 2)} / {numero(f.mejora_sobre_azar, 2)}",
+                    "—"
+                    if pd.isna(f.ganancia_por_capacidad)
+                    else numero(f.ganancia_por_capacidad, signo=True),
+                    f"<b>{f.diagnostico_detallado}</b>",
+                ]
+            )
         else:
-            filas.append([
-                f.modelo, f.rol, numero(f.puntaje_entrenamiento), numero(f.puntaje_validacion),
-                numero(f.brecha, signo=True), f"{numero(100 * f.brecha_relativa, 0)} %",
-                numero(f.veces_azar_entrenamiento, 2), numero(f.mejora_sobre_azar, 2),
-                f"<b>{f.diagnostico}</b>"])
+            filas.append(
+                [
+                    f.modelo,
+                    f.rol,
+                    numero(f.puntaje_entrenamiento),
+                    numero(f.puntaje_validacion),
+                    numero(f.brecha, signo=True),
+                    f"{numero(100 * f.brecha_relativa, 0)} %",
+                    numero(f.veces_azar_entrenamiento, 2),
+                    numero(f.mejora_sobre_azar, 2),
+                    f"<b>{f.diagnostico}</b>",
+                ]
+            )
     if detallado:
-        h.append(_tabla(["Modelo", "PR-AUC<br/>entr.", f"PR-AUC<br/>{val}", "Brecha",
-                         "Brecha<br/>relativa", f"Veces el azar<br/>entr. / {val}",
-                         "Más<br/>capacidad", "Diagnóstico"],
-                        filas, [2.85, 1.35, 1.35, 1.35, 1.45, 1.95, 1.8, 2.6], e))
+        h.append(
+            _tabla(
+                [
+                    "Modelo",
+                    "PR-AUC<br/>entr.",
+                    f"PR-AUC<br/>{val}",
+                    "Brecha",
+                    "Brecha<br/>relativa",
+                    f"Veces el azar<br/>entr. / {val}",
+                    "Más<br/>capacidad",
+                    "Diagnóstico",
+                ],
+                filas,
+                [2.85, 1.35, 1.35, 1.35, 1.45, 1.95, 1.8, 2.6],
+                e,
+            )
+        )
     else:
-        h.append(_tabla(["Modelo", "Rol", "PR-AUC<br/>entr.", f"PR-AUC<br/>{val}", "Brecha",
-                         "Brecha<br/>relativa", "Veces el azar<br/>(entr.)",
-                         f"Veces el azar<br/>({val})", "Diagnóstico"],
-                        filas, [3.0, 1.3, 1.45, 1.45, 1.35, 1.45, 1.6, 1.6, 2.4], e))
-    h.append(Paragraph(
-        f"Tabla 1. Diagnóstico por modelo ({tr} → {val})."
-        + (" «Más capacidad»: cambio de la mejor PR-AUC de validación al aumentar C o la "
-           "tasa de aprendizaje respecto del valor actual (curva D)." if detallado else ""),
-        e["pie"]))
+        h.append(
+            _tabla(
+                [
+                    "Modelo",
+                    "Rol",
+                    "PR-AUC<br/>entr.",
+                    f"PR-AUC<br/>{val}",
+                    "Brecha",
+                    "Brecha<br/>relativa",
+                    "Veces el azar<br/>(entr.)",
+                    f"Veces el azar<br/>({val})",
+                    "Diagnóstico",
+                ],
+                filas,
+                [3.0, 1.3, 1.45, 1.45, 1.35, 1.45, 1.6, 1.6, 2.4],
+                e,
+            )
+        )
+    h.append(
+        Paragraph(
+            f"Tabla 1. Diagnóstico por modelo ({tr} → {val})."
+            + (
+                " «Más capacidad»: cambio de la mejor PR-AUC de validación al aumentar C o la "
+                "tasa de aprendizaje respecto del valor actual (curva D)."
+                if detallado
+                else ""
+            ),
+            e["pie"],
+        )
+    )
     if nar.get("diagnostico"):
         h += _parrafos(nar["diagnostico"], e)
     else:
@@ -547,24 +833,40 @@ def construir(fuente: str, salida: Path) -> Path:
     # ---- Curvas --------------------------------------------------------------------
     h.append(PageBreak())
     h.append(Paragraph("4. Análisis de curvas de aprendizaje", e["h1"]))
-    h.append(Paragraph(
-        "Generamos todas las figuras a 300 DPI. Azul es entrenamiento y rosa con marcadores "
-        "redondos es validación. En las regresiones logísticas cada punto es un "
-        "entrenamiento completo con ese límite de iteraciones.", e["texto"]))
-    h.append(_figura(fig / f"{fuente}_19_curva_perdida.png",
-                     ("Figura 1. Pérdida sin ponderar de entrenamiento y de validación en "
-                      "cada paso. Los modelos de la Fase 2 comparten la escala; el control usa "
-                      "la suya. La línea punteada es la pérdida sin modelo. Los paneles "
-                      "marcados «clases balanceadas» tienen probabilidades sin calibrar: su "
-                      "pérdida es mayor por eso, no porque ordenen peor."
-                      if "perdida_referencia" in resultado else
-                      "Figura 1. Pérdida de entrenamiento y de validación en cada paso. Cada "
-                      "panel tiene su propia escala."), e,
-                     "4.1 Curva A: pérdida durante el entrenamiento"))
+    h.append(
+        Paragraph(
+            "Generamos todas las figuras a 300 DPI. Azul es entrenamiento y rosa con marcadores "
+            "redondos es validación. En las regresiones logísticas cada punto es un "
+            "entrenamiento completo con ese límite de iteraciones.",
+            e["texto"],
+        )
+    )
+    h.append(
+        _figura(
+            fig / f"{fuente}_19_curva_perdida.png",
+            (
+                "Figura 1. Pérdida sin ponderar de entrenamiento y de validación en "
+                "cada paso. Los modelos de la Fase 2 comparten la escala; el control usa "
+                "la suya. La línea punteada es la pérdida sin modelo. Los paneles "
+                "marcados «clases balanceadas» tienen probabilidades sin calibrar: su "
+                "pérdida es mayor por eso, no porque ordenen peor."
+                if "perdida_referencia" in resultado
+                else "Figura 1. Pérdida de entrenamiento y de validación en cada paso. Cada "
+                "panel tiene su propia escala."
+            ),
+            e,
+            "4.1 Curva A: pérdida durante el entrenamiento",
+        )
+    )
     h += _parrafos(nar["curva_a"], e) if nar.get("curva_a") else _vinetas(c["curvas"], e)
-    h.append(_figura(fig / f"{fuente}_20_curva_puntaje.png",
-                     "Figura 2. PR-AUC de entrenamiento y de validación en cada paso.", e,
-                     "4.2 Curva B: PR-AUC durante el entrenamiento"))
+    h.append(
+        _figura(
+            fig / f"{fuente}_20_curva_puntaje.png",
+            "Figura 2. PR-AUC de entrenamiento y de validación en cada paso.",
+            e,
+            "4.2 Curva B: PR-AUC durante el entrenamiento",
+        )
+    )
     if nar.get("curva_b"):
         h += _parrafos(nar["curva_b"], e)
     else:
@@ -576,129 +878,196 @@ def construir(fuente: str, salida: Path) -> Path:
                 f"final (paso {r['iteraciones']}), la brecha de PR-AUC es "
                 f"{numero(r['brecha_puntaje_final'], signo=True)} y la de pérdida "
                 f"{numero(r['brecha_perdida_final'])}"
-                + (", mayor que en el punto óptimo." if r["brecha_crece"] else "."))
+                + (", mayor que en el punto óptimo." if r["brecha_crece"] else ".")
+            )
         h += _vinetas(lecturas, e)
 
-    h.append(_figura(fig / f"{fuente}_21_curva_tamano.png",
-                     "Figura 3. PR-AUC según el número de estudiantes en el entrenamiento. "
-                     "La banda es ±1 desviación entre submuestras.", e,
-                     "4.3 Curva C: tamaño del entrenamiento (opcional)"))
+    h.append(
+        _figura(
+            fig / f"{fuente}_21_curva_tamano.png",
+            "Figura 3. PR-AUC según el número de estudiantes en el entrenamiento. "
+            "La banda es ±1 desviación entre submuestras.",
+            e,
+            "4.3 Curva C: tamaño del entrenamiento (opcional)",
+        )
+    )
     if nar.get("curva_c"):
         h += _parrafos(nar["curva_c"], e)
     else:
-        h += _vinetas([
-            f"<b>{g.modelo}</b>: la validación pasa de {numero(g.validacion_mitad)} con "
-            f"{g.n_mitad} estudiantes a {numero(g.validacion_todo)} con {g.n_todo} "
-            f"({numero(g.ganancia, signo=True)}; variación entre submuestras "
-            f"±{numero(g.variacion_entre_submuestras)}). "
-            + ("La diferencia supera el doble de esa variación." if g.concluyente
-               else "La diferencia no llega al doble de esa variación: no es concluyente.")
-            for g in ganancia.itertuples()], e)
+        h += _vinetas(
+            [
+                f"<b>{g.modelo}</b>: la validación pasa de {numero(g.validacion_mitad)} con "
+                f"{g.n_mitad} estudiantes a {numero(g.validacion_todo)} con {g.n_todo} "
+                f"({numero(g.ganancia, signo=True)}; variación entre submuestras "
+                f"±{numero(g.variacion_entre_submuestras)}). "
+                + (
+                    "La diferencia supera el doble de esa variación."
+                    if g.concluyente
+                    else "La diferencia no llega al doble de esa variación: no es concluyente."
+                )
+                for g in ganancia.itertuples()
+            ],
+            e,
+        )
 
-    h.append(_figura(fig / f"{fuente}_22_curva_hiperparametros.png",
-                     "Figura 4. PR-AUC al variar un hiperparámetro; la línea discontinua "
-                     "marca el valor del modelo (en el control, su valor fijo).", e,
-                     "4.4 Curva D: hiperparámetros (opcional)"))
-    h += (_parrafos(nar["curva_d"], e) if nar.get("curva_d")
-          else _vinetas(_lectura_hiperparametros(hiper), e))
+    h.append(
+        _figura(
+            fig / f"{fuente}_22_curva_hiperparametros.png",
+            "Figura 4. PR-AUC al variar un hiperparámetro; la línea discontinua "
+            "marca el valor del modelo (en el control, su valor fijo).",
+            e,
+            "4.4 Curva D: hiperparámetros (opcional)",
+        )
+    )
+    h += (
+        _parrafos(nar["curva_d"], e)
+        if nar.get("curva_d")
+        else _vinetas(_lectura_hiperparametros(hiper), e)
+    )
 
     # ---- Estrategias ---------------------------------------------------------------
     h.append(Paragraph("5. Estrategias implementadas y resultados", e["h1"]))
     robusta = "veredicto" in estrategias
     if robusta:
         rob = resultado.get("robustez", {})
-        h.append(Paragraph(
-            f"Implementamos {len(_propias(estrategias))} estrategias (la actividad pide al "
-            "menos dos). Cada una parte de un modelo de la Fase 2 que tiene el problema que "
-            "busca corregir y <b>cambia una sola cosa</b>, para poder atribuirle la "
-            "diferencia. Por eso separamos la antigua E4 en E4a (solo las variables de D2) y "
-            "E4b (solo los hiperparámetros del híbrido). Dos filas más no son estrategias: la "
-            "<b>referencia</b> (del control sin regularizar al gradient boosting de la Fase "
-            "2, donde cambian varias cosas) y la <b>contraprueba</b> (más iteraciones a un "
-            "modelo que no tiene subajuste). En la parada temprana elegimos las iteraciones "
-            f"en la validación interna ({interna['entrenamiento']} → "
-            f"{interna['validacion']}), de modo que solo puede recortar.", e["texto"]))
-        h.append(Paragraph(
-            f"<b>Regla de veredicto.</b> Con {principal['eventos_validacion']} eventos en "
-            f"{val}, una diferencia pequeña puede ser ruido. Decimos que una estrategia "
-            "<b>mejora</b> la PR-AUC solo si se cumplen cuatro condiciones: (1) el cambio en "
-            f"{val} llega a {numero(u['cambio_minimo'], 3)}; (2) el intervalo de confianza "
-            "del 95 % de la diferencia no incluye el cero "
-            f"({rob.get('repeticiones_bootstrap', 2000)} "
-            "réplicas bootstrap que remuestrean familias y comparan los dos modelos con las "
-            f"mismas familias); (3) la réplica en {interna['entrenamiento']} → "
-            f"{interna['validacion']} va en el mismo sentido; y (4) con "
-            f"{len(rob.get('semillas', [])) or 5} semillas la diferencia va en el mismo "
-            "sentido. <b>Empeora</b> es lo simétrico; en otro caso, <b>sin diferencia "
-            "demostrable</b>. Fijamos esta regla antes de repetir el cuaderno con datos "
-            "reales. Dos advertencias: en la partición de la réplica eligió Optuna los "
-            "hiperparámetros de la Fase 2, así que favorece al modelo ya afinado (y en E2 es "
-            "circular); y el gradient boosting y la logística con lbfgs no dependen de la "
-            "semilla, de modo que las semillas solo mueven la logística con saga y el "
-            "desempate del Lift@k.", e["texto"]))
+        h.append(
+            Paragraph(
+                f"Implementamos {len(_propias(estrategias))} estrategias (la actividad pide al "
+                "menos dos). Cada una parte de un modelo de la Fase 2 que tiene el problema que "
+                "busca corregir y <b>cambia una sola cosa</b>, para poder atribuirle la "
+                "diferencia. Por eso separamos la antigua E4 en E4a (solo las variables de D2) y "
+                "E4b (solo los hiperparámetros del híbrido). Dos filas más no son estrategias: la "
+                "<b>referencia</b> (del control sin regularizar al gradient boosting de la Fase "
+                "2, donde cambian varias cosas) y la <b>contraprueba</b> (más iteraciones a un "
+                "modelo que no tiene subajuste). En la parada temprana elegimos las iteraciones "
+                f"en la validación interna ({interna['entrenamiento']} → "
+                f"{interna['validacion']}), de modo que solo puede recortar.",
+                e["texto"],
+            )
+        )
+        h.append(
+            Paragraph(
+                f"<b>Regla de veredicto.</b> Con {principal['eventos_validacion']} eventos en "
+                f"{val}, una diferencia pequeña puede ser ruido. Decimos que una estrategia "
+                "<b>mejora</b> la PR-AUC solo si se cumplen cuatro condiciones: (1) el cambio en "
+                f"{val} llega a {numero(u['cambio_minimo'], 3)}; (2) el intervalo de confianza "
+                "del 95 % de la diferencia no incluye el cero "
+                f"({rob.get('repeticiones_bootstrap', 2000)} "
+                "réplicas bootstrap que remuestrean familias y comparan los dos modelos con las "
+                f"mismas familias); (3) la réplica en {interna['entrenamiento']} → "
+                f"{interna['validacion']} va en el mismo sentido; y (4) con "
+                f"{len(rob.get('semillas', [])) or 5} semillas la diferencia va en el mismo "
+                "sentido. <b>Empeora</b> es lo simétrico; en otro caso, <b>sin diferencia "
+                "demostrable</b>. Fijamos esta regla antes de repetir el cuaderno con datos "
+                "reales. Dos advertencias: en la partición de la réplica eligió Optuna los "
+                "hiperparámetros de la Fase 2, así que favorece al modelo ya afinado (y en E2 es "
+                "circular); y el gradient boosting y la logística con lbfgs no dependen de la "
+                "semilla, de modo que las semillas solo mueven la logística con saga y el "
+                "desempate del Lift@k.",
+                e["texto"],
+            )
+        )
     else:
-        h.append(Paragraph(
-            f"Implementamos {n_estrategias} estrategias (la actividad pide al menos dos) y las "
-            "medimos todas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
-            "ajusta a la vez los hiperparámetros de complejidad), con dos excepciones: E1 "
-            "parte de un modelo de control y no de un candidato, y E4 cambia las variables y "
-            "también los hiperparámetros. En la parada temprana elegimos las iteraciones por "
-            f"menor pérdida en la validación interna ({interna['entrenamiento']} → "
-            f"{interna['validacion']}), de modo que solo puede recortar el entrenamiento.",
-            e["texto"]))
+        h.append(
+            Paragraph(
+                f"Implementamos {n_estrategias} estrategias (la actividad pide al menos dos) y las "
+                "medimos todas en la misma partición. Cada una aplica un solo tipo de cambio (E3 "
+                "ajusta a la vez los hiperparámetros de complejidad), con dos excepciones: E1 "
+                "parte de un modelo de control y no de un candidato, y E4 cambia las variables y "
+                "también los hiperparámetros. En la parada temprana elegimos las iteraciones por "
+                f"menor pérdida en la validación interna ({interna['entrenamiento']} → "
+                f"{interna['validacion']}), de modo que solo puede recortar el entrenamiento.",
+                e["texto"],
+            )
+        )
     con_lift = "lift_k_validacion_antes" in estrategias
     filas = []
     for f in estrategias.itertuples():
         tipo = getattr(f, "tipo_fila", "estrategia")
-        encabezado = (f"<b>{f.estrategia}</b> (contra el {f.problema})" if tipo == "estrategia"
-                      else f"<b>{f.estrategia}</b>")
-        brecha = (f"{numero(f.brecha_antes, signo=True)} → {numero(f.brecha_despues, signo=True)}"
-                  + ("" if f.modelo_sin_cambios else
-                     f"<br/>{'se reduce' if f.efecto_brecha == 'reduce' else f.efecto_brecha}"))
+        encabezado = (
+            f"<b>{f.estrategia}</b> (contra el {f.problema})"
+            if tipo == "estrategia"
+            else f"<b>{f.estrategia}</b>"
+        )
+        brecha = (
+            f"{numero(f.brecha_antes, signo=True)} → {numero(f.brecha_despues, signo=True)}"
+            + (
+                ""
+                if f.modelo_sin_cambios
+                else f"<br/>{'se reduce' if f.efecto_brecha == 'reduce' else f.efecto_brecha}"
+            )
+        )
         if robusta:
-            puntaje = (f"{numero(f.puntaje_validacion_antes)} → "
-                       f"{numero(f.puntaje_validacion_despues)}<br/>"
-                       f"{numero(f.cambio_puntaje_validacion, signo=True)}")
+            puntaje = (
+                f"{numero(f.puntaje_validacion_antes)} → "
+                f"{numero(f.puntaje_validacion_despues)}<br/>"
+                f"{numero(f.cambio_puntaje_validacion, signo=True)}"
+            )
             if not pd.isna(f.ic_inferior):
-                puntaje += (f" [{numero(f.ic_inferior, signo=True)}; "
-                            f"{numero(f.ic_superior, signo=True)}]")
-            fila = [f"{encabezado}<br/>{f.cambio}", puntaje,
-                    numero(f.cambio_replica, signo=True), brecha]
+                puntaje += (
+                    f" [{numero(f.ic_inferior, signo=True)}; {numero(f.ic_superior, signo=True)}]"
+                )
+            fila = [
+                f"{encabezado}<br/>{f.cambio}",
+                puntaje,
+                numero(f.cambio_replica, signo=True),
+                brecha,
+            ]
             if con_lift:
-                lift = (f"{numero(f.lift_k_validacion_antes, 2)} → "
-                        f"{numero(f.lift_k_validacion_despues, 2)}")
+                lift = (
+                    f"{numero(f.lift_k_validacion_antes, 2)} → "
+                    f"{numero(f.lift_k_validacion_despues, 2)}"
+                )
                 if hasattr(f, "cambio_lift_min_semillas") and not pd.isna(
-                        f.cambio_lift_min_semillas):
-                    lift += (f"<br/>semillas: {numero(f.cambio_lift_min_semillas, 2, signo=True)}"
-                             f" a {numero(f.cambio_lift_max_semillas, 2, signo=True)}")
+                    f.cambio_lift_min_semillas
+                ):
+                    lift += (
+                        f"<br/>semillas: {numero(f.cambio_lift_min_semillas, 2, signo=True)}"
+                        f" a {numero(f.cambio_lift_max_semillas, 2, signo=True)}"
+                    )
                 fila.append(lift)
             fila.append(f"<b>{f.veredicto}</b>")
         else:
             efecto = "el modelo no cambia" if f.modelo_sin_cambios else f.efecto_validacion
-            fila = [f"{encabezado}<br/>{f.cambio}",
-                    f"{numero(f.puntaje_validacion_antes)} → "
-                    f"{numero(f.puntaje_validacion_despues)}<br/><b>{efecto}</b>", brecha]
+            fila = [
+                f"{encabezado}<br/>{f.cambio}",
+                f"{numero(f.puntaje_validacion_antes)} → "
+                f"{numero(f.puntaje_validacion_despues)}<br/><b>{efecto}</b>",
+                brecha,
+            ]
             if con_lift:
-                fila.append(f"{numero(f.lift_k_validacion_antes, 2)} → "
-                            f"{numero(f.lift_k_validacion_despues, 2)}")
-            fila.append(f.diagnostico_antes if f.diagnostico_antes == f.diagnostico_despues
-                        else f"{f.diagnostico_antes} → {f.diagnostico_despues}")
+                fila.append(
+                    f"{numero(f.lift_k_validacion_antes, 2)} → "
+                    f"{numero(f.lift_k_validacion_despues, 2)}"
+                )
+            fila.append(
+                f.diagnostico_antes
+                if f.diagnostico_antes == f.diagnostico_despues
+                else f"{f.diagnostico_antes} → {f.diagnostico_despues}"
+            )
         filas.append(fila)
     if robusta:
-        encabezados = ["Estrategia y cambio aplicado",
-                       f"PR-AUC {val}<br/>diferencia [IC 95 %]",
-                       f"Réplica<br/>{interna['validacion']}", "Brecha"]
+        encabezados = [
+            "Estrategia y cambio aplicado",
+            f"PR-AUC {val}<br/>diferencia [IC 95 %]",
+            f"Réplica<br/>{interna['validacion']}",
+            "Brecha",
+        ]
         anchos = [4.3, 2.9, 1.5, 2.1]
         if con_lift:
             encabezados.append("Lift@k")
             anchos.append(2.3)
         h.append(_tabla(encabezados + ["Veredicto"], filas, anchos + [2.5], e))
-        h.append(Paragraph(
-            "Tabla 2. Antes → después de cada estrategia. «Réplica»: diferencia de PR-AUC en "
-            f"la partición {interna['entrenamiento']} → {interna['validacion']}. «Semillas»: "
-            "rango de la diferencia de Lift@k con cada semilla del desempate. El veredicto "
-            "aplica la regla de cuatro condiciones; el efecto sobre la brecha se juzga por su "
-            "tamaño (valor absoluto).", e["pie"]))
+        h.append(
+            Paragraph(
+                "Tabla 2. Antes → después de cada estrategia. «Réplica»: diferencia de PR-AUC en "
+                f"la partición {interna['entrenamiento']} → {interna['validacion']}. «Semillas»: "
+                "rango de la diferencia de Lift@k con cada semilla del desempate. El veredicto "
+                "aplica la regla de cuatro condiciones; el efecto sobre la brecha se juzga por su "
+                "tamaño (valor absoluto).",
+                e["pie"],
+            )
+        )
     else:
         encabezados = ["Estrategia y cambio aplicado", f"PR-AUC {val}", "Brecha"]
         anchos = [4.6, 2.2, 2.3]
@@ -706,54 +1075,83 @@ def construir(fuente: str, salida: Path) -> Path:
             encabezados.append("Lift@k")
             anchos.append(1.9)
         h.append(_tabla(encabezados + ["Diagnóstico"], filas, anchos + [2.0], e))
-        h.append(Paragraph("Tabla 2. Antes → después de cada estrategia. Las palabras «mejora» "
-                           "y «empeora» se refieren a la PR-AUC; el efecto sobre la brecha se "
-                           "juzga por su tamaño (valor absoluto).", e["pie"]))
-    h.append(_figura(fig / f"{fuente}_23_estrategias.png",
-                     "Figura 5. Efecto de cada estrategia sobre la PR-AUC de validación, la "
-                     "brecha y el Lift@k por familia"
-                     + ("; el segundo panel muestra la diferencia de PR-AUC con su IC 95 % "
-                        "y la réplica." if robusta else "."), e))
-    h += (_parrafos(nar["estrategias"], e) if nar.get("estrategias")
-          else _vinetas(_estrategias(estrategias, val), e))
+        h.append(
+            Paragraph(
+                "Tabla 2. Antes → después de cada estrategia. Las palabras «mejora» "
+                "y «empeora» se refieren a la PR-AUC; el efecto sobre la brecha se "
+                "juzga por su tamaño (valor absoluto).",
+                e["pie"],
+            )
+        )
+    h.append(
+        _figura(
+            fig / f"{fuente}_23_estrategias.png",
+            "Figura 5. Efecto de cada estrategia sobre la PR-AUC de validación, la "
+            "brecha y el Lift@k por familia"
+            + (
+                "; el segundo panel muestra la diferencia de PR-AUC con su IC 95 % y la réplica."
+                if robusta
+                else "."
+            ),
+            e,
+        )
+    )
+    h += (
+        _parrafos(nar["estrategias"], e)
+        if nar.get("estrategias")
+        else _vinetas(_estrategias(estrategias, val), e)
+    )
 
     # ---- Conclusiones --------------------------------------------------------------
     h.append(Paragraph("6. Conclusiones y recomendaciones futuras", e["h1"]))
     h.append(Paragraph("Conclusiones", e["h2"]))
-    h += _vinetas(nar.get("conclusiones") or c["balance"] + [
-        "Una brecha pequeña no basta para dar por bueno un modelo: también debe superar al "
-        "azar con margen. Medir las dos cosas evita confundir estabilidad con utilidad.",
-        "Reducir la brecha y mejorar la validación son efectos distintos. La Tabla 2 los "
-        "muestra por separado para cada estrategia.",
-    ], e)
+    h += _vinetas(
+        nar.get("conclusiones")
+        or c["balance"]
+        + [
+            "Una brecha pequeña no basta para dar por bueno un modelo: también debe superar al "
+            "azar con margen. Medir las dos cosas evita confundir estabilidad con utilidad.",
+            "Reducir la brecha y mejorar la validación son efectos distintos. La Tabla 2 los "
+            "muestra por separado para cada estrategia.",
+        ],
+        e,
+    )
     if nar.get("aprendizaje"):
         h.append(Paragraph("Qué aprendimos", e["h2"]))
         h.append(Paragraph(nar["aprendizaje"], e["texto"]))
     h.append(Paragraph("Limitaciones", e["h2"]))
-    h += _vinetas(nar.get("limitaciones") or [
-        f"Las estrategias se compararon en {val}, que ya se usó para seleccionar y calibrar "
-        "en la Fase 2, y en la réplica, donde Optuna afinó los hiperparámetros: ninguna de "
-        "las dos cohortes es independiente.",
-        f"Hay {principal['eventos_validacion']} eventos en la validación. El bootstrap mide "
-        "la variación entre familias de la misma cohorte, no el cambio entre años.",
-        "La validación usa una sola cohorte. Las tasas cambian entre ciclos, así que el "
-        "resultado puede no repetirse el año siguiente.",
-        "Los umbrales de diagnóstico son reglas prácticas y se fijaron conociendo ya los "
-        "resultados de la Fase 2.",
-    ], e)
+    h += _vinetas(
+        nar.get("limitaciones")
+        or [
+            f"Las estrategias se compararon en {val}, que ya se usó para seleccionar y calibrar "
+            "en la Fase 2, y en la réplica, donde Optuna afinó los hiperparámetros: ninguna de "
+            "las dos cohortes es independiente.",
+            f"Hay {principal['eventos_validacion']} eventos en la validación. El bootstrap mide "
+            "la variación entre familias de la misma cohorte, no el cambio entre años.",
+            "La validación usa una sola cohorte. Las tasas cambian entre ciclos, así que el "
+            "resultado puede no repetirse el año siguiente.",
+            "Los umbrales de diagnóstico son reglas prácticas y se fijaron conociendo ya los "
+            "resultados de la Fase 2.",
+        ],
+        e,
+    )
     h.append(Paragraph("Recomendaciones", e["h2"]))
-    h += _vinetas(nar.get("recomendaciones") or [
-        "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y "
-        "evaluar en esa cohorte nueva las estrategias que aquí mejoraron la validación.",
-        "Si se vuelve a entrenar un gradient boosting, elegir el número de iteraciones en "
-        "la validación interna y comprobar la curva de pérdida antes de aceptarlo.",
-        "Probar información nueva, por ejemplo una señal temprana de intención de la "
-        "familia, y medir con estas mismas curvas si eleva la validación.",
-        "Conservar la regla D2 para priorizar mientras ningún modelo la supere en una "
-        "cohorte que no haya participado en las decisiones.",
-    ], e)
+    h += _vinetas(
+        nar.get("recomendaciones")
+        or [
+            "Repetir este diagnóstico cada mayo, cuando se conozca el resultado del ciclo, y "
+            "evaluar en esa cohorte nueva las estrategias que aquí mejoraron la validación.",
+            "Si se vuelve a entrenar un gradient boosting, elegir el número de iteraciones en "
+            "la validación interna y comprobar la curva de pérdida antes de aceptarlo.",
+            "Probar información nueva, por ejemplo una señal temprana de intención de la "
+            "familia, y medir con estas mismas curvas si eleva la validación.",
+            "Conservar la regla D2 para priorizar mientras ningún modelo la supere en una "
+            "cohorte que no haya participado en las decisiones.",
+        ],
+        e,
+    )
 
-    if nar.get("nota_posterior"):       # hallazgos posteriores que afectan la lectura
+    if nar.get("nota_posterior"):  # hallazgos posteriores que afectan la lectura
         h.append(Paragraph("Nota posterior: el sorteo entre familias empatadas", e["h2"]))
         h += _parrafos(nar["nota_posterior"], e)
 
@@ -785,11 +1183,14 @@ def construir(fuente: str, salida: Path) -> Path:
     ]
     h += [Paragraph(f"[{i}] {texto}", e["referencia"]) for i, texto in enumerate(referencias, 1)]
     h.append(Spacer(1, 8))
-    h.append(Paragraph(
-        "Código y resultados: github.com/ggranizo2507/prediccion-matricula-lemas "
-        f"({CODIGO.format('notebooks/overfitting_analysis.ipynb')}, "
-        f"{CODIGO.format('src/diagnostico.py')}, {CODIGO.format('results/')}).",
-        e["izquierda"]))
+    h.append(
+        Paragraph(
+            "Código y resultados: github.com/ggranizo2507/prediccion-matricula-lemas "
+            f"({CODIGO.format('notebooks/overfitting_analysis.ipynb')}, "
+            f"{CODIGO.format('src/diagnostico.py')}, {CODIGO.format('results/')}).",
+            e["izquierda"],
+        )
+    )
 
     def pie_de_pagina(lienzo, documento):
         lienzo.saveState()
@@ -804,17 +1205,24 @@ def construir(fuente: str, salida: Path) -> Path:
 
     salida.parent.mkdir(parents=True, exist_ok=True)
     documento = SimpleDocTemplate(
-        str(salida), pagesize=A4, leftMargin=2 * cm, rightMargin=2 * cm, topMargin=1.8 * cm,
-        bottomMargin=2 * cm, title="Diagnóstico de sobreajuste y subajuste",
+        str(salida),
+        pagesize=A4,
+        leftMargin=2 * cm,
+        rightMargin=2 * cm,
+        topMargin=1.8 * cm,
+        bottomMargin=2 * cm,
+        title="Diagnóstico de sobreajuste y subajuste",
         author="Guillermo Granizo y José Ulloa",
-        subject="Actividad de la semana 3 · Predicción de matrícula LEMAS")
+        subject="Actividad de la semana 3 · Predicción de matrícula LEMAS",
+    )
     documento.build(h, onFirstPage=pie_de_pagina, onLaterPages=pie_de_pagina)
     return salida
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--fuente", choices=["real", "sintetica"], default="real")
     parser.add_argument("--salida", default=str(RAIZ / "docs" / "diagnostic_report.pdf"))
     args = parser.parse_args(argv)

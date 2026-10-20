@@ -24,12 +24,19 @@ def _datos(semilla: int = 0, familias: int = 40) -> pd.DataFrame:
         hijos = 1 + f % 3
         evento = int(rng.random() < 0.08 * hijos)
         for h in range(hijos):
-            filas.append({"cohorte": ["C1", "C2", "C3", "C4"][f % 4], "sede": "AB"[f % 2],
-                          "id_familia": f"F{f}", "y_no_matricula": evento if h == 0 else 0,
-                          "pago_origen": "tardio" if f % 5 == 0 else "en_plazo",
-                          "reserva_extraordinaria": int(f % 7 == 0),
-                          "atrasos_pension": int(f % 4), "promedio": 8 + (f % 3) / 2,
-                          "rol": "seleccion"})
+            filas.append(
+                {
+                    "cohorte": ["C1", "C2", "C3", "C4"][f % 4],
+                    "sede": "AB"[f % 2],
+                    "id_familia": f"F{f}",
+                    "y_no_matricula": evento if h == 0 else 0,
+                    "pago_origen": "tardio" if f % 5 == 0 else "en_plazo",
+                    "reserva_extraordinaria": int(f % 7 == 0),
+                    "atrasos_pension": int(f % 4),
+                    "promedio": 8 + (f % 3) / 2,
+                    "rol": "seleccion",
+                }
+            )
     return pd.DataFrame(filas)
 
 
@@ -39,9 +46,13 @@ def test_reglas_es_la_unica_definicion():
 
 
 def test_d2_respeta_el_orden_lexicografico():
-    datos = pd.DataFrame({"pago_origen": ["tardio", "en_plazo", "en_plazo", "en_plazo"],
-                          "reserva_extraordinaria": [0, 1, 0, 0],
-                          "atrasos_pension": [0, 0, 10, 3]})
+    datos = pd.DataFrame(
+        {
+            "pago_origen": ["tardio", "en_plazo", "en_plazo", "en_plazo"],
+            "reserva_extraordinaria": [0, 1, 0, 0],
+            "atrasos_pension": [0, 0, 10, 3],
+        }
+    )
     puntaje = reglas.puntaje_d2(datos)
     # pago tardío > reserva extraordinaria > cualquier número de atrasos
     assert list(np.argsort(-puntaje)) == [0, 1, 2, 3]
@@ -51,25 +62,31 @@ def test_d2_respeta_el_orden_lexicografico():
 # ------------------------------------------------------- espacio de búsqueda en config.yaml
 def test_espacio_de_config_es_el_de_la_fase_2():
     esperado = {
-        "logistica": {"conjunto": CategoricalDistribution(["completo", "reducido"]),
-                      "balanceado": CategoricalDistribution([True, False]),
-                      "C": FloatDistribution(1e-3, 10, log=True),
-                      "l1_ratio": FloatDistribution(0.0, 1.0)},
-        "arboles": {"conjunto": CategoricalDistribution(["completo", "reducido"]),
-                    "balanceado": CategoricalDistribution([True, False]),
-                    "learning_rate": FloatDistribution(0.01, 0.2, log=True),
-                    "max_depth": IntDistribution(2, 4),
-                    "max_leaf_nodes": IntDistribution(4, 15),
-                    "min_samples_leaf": IntDistribution(20, 120),
-                    "l2_regularization": FloatDistribution(1e-3, 10, log=True),
-                    "max_iter": IntDistribution(50, 400)},
-        "hibrido": {"balanceado": CategoricalDistribution([True, False]),
-                    "C": FloatDistribution(1e-3, 10, log=True)},
+        "logistica": {
+            "conjunto": CategoricalDistribution(["completo", "reducido"]),
+            "balanceado": CategoricalDistribution([True, False]),
+            "C": FloatDistribution(1e-3, 10, log=True),
+            "l1_ratio": FloatDistribution(0.0, 1.0),
+        },
+        "arboles": {
+            "conjunto": CategoricalDistribution(["completo", "reducido"]),
+            "balanceado": CategoricalDistribution([True, False]),
+            "learning_rate": FloatDistribution(0.01, 0.2, log=True),
+            "max_depth": IntDistribution(2, 4),
+            "max_leaf_nodes": IntDistribution(4, 15),
+            "min_samples_leaf": IntDistribution(20, 120),
+            "l2_regularization": FloatDistribution(1e-3, 10, log=True),
+            "max_iter": IntDistribution(50, 400),
+        },
+        "hibrido": {
+            "balanceado": CategoricalDistribution([True, False]),
+            "C": FloatDistribution(1e-3, 10, log=True),
+        },
     }
     config = cargar_config()
     for tipo, distribuciones in esperado.items():
         espacio = modeling.espacio_de(tipo, config)
-        assert list(espacio) == list(distribuciones)        # mismo orden de sugerencias
+        assert list(espacio) == list(distribuciones)  # mismo orden de sugerencias
         assert espacio == distribuciones
         assert ESPACIOS[tipo] == distribuciones
     opciones = config["optimizacion"]["espacios"]["logistica"]["conjunto"]["opciones"]
@@ -103,8 +120,11 @@ def test_senales_suprime_celdas_pequenas():
 
 def test_orden_detecta_el_orden_de_d2():
     filas = []
-    for senal, nivel, rr in [("pago_tardio", "sí", 3.0), ("reserva_extraordinaria", "sí", 1.8),
-                             ("atrasos_pension", "1 o más", 1.3)]:
+    for senal, nivel, rr in [
+        ("pago_tardio", "sí", 3.0),
+        ("reserva_extraordinaria", "sí", 1.8),
+        ("atrasos_pension", "1 o más", 1.3),
+    ]:
         filas.append({"periodo": "C1–C3", "senal": senal, "nivel": nivel, "riesgo_relativo": rr})
     orden = rv.orden_senales(pd.DataFrame(filas))
     assert bool(orden["igual_a_D2"].iloc[0])
@@ -114,7 +134,7 @@ def test_orden_detecta_el_orden_de_d2():
 # ------------------------------------------------------------- sorteos y diferencia pareada
 def test_sorteos_sin_empates_no_varian():
     datos = _datos()
-    riesgo = np.arange(len(datos), dtype=float)          # todos distintos: sin empates
+    riesgo = np.arange(len(datos), dtype=float)  # todos distintos: sin empates
     sorteos = rv.sorteos_desempate(datos, riesgo, K, range(10))
     assert sorteos["lift_k"].nunique() == 1
     resumen = rv.resumen_sorteos(sorteos, 3)
@@ -134,8 +154,10 @@ def test_azar_por_familia_cerca_de_uno_y_por_estudiante_mayor():
     resultado = rv.azar_dos_versiones(datos, {"A": 60, "B": 60}, 7, repeticiones=200)
     assert abs(resultado["lift_azar_por_familia"] - 1) < 0.1
     assert resultado["lift_azar_por_estudiante"] > resultado["lift_azar_por_familia"]
-    assert (resultado["estudiantes_por_familia_con_caso"]
-            > resultado["estudiantes_por_familia_sin_caso"])
+    assert (
+        resultado["estudiantes_por_familia_con_caso"]
+        > resultado["estudiantes_por_familia_sin_caso"]
+    )
 
 
 # ------------------------------------------------------------------ descriptivos y textos
@@ -149,10 +171,12 @@ def test_descriptivos_sin_minimo_ni_maximo():
 def test_conclusiones_usan_coma_decimal():
     datos = _datos(familias=200)
     tabla = rv.senales_por_periodo(datos, {"C1–C3": ["C1", "C2", "C3"]}, min_celda=1)
-    sorteos = rv.resumen_sorteos(rv.sorteos_desempate(datos, reglas.puntaje_d2(datos), K,
-                                                      range(20)), 0)
-    pareada = rv.diferencia_pareada(datos, reglas.puntaje_d2(datos), reglas.puntaje_d(datos),
-                                    K, 0, repeticiones=30)
+    sorteos = rv.resumen_sorteos(
+        rv.sorteos_desempate(datos, reglas.puntaje_d2(datos), K, range(20)), 0
+    )
+    pareada = rv.diferencia_pareada(
+        datos, reglas.puntaje_d2(datos), reglas.puntaje_d(datos), K, 0, repeticiones=30
+    )
     azar = rv.azar_dos_versiones(datos, K, 0, repeticiones=30)
     textos = rv.conclusiones(rv.orden_senales(tabla), sorteos, pareada, azar)
     assert len(textos) == 4
@@ -162,11 +186,11 @@ def test_conclusiones_usan_coma_decimal():
 
 
 def test_orden_sin_veredicto_si_falta_una_senal():
-    filas = [{"periodo": "C3", "senal": "pago_tardio", "nivel": "sí", "riesgo_relativo": np.nan},
-             {"periodo": "C3", "senal": "reserva_extraordinaria", "nivel": "sí",
-              "riesgo_relativo": 1.8},
-             {"periodo": "C3", "senal": "atrasos_pension", "nivel": "1 o más",
-              "riesgo_relativo": 1.4}]
+    filas = [
+        {"periodo": "C3", "senal": "pago_tardio", "nivel": "sí", "riesgo_relativo": np.nan},
+        {"periodo": "C3", "senal": "reserva_extraordinaria", "nivel": "sí", "riesgo_relativo": 1.8},
+        {"periodo": "C3", "senal": "atrasos_pension", "nivel": "1 o más", "riesgo_relativo": 1.4},
+    ]
     orden = rv.orden_senales(pd.DataFrame(filas))
     assert orden["igual_a_D2"].iloc[0] is None
     assert "pago_tardio" not in orden["orden"].iloc[0]

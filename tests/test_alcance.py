@@ -32,8 +32,9 @@ def config():
 
 @pytest.fixture(scope="module")
 def dataset(config):
-    datos, _ = construir_dataset(limpiar_base(generar(config, semilla=5).astype(str), config),
-                                 config)
+    datos, _ = construir_dataset(
+        limpiar_base(generar(config, semilla=5).astype(str), config), config
+    )
     return datos
 
 
@@ -45,8 +46,7 @@ def cohortes(config):
 @pytest.fixture(scope="module")
 def k(dataset):
     entrenamiento = dataset[dataset["cohorte"].isin(["C2", "C3"])]
-    return calcular_k_por_sede(consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
-                               2)
+    return calcular_k_por_sede(consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))), 2)
 
 
 @pytest.fixture(scope="module")
@@ -56,56 +56,83 @@ def familias(dataset, cohortes):
 
 @pytest.fixture(scope="module")
 def tablas(familias, k):
-    return {"desglose": al.desglose_evento(familias, k, SEMILLA),
-            "por_k": al.alcance_por_k(familias, k, SEMILLA, personal=10),
-            "semanal": al.foto_semanal(familias, k, SEMILLA),
-            "campana": al.campana(familias, k, SEMILLA, repeticiones=8)}
+    return {
+        "desglose": al.desglose_evento(familias, k, SEMILLA),
+        "por_k": al.alcance_por_k(familias, k, SEMILLA, personal=10),
+        "semanal": al.foto_semanal(familias, k, SEMILLA),
+        "campana": al.campana(familias, k, SEMILLA, repeticiones=8),
+    }
 
 
 def _a_mano(score, evento, dia_resuelta, cohorte="C2", ventana=69):
     """Tabla de familias mínima para probar la campaña con casos escritos a mano."""
     n = len(score)
-    return pd.DataFrame({
-        "cohorte": cohorte, "sede": SEDE, "id_familia": [f"F{i:03d}" for i in range(n)],
-        "score": np.asarray(score, dtype=float), "evento": evento,
-        "dia_resuelta": np.asarray(dia_resuelta, dtype=float), "dias_ventana": ventana,
-        "tipo": np.where(np.asarray(evento) == 1, "sin_pago", "en_plazo"),
-        "dias_tarde": np.nan})
+    return pd.DataFrame(
+        {
+            "cohorte": cohorte,
+            "sede": SEDE,
+            "id_familia": [f"F{i:03d}" for i in range(n)],
+            "score": np.asarray(score, dtype=float),
+            "evento": evento,
+            "dia_resuelta": np.asarray(dia_resuelta, dtype=float),
+            "dias_ventana": ventana,
+            "tipo": np.where(np.asarray(evento) == 1, "sin_pago", "en_plazo"),
+            "dias_tarde": np.nan,
+        }
+    )
 
 
 # --------------------------------------------------------------------------- #
 # Tabla de familias
 # --------------------------------------------------------------------------- #
 def _estudiante(familia, pago, evento):
-    return {"cohorte": "C2", "sede": SEDE, "id_familia": familia,
-            "id_estudiante": f"E-{familia}-{pago}", "atrasos_pension": 0,
-            "pago_origen": "en_plazo", "reserva_extraordinaria": 0,
-            "fecha_pago_destino": pd.Timestamp(pago) if pago else pd.NaT,
-            "y_no_matricula": evento}
+    return {
+        "cohorte": "C2",
+        "sede": SEDE,
+        "id_familia": familia,
+        "id_estudiante": f"E-{familia}-{pago}",
+        "atrasos_pension": 0,
+        "pago_origen": "en_plazo",
+        "reserva_extraordinaria": 0,
+        "fecha_pago_destino": pd.Timestamp(pago) if pago else pd.NaT,
+        "y_no_matricula": evento,
+    }
 
 
 def test_tabla_familias_clasifica_como_termino_cada_familia():
     t0, h = pd.Timestamp("2023-02-20"), pd.Timestamp("2023-04-30")
     cohorte = {"C2": Cohorte("C2", 2022, "entrenamiento", t0, h)}
-    datos = pd.DataFrame([
-        _estudiante("A", "2023-03-01", 0),                       # paga en plazo
-        _estudiante("B", "2023-05-20", 1),                       # paga 20 días tarde
-        _estudiante("C", None, 1),                               # no registra pago
-        _estudiante("D", "2023-02-25", 0), _estudiante("D", None, 1),   # paga por un hijo
-        _estudiante("E", "2023-02-22", 0), _estudiante("E", "2023-04-10", 0),
-        _estudiante("F", "2023-04-30", 0),                       # paga el último día: en plazo
-        _estudiante("G", "2023-02-20", 0),                       # paga el mismo día del corte
-        _estudiante("H", None, 1), _estudiante("H", None, 1),    # ningún hijo registra pago
-    ])
+    datos = pd.DataFrame(
+        [
+            _estudiante("A", "2023-03-01", 0),  # paga en plazo
+            _estudiante("B", "2023-05-20", 1),  # paga 20 días tarde
+            _estudiante("C", None, 1),  # no registra pago
+            _estudiante("D", "2023-02-25", 0),
+            _estudiante("D", None, 1),  # paga por un hijo
+            _estudiante("E", "2023-02-22", 0),
+            _estudiante("E", "2023-04-10", 0),
+            _estudiante("F", "2023-04-30", 0),  # paga el último día: en plazo
+            _estudiante("G", "2023-02-20", 0),  # paga el mismo día del corte
+            _estudiante("H", None, 1),
+            _estudiante("H", None, 1),  # ningún hijo registra pago
+        ]
+    )
     tabla = al.tabla_familias(datos, cohorte).set_index("id_familia")
     assert tabla["tipo"].to_dict() == {
-        "A": "en_plazo", "B": "tardia", "C": "sin_pago", "D": "parcial", "E": "en_plazo",
-        "F": "en_plazo", "G": "en_plazo", "H": "sin_pago"}
+        "A": "en_plazo",
+        "B": "tardia",
+        "C": "sin_pago",
+        "D": "parcial",
+        "E": "en_plazo",
+        "F": "en_plazo",
+        "G": "en_plazo",
+        "H": "sin_pago",
+    }
     assert tabla.loc["A", "dia_resuelta"] == 9
-    assert tabla.loc["E", "dia_resuelta"] == 49          # pendiente hasta que paga el último
+    assert tabla.loc["E", "dia_resuelta"] == 49  # pendiente hasta que paga el último
     assert tabla.loc["F", "dia_resuelta"] == 69 and tabla.loc["G", "dia_resuelta"] == 0
     assert tabla.loc["B", "dias_tarde"] == 20
-    assert tabla.loc[["C", "D", "H"], "dia_resuelta"].isna().all()   # siguen pendientes
+    assert tabla.loc[["C", "D", "H"], "dia_resuelta"].isna().all()  # siguen pendientes
     assert tabla.loc[["A", "C", "D"], "dias_tarde"].isna().all()
     assert (tabla["dias_ventana"] == 69).all()
 
@@ -118,7 +145,7 @@ def test_el_evento_coincide_con_el_tipo(familias):
     tardias = familias[familias["tipo"] == "tardia"]
     assert (tardias["dias_tarde"] > 0).all()
     assert (tardias["dia_resuelta"] > tardias["dias_ventana"]).all()
-    assert set(familias["dias_ventana"]) <= {69, 70}             # 70 en año bisiesto
+    assert set(familias["dias_ventana"]) <= {69, 70}  # 70 en año bisiesto
 
 
 def test_no_usa_la_cohorte_de_prueba(dataset, cohortes, familias, k, tablas):
@@ -130,11 +157,9 @@ def test_no_usa_la_cohorte_de_prueba(dataset, cohortes, familias, k, tablas):
     alterado.loc[prueba, "fecha_pago_destino"] = pd.NaT
     otra = al.tabla_familias(al.sin_prueba(alterado), cohortes)
     pd.testing.assert_frame_equal(al.desglose_evento(otra, k, SEMILLA), tablas["desglose"])
-    pd.testing.assert_frame_equal(al.alcance_por_k(otra, k, SEMILLA, personal=10),
-                                  tablas["por_k"])
+    pd.testing.assert_frame_equal(al.alcance_por_k(otra, k, SEMILLA, personal=10), tablas["por_k"])
     pd.testing.assert_frame_equal(al.foto_semanal(otra, k, SEMILLA), tablas["semanal"])
-    pd.testing.assert_frame_equal(al.campana(otra, k, SEMILLA, repeticiones=8),
-                                  tablas["campana"])
+    pd.testing.assert_frame_equal(al.campana(otra, k, SEMILLA, repeticiones=8), tablas["campana"])
 
 
 def test_la_lista_es_la_de_la_validacion(dataset, familias, k, tablas):
@@ -169,7 +194,7 @@ def test_desglose_suma_y_protege_celdas_pequenas(familias, k):
     columnas = [c for t in al.TIPOS for c in (t, f"aciertos_{t}")]
     assert (estricta.drop(index=al.TODAS)[columnas] == OCULTO).all().all()
     assert estricta.drop(index=al.TODAS)["recall_tardia"].isna().all()
-    assert (estricta["eventos"] == tabla["eventos"]).all()      # los totales ya son públicos
+    assert (estricta["eventos"] == tabla["eventos"]).all()  # los totales ya son públicos
 
 
 def test_desglose_total_oculta_solo_lo_necesario():
@@ -182,8 +207,8 @@ def test_desglose_total_oculta_solo_lo_necesario():
     familias["tipo"] = tipos
     familias["dias_tarde"] = [10.0 if t == "tardia" else np.nan for t in tipos]
     total = al.desglose_evento(familias, {SEDE: 150}, SEMILLA).set_index("cohorte").loc[al.TODAS]
-    assert total["tardia"] == "<5" and total["parcial"] == OCULTO      # la pequeña y otra más
-    assert total["sin_pago"] == 100                                    # el resto se publica
+    assert total["tardia"] == "<5" and total["parcial"] == OCULTO  # la pequeña y otra más
+    assert total["sin_pago"] == 100  # el resto se publica
     assert total["aciertos_tardia"] == OCULTO and total["aciertos_parcial"] == OCULTO
     assert isinstance(total["aciertos_sin_pago"], (int, np.integer))
     assert 0 < total["recall_sin_pago"] < 1 and np.isnan(total["recall_tardia"])
@@ -194,23 +219,30 @@ def test_desglose_total_oculta_solo_lo_necesario():
         al.desglose_evento(familias, {SEDE: 150}, SEMILLA),
         al.alcance_por_k(familias, {SEDE: 150}, SEMILLA),
         al.foto_semanal(familias, {SEDE: 150}, SEMILLA),
-        al.campana(familias, {SEDE: 150}, SEMILLA, repeticiones=3))
+        al.campana(familias, {SEDE: 150}, SEMILLA, repeticiones=3),
+    )
     assert _sin_basura(textos)
 
 
 def test_supresion_complementaria_entre_cohortes():
     """Una sola cohorte oculta se deduciría restando las demás de «Todas»."""
-    tabla = pd.DataFrame({"cohorte": ["C2", "C3", "C4", al.TODAS], "aciertos": [3, 12, 9, 24],
-                          "recall": [0.1, 0.3, 0.2, 0.2]})
+    tabla = pd.DataFrame(
+        {
+            "cohorte": ["C2", "C3", "C4", al.TODAS],
+            "aciertos": [3, 12, 9, 24],
+            "recall": [0.1, 0.3, 0.2, 0.2],
+        }
+    )
     al._ocultar(tabla, "aciertos", ["recall"], minimo=5)
-    assert tabla["aciertos"].tolist() == ["<5", 12, OCULTO, 24]     # C4 es la visible menor
+    assert tabla["aciertos"].tolist() == ["<5", 12, OCULTO, 24]  # C4 es la visible menor
     assert tabla["recall"].isna().tolist() == [True, False, True, False]
 
-    sin_celdas = pd.DataFrame({"cohorte": ["C2", "C3", al.TODAS], "aciertos": [0, 8, 8],
-                               "recall": [0.0, 0.3, 0.2]})
+    sin_celdas = pd.DataFrame(
+        {"cohorte": ["C2", "C3", al.TODAS], "aciertos": [0, 8, 8], "recall": [0.0, 0.3, 0.2]}
+    )
     antes = sin_celdas.copy()
     al._ocultar(sin_celdas, "aciertos", ["recall"], minimo=5)
-    pd.testing.assert_frame_equal(sin_celdas, antes)                # el cero no se oculta
+    pd.testing.assert_frame_equal(sin_celdas, antes)  # el cero no se oculta
 
 
 # --------------------------------------------------------------------------- #
@@ -220,7 +252,7 @@ def test_alcance_por_k_crece_con_los_contactos(familias, k, tablas):
     total = tablas["por_k"]
     total = total[total["cohorte"] == al.TODAS].reset_index(drop=True)
     assert total["contactos"].is_monotonic_increasing
-    assert total["aciertos"].is_monotonic_increasing             # las listas están anidadas
+    assert total["aciertos"].is_monotonic_increasing  # las listas están anidadas
     todas = total.iloc[-1]
     assert todas["multiplicador"] == "todas" and todas["recall"] == 1
     assert todas["contactos"] == len(familias)
@@ -230,7 +262,8 @@ def test_alcance_por_k_crece_con_los_contactos(familias, k, tablas):
     assert aprobado["aciertos"] == desglose.loc[al.TODAS, "aciertos"]
     campanas = familias["cohorte"].nunique()
     assert aprobado["contactos_por_persona_semana"] == pytest.approx(
-        aprobado["contactos"] / campanas / 10 / 10, abs=0.01)
+        aprobado["contactos"] / campanas / 10 / 10, abs=0.01
+    )
 
 
 def test_k_con_multiplicador_redondea_hacia_arriba_en_la_mitad():
@@ -243,16 +276,16 @@ def test_k_con_multiplicador_redondea_hacia_arriba_en_la_mitad():
 # --------------------------------------------------------------------------- #
 def test_foto_semanal(familias, tablas):
     foto = tablas["semanal"]
-    assert set(foto["cohorte"]) == {al.TODAS} and len(foto) == 10   # no se publica por cohorte
+    assert set(foto["cohorte"]) == {al.TODAS} and len(foto) == 10  # no se publica por cohorte
     visibles = foto[foto["pendientes"] != OCULTO]
     assert visibles["pendientes"].is_monotonic_decreasing
-    assert foto["eventos"].nunique() == 1          # quien no pagará en plazo nunca sale
+    assert foto["eventos"].nunique() == 1  # quien no pagará en plazo nunca sale
     assert visibles["tasa_base"].is_monotonic_increasing
     assert (visibles["pendientes"] - visibles["eventos"] == visibles["pagaran_en_plazo"]).all()
     primera = foto.iloc[0]
     desglose = tablas["desglose"].set_index("cohorte")
     assert primera["pendientes"] == len(familias)
-    assert primera["aciertos"] == desglose.loc[al.TODAS, "aciertos"]   # semana 1 = lista fija
+    assert primera["aciertos"] == desglose.loc[al.TODAS, "aciertos"]  # semana 1 = lista fija
 
 
 def test_foto_semanal_no_deja_deducir_conteos_pequenos():
@@ -285,8 +318,9 @@ def test_campana(familias, k, tablas):
     presupuesto = sum(k.values()) * familias["cohorte"].nunique()
     assert (total["cupos"] == presupuesto).all()
     assert (total["llamadas"] <= presupuesto).all()
-    inicio, repartida, semanal = (total.loc[c] for c in ("fija_inicio_d2", "fija_repartida_d2",
-                                                         "semanal_d2"))
+    inicio, repartida, semanal = (
+        total.loc[c] for c in ("fija_inicio_d2", "fija_repartida_d2", "semanal_d2")
+    )
     desglose = tablas["desglose"].set_index("cohorte")
     # la lista fija es la misma de la validación y se llama entera con todo el margen
     assert inicio["aciertos"] == desglose.loc[al.TODAS, "aciertos"]
@@ -319,12 +353,14 @@ def test_campana_a_mano():
     invertida = familias.assign(score=[20.0, 100.0, 5.0, 0.0])
     tabla = al.campana(invertida, {SEDE: 2}, SEMILLA, semanas=2, repeticiones=1, minimo=1)
     total = tabla[tabla["cohorte"] == al.TODAS].set_index("estrategia")
-    assert total.loc["fija_inicio_d2", ["llamadas", "aciertos", "cupos_sin_usar"]].tolist() == \
-        [2, 0, 0]
+    assert total.loc["fija_inicio_d2", ["llamadas", "aciertos", "cupos_sin_usar"]].tolist() == [
+        2,
+        0,
+        0,
+    ]
     assert total.loc["fija_repartida_d2", ["llamadas", "cupos_sin_usar"]].tolist() == [1, 1]
     # la semanal salta a A y llama a C, que sí es un caso, con 7 días de margen
-    assert total.loc["semanal_d2", ["llamadas", "aciertos", "cupos_sin_usar"]].tolist() == \
-        [2, 1, 0]
+    assert total.loc["semanal_d2", ["llamadas", "aciertos", "cupos_sin_usar"]].tolist() == [2, 1, 0]
     assert total.loc["semanal_d2", "margen_medio_dias"] == 7
     assert total.loc["semanal_d2", "aciertos_primera_mitad"] == 0
 
@@ -336,7 +372,7 @@ def test_la_lista_semanal_nunca_alcanza_menos_que_la_fija(semilla):
     n = 80
     evento = (rng.random(n) < 0.25).astype(int)
     dias = np.where(evento == 1, np.nan, rng.integers(0, 69, n))
-    familias = _a_mano(np.zeros(n), evento, dias)                 # todas empatadas
+    familias = _a_mano(np.zeros(n), evento, dias)  # todas empatadas
     tabla = al.campana(familias, {SEDE: 20}, semilla, repeticiones=3, minimo=1)
     total = tabla[tabla["cohorte"] == al.TODAS].set_index("estrategia")
     assert total.loc["semanal_d2", "aciertos"] >= total.loc["fija_repartida_d2", "aciertos"]
@@ -347,8 +383,11 @@ def test_la_lista_semanal_nunca_alcanza_menos_que_la_fija(semilla):
 # Textos y figuras
 # --------------------------------------------------------------------------- #
 def _sin_basura(textos: dict) -> bool:
-    return all("nan" not in frase.lower() and "oculto" not in frase and "<" not in frase
-               for frases in textos.values() for frase in frases)
+    return all(
+        "nan" not in frase.lower() and "oculto" not in frase and "<" not in frase
+        for frases in textos.values()
+        for frase in frases
+    )
 
 
 def test_conclusiones_y_figuras(tmp_path, tablas):
@@ -361,10 +400,12 @@ def test_conclusiones_y_figuras(tmp_path, tablas):
     total = por_k[(por_k["cohorte"] == al.TODAS) & (por_k["multiplicador"] == 1.0)].iloc[0]
     assert f"{round(100 * total['recall'])} %" in textos["por_k"][0]
 
-    figuras = {"desglose": ga.figura_desglose(tablas["desglose"], "C1–C4"),
-               "por_k": ga.figura_por_k(tablas["por_k"], "C1–C4"),
-               "semanal": ga.figura_semanal(tablas["semanal"], "C1–C4"),
-               "campana": ga.figura_campana(tablas["campana"], "C1–C4")}
+    figuras = {
+        "desglose": ga.figura_desglose(tablas["desglose"], "C1–C4"),
+        "por_k": ga.figura_por_k(tablas["por_k"], "C1–C4"),
+        "semanal": ga.figura_semanal(tablas["semanal"], "C1–C4"),
+        "campana": ga.figura_campana(tablas["campana"], "C1–C4"),
+    }
     for nombre, figura in figuras.items():
         assert figura.legends, nombre
         ruta = ga.guardar(figura, tmp_path / f"{nombre}.png", dpi=300)
@@ -377,11 +418,14 @@ def test_conclusiones_dicen_la_verdad_cuando_la_regla_no_ayuda():
     n = 400
     evento = (rng.random(n) < 0.2).astype(int)
     dias = np.where(evento == 1, np.nan, rng.integers(0, 69, n))
-    al_reves = _a_mano(np.where(evento == 1, 0.0, 50.0), evento, dias)   # los casos, al final
+    al_reves = _a_mano(np.where(evento == 1, 0.0, 50.0), evento, dias)  # los casos, al final
     k = {SEDE: 60}
-    tablas = [al.desglose_evento(al_reves, k, SEMILLA), al.alcance_por_k(al_reves, k, SEMILLA),
-              al.foto_semanal(al_reves, k, SEMILLA), al.campana(al_reves, k, SEMILLA,
-                                                                repeticiones=20)]
+    tablas = [
+        al.desglose_evento(al_reves, k, SEMILLA),
+        al.alcance_por_k(al_reves, k, SEMILLA),
+        al.foto_semanal(al_reves, k, SEMILLA),
+        al.campana(al_reves, k, SEMILLA, repeticiones=20),
+    ]
     textos = al.conclusiones(*tablas)
     aporte = next(f for f in textos["campana"] if f.startswith("Aporte de la regla"))
     assert "por debajo del azar" in aporte and "añade" not in aporte
@@ -391,19 +435,25 @@ def test_conclusiones_dicen_la_verdad_cuando_la_regla_no_ayuda():
 def test_conclusiones_y_figuras_con_celdas_ocultas(tmp_path):
     """Con pocos datos casi todo queda oculto: no debe fallar ni escribir «nan»."""
     # 30 familias, 3 casos: los aciertos y el desglose quedan por debajo del mínimo
-    dias = [np.nan] * 3 + [68] * 27                                   # casi todas pagan al final
+    dias = [np.nan] * 3 + [68] * 27  # casi todas pagan al final
     pocas = _a_mano([5, 0, 0] + [1] * 27, [1] * 3 + [0] * 27, dias)
     pocas.loc[0, "tipo"] = "tardia"
     k = {SEDE: 6}
-    tablas = [al.desglose_evento(pocas, k, SEMILLA), al.alcance_por_k(pocas, k, SEMILLA),
-              al.foto_semanal(pocas, k, SEMILLA), al.campana(pocas, k, SEMILLA, repeticiones=5)]
+    tablas = [
+        al.desglose_evento(pocas, k, SEMILLA),
+        al.alcance_por_k(pocas, k, SEMILLA),
+        al.foto_semanal(pocas, k, SEMILLA),
+        al.campana(pocas, k, SEMILLA, repeticiones=5),
+    ]
     assert tablas[0]["aciertos"].astype(str).str.contains("<5").any()
     textos = al.conclusiones(*tablas)
     assert _sin_basura(textos)
-    for nombre, figura in (("desglose", ga.figura_desglose(tablas[0], "C2")),
-                           ("por_k", ga.figura_por_k(tablas[1], "C2")),
-                           ("semanal", ga.figura_semanal(tablas[2], "C2")),
-                           ("campana", ga.figura_campana(tablas[3], "C2"))):
+    for nombre, figura in (
+        ("desglose", ga.figura_desglose(tablas[0], "C2")),
+        ("por_k", ga.figura_por_k(tablas[1], "C2")),
+        ("semanal", ga.figura_semanal(tablas[2], "C2")),
+        ("campana", ga.figura_campana(tablas[3], "C2")),
+    ):
         ga.guardar(figura, tmp_path / f"{nombre}.png", dpi=72)
 
 
@@ -421,11 +471,14 @@ def test_figura_y_frases_con_aciertos_ocultos_y_casos_visibles(tmp_path):
     total = desglose.set_index("cohorte").loc[al.TODAS]
     assert total["tardia"] == 40 and total["aciertos_tardia"] == "<5"
     assert OCULTO in (total["aciertos_parcial"], total["aciertos_sin_pago"])
-    figura = ga.figura_desglose(desglose, "C2")                 # antes: ValueError con NaN
+    figura = ga.figura_desglose(desglose, "C2")  # antes: ValueError con NaN
     ga.guardar(figura, tmp_path / "desglose.png", dpi=72)
     notas = " ".join(t.get_text() for t in figura.axes[0].texts)
     assert "aciertos ocultos" in notas and "nan" not in notas.lower()
-    textos = al.conclusiones(desglose, al.alcance_por_k(familias, k, SEMILLA),
-                             al.foto_semanal(familias, k, SEMILLA),
-                             al.campana(familias, k, SEMILLA, repeticiones=5))
+    textos = al.conclusiones(
+        desglose,
+        al.alcance_por_k(familias, k, SEMILLA),
+        al.foto_semanal(familias, k, SEMILLA),
+        al.campana(familias, k, SEMILLA, repeticiones=5),
+    )
     assert _sin_basura(textos)

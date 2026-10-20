@@ -31,9 +31,9 @@ Duración total: **5:00**. Presentación en línea (10 diapositivas), con las no
 
 **6 · Demo (Guillermo, 2:15–3:15).** Se reproduce la grabación de pantalla (ver sección 2). Narración sugerida: "Esta es la aplicación pública, que solo trabaja con datos sintéticos. Con un clic genera la lista de familias por sede, cada una con su motivo. En Proyección vemos las matrículas esperadas frente a la tasa histórica. Aquí evaluamos un estudiante con pago tardío y reserva extraordinaria: prioridad alta; y otro sin señales: prioridad baja. Si alguien intenta subir un archivo con cédulas, la aplicación lo rechaza."
 
-**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. En términos prácticos: llamando al 15 % de las familias, LEMAS llega al 30 % de las que no completarán la matrícula a tiempo. Superamos la meta de 1,20 que nos pusimos.
+**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, que hicimos una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97, con un intervalo de confianza que no incluye el 1. Llamando al 15 % de las familias, LEMAS llega al 30 % de los casos: 7,5 llamadas por caso encontrado, la mitad que al azar. Superamos la meta de 1,20 que nos pusimos.
 
-**8 · Alcance (Guillermo, 3:40–4:00).** La regla supera al azar en los cuatro ciclos, de 1,4 a 2,0. Una regla aún más simple, más atrasos primero, rinde casi igual; preferimos D2 porque explica el motivo de cada llamada. No llega al 70 % de los casos: el 20 de febrero los datos no los distinguen. Y los modelos de IA no superaron a la regla: la IA sirvió para descubrirla, validarla y medir su incertidumbre.
+**8 · Alcance (Guillermo, 3:40–4:00).** La regla supera al azar en los cuatro ciclos, de 1,4 a 2,0. Una regla aún más simple, más atrasos primero, rinde casi igual; preferimos D2 porque explica el motivo de cada llamada. No llega al 70 % de los casos: el 20 de febrero los datos no los distinguen. Y los modelos de IA no superaron a la regla: sirvieron para comprobar que no había más señal y para medir la incertidumbre.
 
 > *Cambio de la revisión final (D59):* la frase sobre «más atrasos primero» responde a que, en C4, la diferencia entre D2 y D es 0,00 [IC 95 %: −0,62; 0,62] ([modelado.md, sección 9.3](modelado.md#93-d2-frente-a-d)). Esta diapositiva queda unos 5 segundos más larga: ensayarla para que no pase de 4:05.
 
@@ -106,7 +106,7 @@ Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que 
 | Ensayar y cronometrar | Dos ensayos completos; si un bloque se pasa, recortar ejemplos y no cifras | Por hacer |
 | Repartir la palabra | Guillermo: problema, demo, resultados y cierre. José: datos, método, optimización y ética | Hecho |
 | Cerrar con una acción clara | Logro, siguiente paso y los dos QR | Hecho |
-| Preparar las preguntas | [Banco de 49 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
+| Preparar las preguntas | [Banco de 51 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
 | Cuidar audio e imagen | Micrófono externo, lugar silencioso, 1080p, zoom del navegador al 110–125 % | Por hacer |
 
 Errores frecuentes que conviene evitar: leer las diapositivas, pasarse de los 5 minutos, mostrar código, dejar la ética para una frase final y presentar el resultado como mejor de lo que es.

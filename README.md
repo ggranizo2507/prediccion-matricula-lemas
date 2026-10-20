@@ -73,7 +73,8 @@ Prueba final en **C5** (matrícula 2026–2027), evaluada **una sola vez** con e
 - **Hallazgo principal:** contactando al 15 % de las familias se llega al **30 %** de las que no se matriculan. La regla D2 (pago anterior tardío → reserva extraordinaria → pensiones pagadas tarde) se definió en la Fase 1 a partir del análisis exploratorio y se confirmó en C5 sin ajustar nada. **Ese análisis exploratorio usó las cinco cohortes**; al repetirlo solo con C1–C3, el orden de las señales sale igual, así que D2 se habría construido igual sin ver C4 ni C5. Dos matices: D2 y D son estadísticamente indistinguibles (diferencia en C4 de 0,00 [−0,62; 0,62]) y el Lift@k depende del sorteo de empates (media de 1,77 en C4 con 500 sorteos) (D59, [`docs/modelado.md`](docs/modelado.md#9-comprobaciones-de-la-revisión-final-d59)).
 - **Los modelos de aprendizaje automático no superaron a la regla** con 193 eventos de entrenamiento: el gradient boosting se sobreajustó y los modelos lineales se quedaron cortos. Es un resultado válido y está documentado.
 - **Calibración y proyección:** la logística híbrida calibrada iguala a la tasa histórica (Brier 0,0648 frente a 0,0647; MAPE 2,8 % en ambos).
-- **Equidad:** menor detección en familias becadas (recall 0,18 frente a 0,32), que se advierte en la app.
+- **Carga operativa:** 7,5 llamadas por cada familia en riesgo encontrada, frente a unas 15 al azar.
+- **Equidad:** menor detección en familias becadas (recall 0,18 [IC 95 %: 0,05; 0,48] frente a 0,32 [0,22; 0,44]; Fisher p = 0,49): no es demostrable con 11 casos, así que se advierte en la app y se vigila cada año.
 
 ![Prueba final en C5](results/figures/real_12_prueba_c5.png)
 
@@ -148,11 +149,11 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 |---|---|
 | `data/` | `raw/` y `processed/` (vacías en el repositorio público) y `synthetic/` con la base artificial |
 | `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (entrena, optimiza, calibra y evalúa una vez en C5), 04 optimización, 05 evaluación (análisis de resultados guardados), 06 alcance de la lista, 07 escenarios críticos y 08 comprobaciones de la revisión final, listos para Colab |
-| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `reglas` (D y D2, una sola definición), `modeling` (entrenamiento, Optuna, calibración, evaluación), `model` y `train` (puntos de entrada de la guía), `revision` (comprobaciones D59), `inferencia` (lógica de la app), `institucional`, `diagnostico`, `sensibilidad`, `alcance`, `costo`, `escenarios`, sus módulos de figuras (`graficos_*`), `synthetic` y `utils` |
-| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) la sensibilidad de hiperparámetros (`generar_sensibilidad.py`) y el resumen de resultados (`generar_resumen.py`), que solo leen tablas agregadas de `results/metrics` |
+| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `reglas` (D y D2, una sola definición), `modeling` (entrenamiento, Optuna, calibración, evaluación), `model` y `train` (puntos de entrada de la guía), `revision` (comprobaciones D59), `incertidumbre` (intervalos por grupo, carga operativa y tamaño de la reserva, D60), `inferencia` (lógica de la app), `institucional`, `diagnostico`, `sensibilidad`, `alcance`, `costo`, `escenarios`, sus módulos de figuras (`graficos_*`), `synthetic` y `utils` |
+| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) la sensibilidad de hiperparámetros (`generar_sensibilidad.py`) el resumen de resultados (`generar_resumen.py`) y la incertidumbre por grupo (`generar_incertidumbre.py`), que solo leen tablas agregadas de `results/metrics` |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 255 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
+| `tests/` | 263 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna |
@@ -170,7 +171,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | Documento | Contenido |
 |---|---|
 | [`docs/glosario.md`](docs/glosario.md) | Siglas y términos del proyecto (cohortes, reglas, líneas base, métricas y normas). Conviene leerlo primero |
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D59 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D60 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados, análisis de sensibilidad (importancia, dependencia parcial e interacciones), antes/después y diagnóstico de ajuste |
@@ -185,7 +186,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/impacto_social_responsabilidad.md`](docs/impacto_social_responsabilidad.md) | Workshop de la semana 4: stakeholders, impacto social, riesgos éticos con su mitigación, responsabilidad, cumplimiento y compromiso del equipo. Versión entregada: [`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf`](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf) |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
 | [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
-| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 49 preguntas probables de la defensa con sus respuestas, incluidas las de la revisión independiente |
+| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 51 preguntas probables de la defensa con sus respuestas, incluidas las de la revisión independiente |
 | [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
 
 ## Consideraciones éticas

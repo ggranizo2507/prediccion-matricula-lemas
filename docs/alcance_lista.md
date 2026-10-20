@@ -96,7 +96,7 @@ Los aciertos de los dos primeros tipos se ocultan por separado porque alguna cel
 
 - **La regla añade entre 9 y 12 puntos sobre el azar con cualquier tamaño de lista.** No más. Con el doble de contactos se llega al 45 % de los casos, pero 33 de esos 45 puntos los daría cualquier lista de ese tamaño.
 - **La capacidad no es el límite.** Contactar a todas las familias una vez son 10 contactos por persona y semana, dos por día laborable. El k aprobado son menos de dos por semana.
-- **El Lift cambia con la cohorte:** 1,38 en C2, 1,49 en C3 y 1,93 en C4 con el sorteo de la validación; 1,42, 1,57 y 1,75 en promedio de cien sorteos. C4 es la cohorte donde se eligió la regla, así que su cifra es la más favorable. Con el 1,97 de la prueba final (C5, IC 95 % [1,24; 2,56]), el Lift de la regla ha ido de 1,4 a 2,0 en cuatro cohortes: no hay base para esperar siempre el valor más alto.
+- **El Lift cambia con la cohorte:** 1,38 en C2, 1,49 en C3 y 1,93 en C4 con el sorteo de la validación; 1,42, 1,57 y 1,75 en promedio de cien sorteos (con 500 sorteos, C4 da 1,77: D59). C4 es la cohorte donde se eligió la regla, así que su cifra es la más favorable. Con el 1,97 de la prueba final (C5, IC 95 % [1,24; 2,56]), el Lift de la regla ha ido de 1,4 a 2,0 en cuatro cohortes: no hay base para esperar siempre el valor más alto.
 
 ### 6.3 Quién sigue sin pagar
 
@@ -135,7 +135,7 @@ Los aciertos de los dos primeros tipos se ocultan por separado porque alguna cel
 
 1. **El 30 % no mejora con más modelo ni con más cupos, sino con tiempo.** El 20 de febrero los datos no distinguen a la mayoría de los casos. Cinco semanas después, basta mirar quién sigue sin pagar.
 2. **La regla D2 sirve para empezar, no para toda la campaña.** Ordena mejor que el azar las primeras tres semanas (Lift de 1,4 a 1,9 según la cohorte). Después no añade nada.
-3. **El resultado de C4 era algo optimista.** Parte de la ventaja de D2 sobre el mejor modelo dependía del sorteo entre empatadas: en promedio su Lift en C4 es 1,75, no 1,93, todavía por encima del 1,53 de la logística híbrida. La prueba final en C5 no se toca y sigue siendo el resultado del proyecto, pero en adelante conviene informar el promedio de varios sorteos y no uno solo.
+3. **El resultado de C4 era algo optimista.** Parte de la ventaja de D2 sobre el mejor modelo dependía del sorteo entre empatadas: en promedio su Lift en C4 es 1,75 con cien sorteos (1,77 con 500), no 1,93, todavía por encima del 1,53 de la logística híbrida. La prueba final en C5 no se toca y sigue siendo el resultado del proyecto, pero en adelante conviene informar el promedio de varios sorteos y no uno solo.
 4. **Sigue sin saberse si llamar ayuda.** Todo lo anterior mide a quién se alcanza y cuándo.
 5. **El problema no es la etiqueta.** El 86 % de los casos son familias que no registran ningún pago, y son las que la regla encuentra peor (24 %).
 

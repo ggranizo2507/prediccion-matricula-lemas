@@ -23,14 +23,26 @@ def historial():
     balanceado = rng.random(N) < 0.5
     valor = 0.06 + 0.04 / (1 + np.exp(-3 * np.log10(c))) + 0.005 * balanceado
     valor += rng.normal(0, 0.001, N)
-    logistica = pd.DataFrame({
-        "number": range(N), "value": valor, "params_C": c,
-        "params_balanceado": balanceado, "params_conjunto": rng.choice(["completo", "reducido"], N),
-        "params_l1_ratio": rng.random(N), "modelo": "Regresión logística regularizada"})
-    hibrido = pd.DataFrame({
-        "number": range(N), "value": 0.08 + 0.004 * balanceado + rng.normal(0, 0.0005, N),
-        "params_C": c, "params_balanceado": balanceado,
-        "modelo": "Logística híbrida (señales de D2 + variables académicas)"})
+    logistica = pd.DataFrame(
+        {
+            "number": range(N),
+            "value": valor,
+            "params_C": c,
+            "params_balanceado": balanceado,
+            "params_conjunto": rng.choice(["completo", "reducido"], N),
+            "params_l1_ratio": rng.random(N),
+            "modelo": "Regresión logística regularizada",
+        }
+    )
+    hibrido = pd.DataFrame(
+        {
+            "number": range(N),
+            "value": 0.08 + 0.004 * balanceado + rng.normal(0, 0.0005, N),
+            "params_C": c,
+            "params_balanceado": balanceado,
+            "modelo": "Logística híbrida (señales de D2 + variables académicas)",
+        }
+    )
     return pd.concat([logistica, hibrido], ignore_index=True)
 
 
@@ -61,7 +73,7 @@ def test_dependencia_parcial_sube_con_c(historial):
     sustituto = se.ajustar_sustituto(pruebas, "logistica", arboles=60)
     curva = se.dependencia_parcial(sustituto, "C", puntos=10)
     assert curva["pr_auc"].iloc[-1] > curva["pr_auc"].iloc[0]
-    assert curva["valor"].min() == pytest.approx(pruebas["C"].min(), rel=1e-6)   # escala original
+    assert curva["valor"].min() == pytest.approx(pruebas["C"].min(), rel=1e-6)  # escala original
     cat = se.dependencia_parcial(sustituto, "balanceado")
     assert set(cat["valor"]) == {"True", "False"}
 
@@ -81,7 +93,8 @@ def test_antes_despues(historial):
     fila = se.antes_despues(pruebas, "logistica", tasa_validacion=0.06)
     assert fila["mejor"] >= fila["mediana_aleatorias"]
     assert fila["ganancia_sobre_aleatorias"] == pytest.approx(
-        fila["mejor"] - fila["mediana_aleatorias"], abs=1e-4)
+        fila["mejor"] - fila["mediana_aleatorias"], abs=1e-4
+    )
 
 
 def test_figuras(historial):

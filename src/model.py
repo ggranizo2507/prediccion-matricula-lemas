@@ -12,5 +12,17 @@ sin duplicar código.
 from src.modeling import CONJUNTOS, NOMBRES, TIPOS, construir_modelo, distribuciones, espacio_de
 from src.reglas import PESOS_D2, REGLA_D, REGLA_D2, puntaje_d, puntaje_d2, puntajes_reglas
 
-__all__ = ["CONJUNTOS", "NOMBRES", "TIPOS", "construir_modelo", "distribuciones", "espacio_de",
-           "PESOS_D2", "REGLA_D", "REGLA_D2", "puntaje_d", "puntaje_d2", "puntajes_reglas"]
+__all__ = [
+    "CONJUNTOS",
+    "NOMBRES",
+    "TIPOS",
+    "construir_modelo",
+    "distribuciones",
+    "espacio_de",
+    "PESOS_D2",
+    "REGLA_D",
+    "REGLA_D2",
+    "puntaje_d",
+    "puntaje_d2",
+    "puntajes_reglas",
+]

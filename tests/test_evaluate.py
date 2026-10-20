@@ -35,12 +35,14 @@ def dataset(base, config):
 
 
 def _familias_ejemplo():
-    datos = pd.DataFrame({
-        "cohorte": ["C4"] * 6,
-        "sede": ["Mucho Lote 1"] * 4 + ["Mucho Lote 2"] * 2,
-        "id_familia": ["F1", "F1", "F2", "F3", "F4", "F5"],
-        "y_no_matricula": [0, 1, 0, 0, 1, 0],
-    })
+    datos = pd.DataFrame(
+        {
+            "cohorte": ["C4"] * 6,
+            "sede": ["Mucho Lote 1"] * 4 + ["Mucho Lote 2"] * 2,
+            "id_familia": ["F1", "F1", "F2", "F3", "F4", "F5"],
+            "y_no_matricula": [0, 1, 0, 0, 1, 0],
+        }
+    )
     riesgo = np.array([0.2, 0.9, 0.8, 0.1, 0.7, 0.3])
     return consolidar_familias(datos, riesgo)
 
@@ -63,11 +65,13 @@ def test_precision_lift_recall_por_sede():
 
 
 def test_k_por_sede_es_promedio_de_familias_con_evento():
-    familias = pd.DataFrame({
-        "cohorte": ["C1", "C1", "C2", "C2", "C2"],
-        "sede": ["A", "A", "A", "A", "B"],
-        "evento": [1, 1, 1, 0, 0],
-    })
+    familias = pd.DataFrame(
+        {
+            "cohorte": ["C1", "C1", "C2", "C2", "C2"],
+            "sede": ["A", "A", "A", "A", "B"],
+            "evento": [1, 1, 1, 0, 0],
+        }
+    )
     assert calcular_k_por_sede(familias) == {"A": 2, "B": 1}
 
 
@@ -79,14 +83,23 @@ def test_conteo_eventos_por_estudiante_y_familia(dataset, config):
 
 
 def test_smd_detecta_diferencia_artificial(config):
-    datos = pd.DataFrame({
-        "cohorte": ["C1"] * 50 + ["C2"] * 50,
-        "sede": "A", "subnivel": "EGB", "curso": "5to", "pago_origen": "en_plazo",
-        "promedio": [6.0] * 25 + [7.0] * 25 + [8.5] * 25 + [9.5] * 25,
-        "conducta": 5.0, "anios_permanencia": 3.0, "atrasos_pension": 1.0,
-        "hermanos_lemas": 0.0, "beca": 0.0, "reserva_extraordinaria": 0.0,
-        "y_no_matricula": [0, 1] * 50,
-    })
+    datos = pd.DataFrame(
+        {
+            "cohorte": ["C1"] * 50 + ["C2"] * 50,
+            "sede": "A",
+            "subnivel": "EGB",
+            "curso": "5to",
+            "pago_origen": "en_plazo",
+            "promedio": [6.0] * 25 + [7.0] * 25 + [8.5] * 25 + [9.5] * 25,
+            "conducta": 5.0,
+            "anios_permanencia": 3.0,
+            "atrasos_pension": 1.0,
+            "hermanos_lemas": 0.0,
+            "beca": 0.0,
+            "reserva_extraordinaria": 0.0,
+            "y_no_matricula": [0, 1] * 50,
+        }
+    )
     tabla = diferencias_estandarizadas(datos, config, referencia=("C2",)).set_index("variable")
     assert bool(tabla.loc["promedio", "relevante"])
     assert not bool(tabla.loc["y_no_matricula", "relevante"])
@@ -118,7 +131,9 @@ def test_sensibilidad_solo_aprobar_reduce_poblacion(base, config):
 
 def test_multiplicador_duplica_k():
     from src.evaluate import calcular_k_por_sede
-    familias = pd.DataFrame({"sede": ["S"] * 4, "cohorte": ["C1", "C1", "C2", "C2"],
-                             "evento": [1, 1, 1, 0]})
+
+    familias = pd.DataFrame(
+        {"sede": ["S"] * 4, "cohorte": ["C1", "C1", "C2", "C2"], "evento": [1, 1, 1, 0]}
+    )
     assert calcular_k_por_sede(familias) == {"S": 2}
     assert calcular_k_por_sede(familias, multiplicador=2) == {"S": 3}

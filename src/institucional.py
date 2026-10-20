@@ -40,7 +40,7 @@ def es_equipo_local(host: str | None) -> bool:
     if not host:
         return True
     nombre = host.strip().lower()
-    if nombre.startswith("["):                       # IPv6: [::1]:8501
+    if nombre.startswith("["):  # IPv6: [::1]:8501
         nombre = nombre.split("]")[0] + "]"
     else:
         nombre = nombre.split(":")[0]
@@ -52,11 +52,11 @@ class BaseInstitucional:
     """Resultado de seudonimizar el Excel. `padron` contiene datos personales:
     nunca se guarda, se descarga ni se pasa al modelo."""
 
-    base: pd.DataFrame        # base seudonimizada (equivale a base_seud.csv)
-    csv: bytes                # la misma base lista para descargar o procesar
-    acta: dict                # acta de extracción (sin datos personales)
-    padron: pd.DataFrame      # seudónimo -> nombres y cédulas, solo en memoria
-    resumen: dict             # cifras para mostrar al usuario
+    base: pd.DataFrame  # base seudonimizada (equivale a base_seud.csv)
+    csv: bytes  # la misma base lista para descargar o procesar
+    acta: dict  # acta de extracción (sin datos personales)
+    padron: pd.DataFrame  # seudónimo -> nombres y cédulas, solo en memoria
+    resumen: dict  # cifras para mostrar al usuario
 
 
 def nueva_clave() -> str:
@@ -71,19 +71,22 @@ def leer_clave(contenido: bytes) -> bytes:
     except ValueError as error:
         raise ErrorEntrada(
             "El archivo de clave no es válido. Debe ser el archivo clave_lemas.key que "
-            "guarda el custodio de datos, sin modificar.") from error
+            "guarda el custodio de datos, sin modificar."
+        ) from error
 
 
-def seudonimizar_excel(contenido: bytes, nombre: str, clave: bytes, config: dict
-                       ) -> BaseInstitucional:
+def seudonimizar_excel(
+    contenido: bytes, nombre: str, clave: bytes, config: dict
+) -> BaseInstitucional:
     """Convierte el Excel institucional en la base seudonimizada, todo en memoria."""
     reglas = config["seudonimizacion"]
     try:
         bruto = seud.leer_tabla(contenido, nombre)
-    except Exception as error:   # archivo dañado, con contraseña o que no es Excel
+    except Exception as error:  # archivo dañado, con contraseña o que no es Excel
         raise ErrorEntrada(
             "No se pudo leer el Excel. Verifique que sea el archivo institucional (.xlsx), "
-            "que no tenga contraseña y que no esté abierto en otro programa.") from error
+            "que no tenga contraseña y que no esté abierto en otro programa."
+        ) from error
     if bruto.empty:
         raise ErrorEntrada("El Excel no tiene filas.")
 
@@ -92,17 +95,27 @@ def seudonimizar_excel(contenido: bytes, nombre: str, clave: bytes, config: dict
     if faltan:
         raise ErrorEntrada(
             f"Al Excel le faltan columnas obligatorias: {', '.join(faltan)}. Revise que los "
-            "encabezados sean los acordados (ver manual de usuario).")
+            "encabezados sean los acordados (ver manual de usuario)."
+        )
 
     # Además de las columnas acordadas, se elimina cualquier otra que parezca un
     # identificador directo (teléfono, correo, dirección, apellidos...).
-    extra = [c for c in bruto.columns
-             if PATRON_IDENTIFICADOR.match(str(c).strip()) and c not in obligatorias]
+    extra = [
+        c
+        for c in bruto.columns
+        if PATRON_IDENTIFICADOR.match(str(c).strip()) and c not in obligatorias
+    ]
     eliminar = list(dict.fromkeys([*reglas["eliminar"], *extra]))
     try:
         base, eliminadas = seud.seudonimizar_tabla(
-            bruto, clave, reglas["col_estudiante"], reglas["col_familia"], eliminar,
-            derivar_anio_ingreso=True, col_codigo=reglas["col_codigo"])
+            bruto,
+            clave,
+            reglas["col_estudiante"],
+            reglas["col_familia"],
+            eliminar,
+            derivar_anio_ingreso=True,
+            col_codigo=reglas["col_codigo"],
+        )
     except (KeyError, RuntimeError) as error:
         raise ErrorEntrada(f"No se pudo seudonimizar el Excel: {error}") from error
 
@@ -111,12 +124,14 @@ def seudonimizar_excel(contenido: bytes, nombre: str, clave: bytes, config: dict
         raise ErrorEntrada(
             "Por seguridad no se continúa: después de seudonimizar aún hay columnas con "
             f"nombres o cédulas ({', '.join(restantes)}). Elimínelas del Excel o avise al "
-            "responsable de datos.")
+            "responsable de datos."
+        )
 
     csv = base.to_csv(index=False).encode("utf-8")
     salida = "base_seud.csv"
-    acta = seud.construir_acta(base, csv, nombre, salida, eliminadas,
-                               reglas["col_estudiante"], clave)
+    acta = seud.construir_acta(
+        base, csv, nombre, salida, eliminadas, reglas["col_estudiante"], clave
+    )
     resumen = {
         "filas": len(base),
         "hojas": bruto["hoja"].value_counts().sort_index().to_dict() if "hoja" in bruto else {},
@@ -142,16 +157,18 @@ def _padron(bruto: pd.DataFrame, base: pd.DataFrame, config: dict) -> pd.DataFra
             return con_anio[nombre].astype("string").str.strip()
         return pd.Series(pd.NA, index=con_anio.index, dtype="string")
 
-    return pd.DataFrame({
-        "id_estudiante": base["id_seudonimo"].to_numpy(),
-        "anio": anio_de_ciclo(columna(columnas["anio_origen"])).to_numpy(),
-        "estudiante": columna(reglas["nombre_estudiante"]).to_numpy(),
-        "cedula_estudiante": columna(reglas["col_estudiante"]).to_numpy(),
-        "representante": columna(reglas["nombre_representante"]).to_numpy(),
-        "cedula_representante": columna(reglas["col_familia"]).to_numpy(),
-        "curso": columna(columnas["nivel"]).to_numpy(),
-        "paralelo": columna(columnas["paralelo"]).to_numpy(),
-    }).dropna(subset=["id_estudiante"])
+    return pd.DataFrame(
+        {
+            "id_estudiante": base["id_seudonimo"].to_numpy(),
+            "anio": anio_de_ciclo(columna(columnas["anio_origen"])).to_numpy(),
+            "estudiante": columna(reglas["nombre_estudiante"]).to_numpy(),
+            "cedula_estudiante": columna(reglas["col_estudiante"]).to_numpy(),
+            "representante": columna(reglas["nombre_representante"]).to_numpy(),
+            "cedula_representante": columna(reglas["col_familia"]).to_numpy(),
+            "curso": columna(columnas["nivel"]).to_numpy(),
+            "paralelo": columna(columnas["paralelo"]).to_numpy(),
+        }
+    ).dropna(subset=["id_estudiante"])
 
 
 def lista_con_nombres(lista: pd.DataFrame, padron: pd.DataFrame, anio: int) -> pd.DataFrame:
@@ -164,7 +181,8 @@ def lista_con_nombres(lista: pd.DataFrame, padron: pd.DataFrame, anio: int) -> p
     if lista.empty:
         return pd.DataFrame()
     orden = padron.assign(_del_ciclo=(padron["anio"] == anio).astype(int)).sort_values(
-        ["_del_ciclo", "anio"], ascending=False, na_position="last")
+        ["_del_ciclo", "anio"], ascending=False, na_position="last"
+    )
     por_estudiante = orden.drop_duplicates("id_estudiante").set_index("id_estudiante")
 
     filas = []
@@ -174,7 +192,9 @@ def lista_con_nombres(lista: pd.DataFrame, padron: pd.DataFrame, anio: int) -> p
         encontrados = personas.dropna(subset=["estudiante", "representante"], how="all")
         nombres = [
             f"{p.estudiante} ({p.curso})" if pd.notna(p.curso) else str(p.estudiante)
-            for p in encontrados.itertuples() if pd.notna(p.estudiante)]
+            for p in encontrados.itertuples()
+            if pd.notna(p.estudiante)
+        ]
         representantes = encontrados["representante"].dropna()
         cedulas = encontrados["cedula_representante"].dropna()
         generica = str(familia["id_familia"]).startswith("IND-")
@@ -183,14 +203,16 @@ def lista_con_nombres(lista: pd.DataFrame, padron: pd.DataFrame, anio: int) -> p
             observacion.append("cédula de representante compartida: confirmar el contacto")
         if len(encontrados) < len(ids):
             observacion.append("estudiante no encontrado en el Excel")
-        filas.append({
-            "puesto": familia["puesto"],
-            "sede": familia["sede"],
-            "representante": representantes.iloc[0] if len(representantes) else pd.NA,
-            "cedula_representante": cedulas.iloc[0] if len(cedulas) else pd.NA,
-            "estudiantes": "; ".join(nombres),
-            "motivo": familia["motivo"],
-            "observacion": "; ".join(observacion),
-            "id_familia": familia["id_familia"],
-        })
+        filas.append(
+            {
+                "puesto": familia["puesto"],
+                "sede": familia["sede"],
+                "representante": representantes.iloc[0] if len(representantes) else pd.NA,
+                "cedula_representante": cedulas.iloc[0] if len(cedulas) else pd.NA,
+                "estudiantes": "; ".join(nombres),
+                "motivo": familia["motivo"],
+                "observacion": "; ".join(observacion),
+                "id_familia": familia["id_familia"],
+            }
+        )
     return pd.DataFrame(filas)

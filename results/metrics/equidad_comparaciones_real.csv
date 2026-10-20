@@ -1,0 +1,6 @@
+variable,grupo,referencia,razon_seleccion,razon_ic_bajo,razon_ic_alto,p_seleccion,diferencia_recall,p_recall
+beca,1,0,0.655,0.408,1.052,0.0755,-0.1357,0.4886
+sede,Mucho Lote 2,Mucho Lote 1,0.563,0.41,0.772,0.0002,-0.0515,0.7964
+subnivel,Bachillerato,Educación General Básica,0.998,0.648,1.538,1.0,,
+subnivel,Inicial,Educación General Básica,0.53,0.287,0.979,0.0364,,
+subnivel,Preparatoria,Educación General Básica,0.701,0.41,1.198,0.213,0.144,0.3229
