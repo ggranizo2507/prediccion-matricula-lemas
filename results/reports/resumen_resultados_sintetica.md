@@ -47,9 +47,9 @@ MAPE de la proyección por sede y subnivel: modelo 1,2 %, B1 1,2 %.
 
 - Con C1–C3, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > pago tardío de la matrícula anterior > reserva extraordinaria; es un orden distinto al de D2.
 - Con C2–C3 (entrenamiento), las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.
-- Con C1, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.
-- Con C2, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.
-- Con C3, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.
+- Con C1 no se pueden comparar las tres señales: alguna tiene menos casos que el mínimo publicable.
+- Con C2 no se pueden comparar las tres señales: alguna tiene menos casos que el mínimo publicable.
+- Con C3 no se pueden comparar las tres señales: alguna tiene menos casos que el mínimo publicable.
 - En C4, con 500 sorteos de desempate, el Lift@k de D2 tiene media 1,08 (percentiles 5 y 95: 0,95 y 1,18); la semilla oficial da 1,06, más que el 24 % de los sorteos.
 - En C4, la diferencia de Lift@k D2 − D es -0,33 [IC 95 %: -0,90; 0,22]; D2 supera a D en el 10 % de las remuestras: no se puede afirmar que D2 sea mejor que D.
 - El azar por estudiante da un Lift@k medio de 1,02 y el azar por familia, 0,99. Las familias con caso tienen 1,12 estudiantes en promedio, frente a 1,10 las demás.

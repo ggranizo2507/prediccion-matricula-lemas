@@ -94,11 +94,11 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 
 - La lista no alcanza a cerca del 70 % de las familias que no pagan la matrícula en plazo. Tenía más cupos (165) que casos (74), así que es un límite de señal y no de capacidad.
 - La regla ordena mejor que el azar solo al inicio de la campaña. Desde la cuarta semana no supera a elegir al azar entre las familias que siguen sin pagar ([alcance_lista.md](alcance_lista.md)).
-- El Lift depende de la cohorte (1,38 en C2, 1,49 en C3, 1,93 en C4 y 1,97 en C5) y del sorteo entre familias empatadas (en C4, de 1,53 a 1,99; media 1,75).
+- El Lift depende de la cohorte (1,38 en C2, 1,49 en C3, 1,93 en C4 y 1,97 en C5) y del sorteo entre familias empatadas (en C4, con 500 sorteos, de 1,40 a 2,06; media 1,77).
 - En C2 a C4, el 86 % de los casos son familias que no registran ningún pago; el 5 % paga todo después del 30 de abril y el 9 % paga por unos estudiantes y no por otros. La regla encuentra al 24 % de las primeras y al 43 % del resto: detecta mejor el retraso que la salida.
 - La regla refleja las políticas de cobro y de reservas vigentes entre 2022 y 2026. Si cambian, hay que revalidarla antes de usarla.
-- El orden de las señales de D2 salió de un análisis exploratorio que usó las cinco cohortes, C4 y C5 incluidas. La prueba en C5 no ajustó nada, pero no es independiente del diseño; el cuaderno 08 comprueba el orden solo con C1–C3 ([modelado.md, sección 9](modelado.md#9-comprobaciones-de-la-revisión-final-d59)).
-- No está demostrado que D2 sea mejor que la regla D: sus IC en C5 se solapan. Ambas superan al azar.
+- El orden de las señales de D2 salió de un análisis exploratorio que usó las cinco cohortes, C4 y C5 incluidas. Al repetirlo solo con C1–C3 el orden es el mismo, así que la prueba en C5 vale también para el diseño ([modelado.md, sección 9](modelado.md#9-comprobaciones-de-la-revisión-final-d59)). Cohorte a cohorte, el orden entre reserva extraordinaria y atrasos no es estable.
+- No está demostrado que D2 sea mejor que la regla D: en C4 la diferencia es 0,00 [IC 95 %: −0,62; 0,62] y sus IC en C5 se solapan. Ambas superan al azar.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
 - No se ha medido si la llamada cambia la decisión de la familia.
 - Escenarios críticos con datos reales sobre C4 ([escenarios_criticos.md](escenarios_criticos.md)):

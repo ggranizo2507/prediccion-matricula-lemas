@@ -42,3 +42,14 @@ MAPE de la proyección por sede y subnivel: modelo 2,8 %, B1 2,8 %.
 - **logistica:** conjunto = completo, balanceado = False, C = 2,7450, l1_ratio = 0,8670
 - **arboles:** conjunto = completo, balanceado = True, learning_rate = 0,0351, max_depth = 3, max_leaf_nodes = 6, min_samples_leaf = 101, l2_regularization = 4,2494, max_iter = 359
 - **hibrido:** balanceado = True, C = 9,0132
+
+## Comprobaciones de la revisión final (D59, cuaderno 08)
+
+- Con C1–C3, las señales se ordenan así por riesgo relativo: pago tardío de la matrícula anterior > reserva extraordinaria > al menos una pensión pagada tarde; es el mismo orden de D2.
+- Con C2–C3 (entrenamiento), las señales se ordenan así por riesgo relativo: pago tardío de la matrícula anterior > reserva extraordinaria > al menos una pensión pagada tarde; es el mismo orden de D2.
+- Con C1, las señales se ordenan así por riesgo relativo: pago tardío de la matrícula anterior > al menos una pensión pagada tarde > reserva extraordinaria; es un orden distinto al de D2.
+- Con C2, las señales se ordenan así por riesgo relativo: pago tardío de la matrícula anterior > al menos una pensión pagada tarde > reserva extraordinaria; es un orden distinto al de D2.
+- Con C3 no se pueden comparar las tres señales: alguna tiene menos casos que el mínimo publicable.
+- En C4, con 500 sorteos de desempate, el Lift@k de D2 tiene media 1,77 (percentiles 5 y 95: 1,60 y 1,93); la semilla oficial da 1,93, más que el 87 % de los sorteos.
+- En C4, la diferencia de Lift@k D2 − D es 0,00 [IC 95 %: -0,62; 0,62]; D2 supera a D en el 47 % de las remuestras: no se puede afirmar que D2 sea mejor que D.
+- El azar por estudiante da un Lift@k medio de 1,12 y el azar por familia, 1,00. Las familias con caso tienen 1,45 estudiantes en promedio, frente a 1,30 las demás.

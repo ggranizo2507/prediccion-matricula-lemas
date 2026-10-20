@@ -159,3 +159,32 @@ def test_conclusiones_usan_coma_decimal():
     assert all(re.search(r"\d,\d", t) for t in textos[1:])
     assert not any(re.search(r"\d\.\d", t) for t in textos)
     assert any("D2 − D" in t for t in textos)
+
+
+def test_orden_sin_veredicto_si_falta_una_senal():
+    filas = [{"periodo": "C3", "senal": "pago_tardio", "nivel": "sí", "riesgo_relativo": np.nan},
+             {"periodo": "C3", "senal": "reserva_extraordinaria", "nivel": "sí",
+              "riesgo_relativo": 1.8},
+             {"periodo": "C3", "senal": "atrasos_pension", "nivel": "1 o más",
+              "riesgo_relativo": 1.4}]
+    orden = rv.orden_senales(pd.DataFrame(filas))
+    assert orden["igual_a_D2"].iloc[0] is None
+    assert "pago_tardio" not in orden["orden"].iloc[0]
+
+
+def test_para_publicar_evita_deducir_celdas_por_diferencia():
+    datos = _datos(familias=400)
+    periodos = {"C1–C3": ["C1", "C2", "C3"], "C1": ["C1"], "C2": ["C2"], "C3": ["C3"]}
+    tabla = rv.senales_por_periodo(datos, periodos, min_celda=5)
+    publicable = rv.para_publicar(tabla, ["C1–C3"])
+    por_cohorte = publicable[publicable["periodo"] != "C1–C3"]
+    assert por_cohorte[["estudiantes", "eventos", "tasa"]].isna().all().all()
+    agrupado = publicable[publicable["periodo"] == "C1–C3"]
+    assert agrupado["estudiantes"].notna().all()
+
+
+def test_descriptivos_suprimen_vacios_pequenos():
+    datos = _datos()
+    datos.loc[datos.index[:2], "promedio"] = np.nan
+    tabla = rv.descriptivos(datos, ["promedio"], min_celda=5)
+    assert (tabla.loc[tabla["cohorte"] == "Total", "vacios"] == "<5").all()

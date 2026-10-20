@@ -139,25 +139,42 @@ Las tasas por señal del cuaderno 01 (figuras 3 a 6 de [analisis_datos.md](anali
 
 **Comprobación:** el cuaderno 08 repite las tasas y el riesgo relativo de cada señal solo con C1–C3, con C2–C3 (las cohortes de entrenamiento) y con cada cohorte por separado. Si el orden por riesgo relativo es el mismo, D2 se habría construido igual sin mirar C4 ni C5, y el resultado de C5 vale también como prueba del diseño.
 
-**Resultado:** *pendiente de ejecutar el cuaderno 08 con datos reales.*
+**Resultado (19-oct-2026, datos reales):**
+
+| Periodo | Riesgo relativo: pago tardío | Reserva extraordinaria | 1 o más pensiones tarde | ¿Mismo orden que D2? |
+|---|---|---|---|---|
+| **C1–C3** | **2,88** (24 % frente a 8,3 %) | **1,47** | **1,27** | **Sí** |
+| **C2–C3 (entrenamiento)** | **2,95** | **1,50** | **1,32** | **Sí** |
+| C1 | 2,43 | 1,30 | 1,48 | No: atrasos antes que reserva |
+| C2 | 2,53 | 1,26 | 1,75 | No: atrasos antes que reserva |
+| C3 | `<5` casos | 1,80 | 1,46 | No comparable |
+
+- **Con las cohortes anteriores a la selección, el orden de D2 sale igual.** D2 se habría construido de la misma forma sin mirar C4 ni C5, así que el resultado de C5 vale también como prueba del diseño.
+- El pago tardío es la señal más fuerte en todas las cohortes con casos suficientes. El orden entre la reserva extraordinaria y los atrasos, en cambio, **no es estable** cohorte a cohorte: se invierte en C1 y C2. Ese tramo de la regla descansa en diferencias pequeñas.
+- Por cohorte solo se publica el riesgo relativo: con los conteos por cohorte y los del grupo se podría deducir, por diferencia, la celda suprimida de C3 (`results/metrics/revision_senales_real.csv`).
 
 ### 9.2 El sorteo de desempate
 Muchas familias empatan en el puntaje de D2. En C4 el Lift@k variaba de 1,53 a 1,99 según el sorteo, con media 1,75 (sección 7); el 1,93 con el que se eligió D2 está en la parte alta. El cuaderno 08 mide la distribución con 500 sorteos.
 
-El IC de C5 (1,24 a 2,56) ya incluye buena parte de esa variación: en cada remuestra del bootstrap las familias cambian de orden y los empates se resuelven de nuevo. El 1,97 puntual, en cambio, es el de un solo sorteo. No se sabe en qué posición quedó el sorteo de C5. Si hubiera sido tan favorable como el de C4 (unos 0,2 puntos sobre la media), el Lift@k medio de C5 rondaría 1,8: menos que el 1,97 publicado, pero todavía muy por encima de la meta de 1,20.
+El IC de C5 (1,24 a 2,56) ya incluye buena parte de esa variación: en cada remuestra del bootstrap las familias cambian de orden y los empates se resuelven de nuevo. El 1,97 puntual, en cambio, es el de un solo sorteo. No se sabe en qué posición quedó el sorteo de C5. Si hubiera sido tan favorable como el de C4 (unos 0,16 puntos sobre la media), el Lift@k medio de C5 rondaría 1,8: menos que el 1,97 publicado, pero todavía muy por encima de la meta de 1,20.
 
-**Resultado en C4:** *pendiente.*
+**Resultado en C4 (500 sorteos):** media **1,77**; percentiles 5 y 95: 1,60 y 1,93; extremos: 1,40 y 2,06. La semilla oficial (1,93) supera al 87 % de los sorteos: **D2 se eligió con un sorteo favorable**. Aun con el valor medio, D2 queda por encima de la logística híbrida (1,53, que no tiene empates) y de la meta de 1,20 en el 100 % de los sorteos (el mínimo es 1,40). Recall@k medio: 0,28.
 
 ### 9.3 D2 frente a D
 Los IC de D2 [1,24; 2,56] y de D [1,03; 2,30] en C5 se solapan casi por completo, así que **no está demostrado que D2 sea mejor que D**; solo que las dos superan al azar. El cuaderno 08 estima el IC 95 % de la diferencia D2 − D en C4 con un bootstrap **pareado** (las dos reglas sobre las mismas remuestras de representantes, con un sorteo nuevo en cada una). La elección de D2 se mantiene por la regla escrita de antemano (D37: el mayor Lift@k en C4) y porque D2 explica mejor a Secretaría por qué llama a cada familia.
 
-**Resultado en C4:** *pendiente.*
+**Resultado en C4 (2.000 remuestras):** D2 1,75 [1,22; 2,31]; D 1,75 [1,21; 2,29]; **diferencia D2 − D = 0,00 [−0,62; 0,62]**, y D2 supera a D en el 47 % de las remuestras. En C4 las dos reglas son **indistinguibles**: el 1,93 frente a 1,86 con que se eligió D2 estaba dentro del ruido del sorteo y del muestreo. Lo que sí está demostrado es que las dos superan al azar. La elección de D2 se mantiene por la regla registrada de antemano y por su explicación, no por una ventaja medida sobre D.
 
 ### 9.4 Por qué el azar da 1,08 y no 1,00
 La referencia A sortea un número por **estudiante** y la familia toma el máximo, exactamente como se consolida cualquier puntaje (`evaluate.consolidar_familias`). Una familia con dos hijos tiene dos números en el sorteo y más probabilidad de entrar en la lista. Como el evento es familiar (basta que un hijo no se matricule), las familias con más hijos tienen más casos, y el azar queda un poco por encima de 1. Con un sorteo uniforme **por familia**, el Lift@k esperado es 1. La comparación con D2 no cambia de sentido: el azar publicado es una referencia algo **exigente**, no complaciente. El cuaderno 08 calcula las dos versiones en C4 y el número medio de estudiantes de las familias con y sin caso.
 
-**Resultado en C4:** *pendiente.*
+**Resultado en C4 (500 sorteos):** azar por estudiante **1,12**; azar uniforme por familia **1,00**. Las familias con caso tienen 1,45 estudiantes en promedio y las demás, 1,30: el mecanismo se confirma. Con la referencia uniforme, el Lift@k de C5 se leería frente a 1,00 en lugar de 1,08.
 
 ### 9.5 (Opcional) Las mismas mediciones en C5
 Medir en C5 la distribución por sorteos y la diferencia D2 − D no elige ni cambia nada, porque D y D2 son reglas fijas. Aun así, el protocolo dice que C5 se usa una sola vez. El cuaderno deja esa medición desactivada (`INCLUIR_C5 = False`); si el equipo la activa, debe registrarse como una decisión aparte en [planificacion.md](planificacion.md).
+
+### 9.6 Qué cambia en las conclusiones
+1. El resultado principal se mantiene: con datos que no intervinieron en su diseño, una regla de tres señales casi duplica al azar.
+2. Se corrige una afirmación: **D2 no es mejor que D de forma demostrable**. Las dos reglas son igual de buenas; D2 se prefiere por su explicación.
+3. Las cifras puntuales de C4 (1,93) y C5 (1,97) son de un solo sorteo. En C4 la media es 1,77; para 2027 conviene informar siempre la media de varios sorteos.
 

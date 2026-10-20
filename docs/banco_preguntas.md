@@ -141,6 +141,40 @@ Cada mayo se compara la lista con las matrículas reales. Si el Lift@k baja de 1
 **34. ¿Qué aprendieron de otros sistemas parecidos?**
 El caso más estudiado es el sistema de alerta de deserción de Wisconsin. Ordenaba bien a los estudiantes, pero un estudio de casi diez años de datos no pudo demostrar que mejorara la graduación, y una investigación mostró más falsas alarmas con estudiantes negros e hispanos. La lección es que predecir no es ayudar: por eso no usamos variables demográficas y reconocemos que falta medir si la llamada cambia la decisión.
 
+## H. Preguntas de la revisión independiente (D59)
+
+Una revisión independiente de la entrega señaló los puntos más discutibles del proyecto. Son las preguntas más probables del video de respuestas. Detalle y cifras en [modelado.md, sección 9](modelado.md#9-comprobaciones-de-la-revisión-final-d59).
+
+**35. El análisis exploratorio usó las cinco cohortes. ¿Con qué fundamento dicen que D2 se confirmó fuera de muestra?**
+Tiene razón en que el diseño vio C4 y C5: las tasas por señal del cuaderno 01 se calcularon con todas las cohortes, y no lo declaramos a tiempo. Por eso lo comprobamos: repetimos el cálculo solo con C1–C3 y el orden sale igual (riesgo relativo 2,88 para el pago tardío, 1,47 para la reserva extraordinaria y 1,27 para los atrasos). Con C2–C3, también. D2 se habría construido igual sin mirar C4 ni C5, así que la prueba en C5 vale también para el diseño. Cohorte a cohorte, el orden entre reserva y atrasos cambia: ese tramo de la regla descansa en diferencias pequeñas.
+
+**36. El Lift@k depende del sorteo de empates. ¿El 1,97 de C5 no es un sorteo favorable?**
+Puede serlo. En C4, con 500 sorteos, la media es 1,77 y la semilla oficial (1,93) supera al 87 % de los sorteos: elegimos D2 con un sorteo favorable. Con la media, D2 sigue sobre la logística híbrida (1,53) y sobre la meta de 1,20 en todos los sorteos (el mínimo es 1,40). El IC de C5 [1,24; 2,56] sí incluye esa variación, porque cada remuestra resuelve los empates de nuevo. No repetimos los sorteos en C5 para no volver a usarla.
+
+**37. ¿Dónde está la IA, si la solución es una regla de tres señales con pesos puestos a mano?**
+La IA está en el método, no en el producto final. Usamos aprendizaje automático para encontrar las señales, compararlas con tres modelos optimizados, medir la incertidumbre y descartar lo que no generaliza. Con 193 eventos de entrenamiento, los modelos no superaron a la regla, y eso solo se puede afirmar después de compararlos con validación temporal. Los pesos 100, 20 y 1 no son parámetros estimados: solo fijan un orden lexicográfico. Una logística solo con esas tres señales no se probó: el protocolo permitía un único intento adicional, registrado antes de verlo en C4 (D39), y fue la logística híbrida, que ya las incluía y obtuvo 1,53. Probarla es una buena tarea para la próxima versión.
+
+**38. La optimización empeoró la regresión logística en C4 (1,53 → 1,40). ¿Por qué mantuvieron esa función objetivo?**
+Porque se fijó antes de ver C4 (PR-AUC en la validación C2 → C3) y cambiarla después habría sido ajustar a C4. La optimización sí mejoró la validación interna (de 0,079 a 0,106), pero esa mejora no se trasladó: con 81 eventos en C3, lo óptimo en una cohorte no lo es en la siguiente. El análisis de sensibilidad lo explica: la respuesta es casi plana y lo que importa es la regularización. Una validación con varias cohortes promediadas sería la mejora para una próxima versión.
+
+**39. Los IC de D2 y de D se solapan. ¿Qué evidencia tienen de que D2 sea mejor que la regla más simple?**
+Ninguna, y lo decimos así. Con un bootstrap pareado en C4, la diferencia D2 − D es 0,00 [−0,62; 0,62]: las dos reglas son igual de buenas. D2 se mantiene por la regla de decisión registrada de antemano (el mayor Lift@k en C4) y porque explica mejor a Secretaría por qué llama a cada familia, no por una ventaja medida.
+
+**40. ¿Por qué el azar da 1,08 y no 1,00?**
+Porque el sorteo es por estudiante y la familia toma el máximo, igual que con cualquier puntaje: una familia con más hijos tiene más números en el sorteo. Las familias con caso tienen más hijos en promedio (1,45 frente a 1,30), así que el azar por estudiante da 1,12 en C4. Con un sorteo uniforme por familia da 1,00. Nuestra referencia era, por lo tanto, algo más exigente que el azar puro.
+
+**41. Nadie fuera de LEMAS puede reproducir los resultados y con la base sintética el cuaderno 03 concluye lo contrario. ¿Por qué confiar en las cifras?**
+Porque son datos de menores y no se pueden publicar. Lo que sí se puede verificar: el código completo y sus 255 pruebas; los cuadernos 04, 05, 07, 08 y el de sobreajuste ejecutados con datos reales, con sus salidas agregadas; la huella SHA-256 del sistema congelado antes de abrir C5, y el registro de decisiones fechadas. La base sintética respeta los totales, no las relaciones entre variables: sirve para probar el código, no para reproducir conclusiones, y el README lo advierte.
+
+**42. La razón de selección de las becadas es 0,66 y su recall casi la mitad. ¿Por qué no lo corrigieron en la lista?**
+Porque con 11 eventos la diferencia es incierta y una corrección (reservar cupos para becadas) se habría ajustado a muy pocos casos. Lo que hicimos fue advertirlo en la aplicación, recomendar que Secretaría revise también a las becadas con atrasos y medirlo cada mayo acumulando cohortes. Si la brecha se confirma en 2027, la medida sería reservar una parte de la lista para ese grupo.
+
+**43. Procesaron datos seudonimizados de menores en Colab, fuera del país, sin informar a las familias. ¿Quién responde?**
+LEMAS, como responsable del tratamiento, con nuestra participación como equipo técnico. Hubo autorización institucional, los datos estaban seudonimizados y la clave no salió de LEMAS; aun así, son datos personales y lo declaramos como limitación. Para el uso permanente, el modo institucional procesa todo en un equipo de LEMAS. Antes de usarlo, LEMAS debe informar a las familias, hacer la evaluación de impacto y confirmar la base legal.
+
+**44. ¿Cómo se repartió el trabajo y qué parte puede explicar cada uno?**
+*Respuesta que debe preparar el equipo con su reparto real.* Punto de partida: los roles del README (Guillermo, Product Owner: dominio institucional, datos reales y validación con usuarios; José, Scrum Master: repositorio, modelado, optimización y aplicación). Si el historial de git muestra una sola cuenta, explicar por qué (por ejemplo, porque los cambios se subían desde la cuenta que tenía acceso a los datos reales) y que cada uno elija dos o tres decisiones del registro que pueda explicar en detalle.
+
 ## Consejos para responder
 
 - Empezar por la respuesta corta y luego dar una cifra.
