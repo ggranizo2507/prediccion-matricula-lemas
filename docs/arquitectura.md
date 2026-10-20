@@ -28,7 +28,9 @@ flowchart LR
 | `src/data_processing.py` | Limpieza, normalización (curso, estados de reserva, alias), representantes atípicos, predictores conocidos en t0, cohortes, etiqueta y guardas anti-fuga |
 | `src/auditoria.py` | Conteo de eventos, EPV, diferencias estandarizadas, decisión sobre C1, tabla 6.3 del v5 y sensibilidad |
 | `src/evaluate.py` | Consolidación por representante, k por sede y Precision/Recall/Lift@k familiar |
-| `src/modeling.py` | Candidatos, optimización con Optuna, selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
+| `src/reglas.py` | Única definición de las reglas D y D2 (la usan la auditoría, el modelado, los escenarios, el alcance y la aplicación) |
+| `src/modeling.py` | Candidatos, optimización con Optuna (espacio de búsqueda en `config.yaml`), selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
+| `src/revision.py` | Comprobaciones de la revisión final (D59): orden de las señales de D2 con C1–C3, sorteos de desempate, IC pareado D2 − D, azar por estudiante y por familia, estadísticos descriptivos. Cuaderno `08_revision_final` |
 | `src/diagnostico.py` · `src/graficos_diagnostico.py` | Actividad de la semana 3: seguimiento de métricas por iteración, curvas de aprendizaje de scikit-learn, diagnóstico cuantitativo de sobreajuste y subajuste (con la segunda etapa de D54), estrategias de un solo cambio con bootstrap, réplica y semillas, y sus figuras |
 | `src/alcance.py` · `src/graficos_alcance.py` | Análisis descriptivo del alcance de la lista (D50): desglose del evento, alcance según k y lista semanal frente a lista fija. No usa C5 ni cambia el sistema |
 | `src/costo.py` · `src/graficos_costo.py` · `tools/generar_costo.py` | Costo esperado de las llamadas (D56): razón de equilibrio cFN / cFP por escenario, precisión por tramo de la lista y beneficio neto según k. Solo usa tablas agregadas ya publicadas; no vuelve a evaluar C5 |
@@ -38,8 +40,8 @@ flowchart LR
 | `src/institucional.py` | Modo institucional (D45): seudonimiza el Excel en memoria, verifica que no queden identificadores, arma el acta y construye la lista con nombres. Comprueba que la app se use en el mismo equipo |
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
-| `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 |
-| `tests/` | 179 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 (construcción y prueba única en C5), luego 04 y 05 (lectura de resultados), `overfitting_analysis`, 06, 07 y 08 (análisis sin C5) |
+| `tests/` | 252 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -133,26 +135,27 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` y registro de decisiones D01–D53.
-- **Versiones exactas** en `requirements-lock.txt` y en `app/requirements.txt`.
-- **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push.
+- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D59.
+- **Versiones exactas** en `requirements.txt` y en `app/requirements.txt`.
+- **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push, con Python 3.11 y 3.12.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
 - **Cuadernos listos para Colab**, que se pueden ejecutar de punta a punta con la base sintética. Siguen siendo la evidencia académica del proceso; el uso anual en LEMAS ya no los necesita.
 
 ## 7. Tecnologías
 
-Versiones exactas con las que se verificó el proyecto (`requirements-lock.txt`). `requirements.txt` fija las versiones mínimas compatibles con Colab, y `app/requirements.txt` las de la aplicación desplegada.
+Versiones exactas con las que se verificó el proyecto (`requirements.txt`); `app/requirements.txt` repite las de la aplicación desplegada. En Colab, cada cuaderno instala solo lo que falta.
 
 | Uso | Librería | Versión |
 |---|---|---|
-| Lenguaje | Python | 3.11 o superior (GitHub Actions usa 3.12) |
+| Lenguaje | Python | 3.11 o superior (GitHub Actions prueba 3.11 y 3.12) |
 | Datos | pandas · NumPy · openpyxl · PyYAML | 3.0.2 · 2.4.4 · 3.1.5 · 6.0.3 |
 | Modelos | scikit-learn (regresión logística, HistGradientBoosting, calibración, `Pipeline`) | 1.8.0 |
 | Optimización | Optuna (TPE, `optuna.importance` para fANOVA) | 5.0.0 |
-| Explicabilidad y equidad | SHAP · Fairlearn | 0.52.0 · 0.14.0 |
-| Seguimiento de experimentos | MLflow | 3.16.1 |
+| Explicabilidad | SHAP (más importancia por permutación de scikit-learn) | 0.52.0 |
+| Equidad | Cálculo propio en `modeling.equidad` (razón de selección y diferencia de recall por grupo); no se usa Fairlearn | — |
+| Seguimiento de experimentos | Historial de Optuna en CSV, registro de decisiones y huella SHA-256 del sistema (no se usa MLflow) | — |
 | Persistencia | joblib | 1.5.3 |
 | Figuras | Matplotlib · seaborn · Plotly | 3.10.8 · 0.13.2 · 7.1.0 |
 | Interfaz | Streamlit (Community Cloud para la demostración) | 1.64.0 |
 | Calidad | pytest · ruff (PEP 8) · GitHub Actions | 9.1.1 · 0.16.9 |
-| Reportes | reportlab (solo para `diagnostic_report.pdf`) | 4.0 o superior |
+| Reportes | reportlab (solo para `diagnostic_report.pdf`) | 4.4.10 |

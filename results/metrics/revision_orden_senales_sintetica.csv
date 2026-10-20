@@ -1,0 +1,6 @@
+periodo,rr_pago_tardio,rr_reserva_extraordinaria,rr_atrasos_pension,orden,igual_a_D2
+C1–C3,1.1,1.05,1.85,atrasos_pension > pago_tardio > reserva_extraordinaria,False
+C2–C3 (entrenamiento),1.05,1.12,1.83,atrasos_pension > reserva_extraordinaria > pago_tardio,False
+C1,,0.88,2.13,atrasos_pension > reserva_extraordinaria > pago_tardio,False
+C2,,1.02,1.88,atrasos_pension > reserva_extraordinaria > pago_tardio,False
+C3,,1.28,1.72,atrasos_pension > reserva_extraordinaria > pago_tardio,False

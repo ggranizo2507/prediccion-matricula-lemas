@@ -22,6 +22,8 @@ Este documento explica cómo se optimizaron los modelos, qué se obtuvo y qué s
 
 Los rangos son **conservadores a propósito**: árboles poco profundos, hojas grandes y regularización fuerte, porque hay pocos eventos (193 en el entrenamiento).
 
+Los espacios y el número de pruebas (60 por modelo) están en `config.yaml` (`optimizacion`), de donde los leen la optimización (`modeling.entrenar_candidatos`) y el análisis de sensibilidad (`sensibilidad.ESPACIOS`). Se comprobó que, con la misma semilla, Optuna propone exactamente las mismas pruebas que cuando el espacio estaba escrito en el código (D59).
+
 ## 2. Resultados
 
 ### Hiperparámetros elegidos (datos reales)
@@ -29,7 +31,7 @@ Los rangos son **conservadores a propósito**: árboles poco profundos, hojas gr
 |---|---|
 | Regresión logística | todas las variables, sin balanceo, `C` = 2,75, `l1_ratio` = 0,87 |
 | Gradient boosting | todas las variables, con balanceo, `learning_rate` = 0,035, `max_depth` = 3, `max_leaf_nodes` = 6, `min_samples_leaf` = 101, `l2` = 4,25, `max_iter` = 359 |
-| Logística híbrida | con balanceo, `C` = 9,0 |
+| Logística híbrida | con balanceo, `C` = 9,0 (cerca del límite superior del rango, 10: casi sin regularización. La respuesta es casi plana en `C` —sección 2 bis—, así que ampliar el rango no cambiaría el resultado de forma apreciable) |
 
 ### Efecto de la optimización en C4 (métrica principal)
 | Modelo | Antes de optimizar | Después de optimizar | Diagnóstico |

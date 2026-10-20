@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -120,7 +121,7 @@ from src.institucional import (  # noqa: E402
     nueva_clave,
     seudonimizar_excel,
 )
-from src.utils import cargar_config  # noqa: E402
+from src.utils import cargar_config, configurar_logging  # noqa: E402
 
 anotar_modulos()
 
@@ -129,6 +130,8 @@ COLOR_SUAVE = "#9DB4C9"
 st.set_page_config(page_title="Matrícula LEMAS · Priorización", page_icon="🎓", layout="wide")
 
 CONFIG = cargar_config(RAIZ / "config.yaml")
+configurar_logging()   # solo cuentas y tipos de evento: nunca datos de estudiantes
+LOG = logging.getLogger("lemas.app")
 MODO = modo_actual()
 
 
@@ -149,6 +152,20 @@ RESULTADOS = json.loads((RAIZ / "app/assets/resultados_validacion.json").read_te
 # Carga y procesamiento (en memoria; nada se guarda en disco)
 # --------------------------------------------------------------------------- #
 @st.cache_data(show_spinner=False)
+def puntos(valor: float, decimales: int = 1) -> str:
+    """Diferencia entre dos porcentajes, en puntos porcentuales (+1,2 p. p.)."""
+    return f"{100 * valor:+.{decimales}f}".replace(".", ",") + " p. p."
+
+
+def leer_decimal(texto: str, minimo: float, maximo: float) -> float | None:
+    """Número escrito con coma o punto decimal; None si no es válido o está fuera de rango."""
+    try:
+        valor = float(str(texto).strip().replace(",", "."))
+    except ValueError:
+        return None
+    return valor if minimo <= valor <= maximo else None
+
+
 def pct(valor: float, decimales: int = 1, signo: bool = False) -> str:
     """Porcentaje con coma decimal, como en el resto del proyecto (5,5 %)."""
     texto = f"{100 * valor:{'+' if signo else ''}.{decimales}f}".replace(".", ",")
@@ -185,7 +202,7 @@ def bytes_ejemplo() -> bytes:
 
 def usar_datos(contenido: bytes, origen: str, institucional=None) -> None:
     """Cambia la fuente de datos de la sesión. La última acción del usuario manda."""
-    for clave in ("generar", "puntuados", "lista", "institucional"):
+    for clave in ("generar", "puntuados", "lista", "institucional", "anio"):
         st.session_state.pop(clave, None)
     if institucional is not None:
         st.session_state["institucional"] = institucional
@@ -321,15 +338,18 @@ try:
     with st.spinner("Validando y preparando los datos…"):
         BASE, SISTEMA = preparar(hashlib.sha256(contenido).hexdigest(), contenido)
 except ErrorEntrada as error:
+    LOG.info("Archivo rechazado por validación")
     AVISO_DATOS.error(f"Archivo rechazado: {st.session_state['origen']}")
     st.error(f"No se pudo usar el archivo: {error}")
     st.stop()
-except Exception:   # mensaje amable, sin detalles técnicos para el usuario final
+except Exception as error:   # mensaje amable, sin detalles técnicos para el usuario final
+    LOG.error("Error inesperado al preparar los datos: %s", type(error).__name__)
     AVISO_DATOS.error(f"Archivo rechazado: {st.session_state['origen']}")
     st.error("El archivo no tiene la estructura esperada. Revise el manual de usuario "
              "(columnas obligatorias y formato de fechas) e intente de nuevo.")
     st.stop()
 AVISO_DATOS.success(f"Datos: {st.session_state['origen']}")
+LOG.info("Datos listos: %d filas, %d ciclos", len(BASE), BASE["anio_origen"].nunique())
 
 DATOS_INSTITUCIONALES = st.session_state.get("institucional") if INSTITUCIONAL and LOCAL else None
 if DATOS_INSTITUCIONALES is not None:
@@ -358,8 +378,10 @@ if DATOS_INSTITUCIONALES is not None:
 
 with st.sidebar:
     st.header("2 · Parámetros")
-    anios = sorted(BASE["anio_origen"].dropna().astype(int).unique())
-    anio = st.selectbox("Ciclo de origen", anios, index=anios.index(ciclo_por_defecto(BASE)),
+    anios = [int(a) for a in sorted(BASE["anio_origen"].dropna().astype(int).unique())]
+    if st.session_state.get("anio") not in anios:   # datos nuevos: volver al ciclo actual
+        st.session_state["anio"] = ciclo_por_defecto(BASE)
+    anio = st.selectbox("Ciclo de origen", anios, key="anio",
                         format_func=lambda a: f"{a}-{a + 1} (corte 20-feb-{a + 1})",
                         help="Ciclo cuyas reservas aprobadas se van a priorizar.")
     st.markdown("**Familias a contactar (k)**")
@@ -402,6 +424,7 @@ with tab_lista:
                 st.stop()
             puntuados = puntuar(poblacion, SISTEMA)
             lista = lista_contactos(puntuados, k_editado, CONFIG["proyecto"]["semilla"])
+            LOG.info("Lista generada: ciclo %s, %d familias", anio, len(lista))
         calidad = revisar_senales(poblacion, CONFIG)   # D57: señales vacías o constantes
         if calidad["nivel"] != "ok":
             texto = "\n".join(f"- {aviso}" for aviso in calidad["avisos"])
@@ -427,7 +450,7 @@ with tab_lista:
                 "estudiantes": "Estudiantes",
                 "estudiantes_ids": "Estudiantes (seudónimos)", "motivo": "Motivo"}),
             use_container_width=True, hide_index=True)
-        st.download_button("⬇️ Descargar lista (CSV)", lista.to_csv(index=False).encode("utf-8"),
+        st.download_button("⬇️ Descargar lista (CSV)", lista.to_csv(index=False).encode("utf-8-sig"),
                            file_name=f"lista_contactos_{anio}.csv", mime="text/csv")
         col_a, col_b = st.columns(2)
         motivos = lista["motivo"].str.split("; ").explode().str.replace(
@@ -516,6 +539,12 @@ with tab_seguimiento:
                 "entre el 20 de febrero y la fecha de corte, así que no se puede saber quién "
                 "sigue pendiente. Cargue el archivo actualizado a esa fecha. Con el ejemplo, "
                 "elija un ciclo anterior en la barra lateral.", icon="📂")
+            anterior = int(anio) - 1
+            if anterior in anios:
+                st.button(f"Ver el seguimiento del ciclo {anterior}-{anterior + 1}",
+                          on_click=lambda: st.session_state.update(anio=anterior),
+                          help="Cambia el ciclo de la barra lateral a uno que ya tiene los "
+                               "pagos registrados (resultado retrospectivo).")
         else:
             s1, s2, s3, s4 = st.columns(4)
             s1.metric("Familias al 20 de febrero", f"{cifras['familias_t0']:,}".replace(",", "."))
@@ -559,7 +588,7 @@ with tab_seguimiento:
                 use_container_width=True, hide_index=True)
             st.download_button(
                 "⬇️ Descargar seguimiento (CSV)",
-                tabla[columnas].to_csv(index=False).encode("utf-8"),
+                tabla[columnas].to_csv(index=False).encode("utf-8-sig"),
                 file_name=f"seguimiento_{anio}_{cifras['fecha_corte']}.csv", mime="text/csv")
             st.caption(
                 "El orden de la tabla es el de la regla del 20 de febrero y solo sirve para "
@@ -601,20 +630,24 @@ with tab_proy:
     else:
         proy = proyeccion_actual(puntuados, SISTEMA.tasa_historica)
         st.markdown("Matrículas **esperadas** del ciclo siguiente entre los elegibles, por sede "
-                    "y subnivel. Se compara con **B1** (tasa histórica), que en la validación "
-                    "tuvo el mismo error (MAPE ≈ 2,8 %).")
+                    "y subnivel. Se compara con la **tasa histórica**, que en la validación "
+                    "tuvo el mismo error medio (alrededor de 2,8 %).")
         largo = proy.melt(id_vars=["sede", "subnivel"],
                           value_vars=["elegibles", "esperadas_modelo", "esperadas_B1"],
                           var_name="serie", value_name="estudiantes")
         largo["serie"] = largo["serie"].map({"elegibles": "Elegibles",
                                              "esperadas_modelo": "Esperadas (modelo)",
-                                             "esperadas_B1": "Esperadas (B1)"})
+                                             "esperadas_B1": "Esperadas (tasa histórica)"})
         figura = px.bar(largo, x="subnivel", y="estudiantes", color="serie", barmode="group",
                         facet_col="sede", labels={"serie": "", "subnivel": ""},
                         color_discrete_sequence=["#C9D6E3", COLOR, COLOR_SUAVE])
         figura.for_each_annotation(lambda a: a.update(text=a.text.split("=")[-1]))
         st.plotly_chart(figura, use_container_width=True)
-        st.dataframe(proy, use_container_width=True, hide_index=True)
+        st.dataframe(proy.rename(columns={
+            "sede": "Sede", "subnivel": "Subnivel", "elegibles": "Elegibles",
+            "esperadas_modelo": "Esperadas (modelo)",
+            "esperadas_B1": "Esperadas (tasa histórica)"}),
+            use_container_width=True, hide_index=True)
 
 # --------------------------------------------------------------------------- #
 # Evaluar un estudiante (formulario validado)
@@ -635,24 +668,30 @@ with tab_estudiante:
                                          "nuevo": "Estudiante nuevo"}.get)
         atrasos = f2.number_input("Pensiones pagadas tarde (mayo–enero)", 0, 9, 0)
         reserva = f3.radio("Tipo de reserva", ["ORDINARIA", "EXTRAORDINARIA"], horizontal=True)
-        promedio = f3.number_input("Promedio final (0–10)", 0.0, 10.0, 9.0, step=0.01)
+        promedio_texto = f3.text_input("Promedio final (0–10)", "9,00",
+                                       help="Con coma o punto decimal, por ejemplo 8,75.")
         conducta = f3.selectbox("Conducta", list("ABCDE"))
         enviado = st.form_submit_button("Estimar", type="primary")
-    if enviado:
+    promedio = leer_decimal(promedio_texto, 0.0, 10.0) if enviado else None
+    if enviado and promedio is None:
+        st.error("El promedio debe ser un número entre 0 y 10, por ejemplo 8,75.")
+    elif enviado:
         resultado = estimar_estudiante({
             "sede": sede, "subnivel": subnivel, "pago_origen": pago,
             "atrasos_pension": atrasos, "reserva_extraordinaria": int(reserva == "EXTRAORDINARIA"),
             "promedio": promedio, "conducta": {"A": 5, "B": 4, "C": 3, "D": 2, "E": 1}[conducta],
         }, SISTEMA)
         r1, r2, r3 = st.columns(3)
-        r1.metric("Prioridad D2", resultado["nivel"])
+        r1.metric("Prioridad en la lista", resultado["nivel"],
+                  help="Alta: pagó tarde la matrícula anterior. Media: reserva extraordinaria o "
+                       "3 o más pensiones pagadas tarde. Baja: el resto.")
         r2.metric("Prob. de no matrícula", pct(resultado["prob_no_matricula"]),
-                  delta=pct(resultado["prob_no_matricula"] - resultado["tasa_historica"],
-                            signo=True) + " vs. tasa histórica", delta_color="inverse")
-        r3.metric("Tasa histórica (B1)", pct(resultado["tasa_historica"]))
+                  delta=puntos(resultado["prob_no_matricula"] - resultado["tasa_historica"])
+                  + " frente a la tasa histórica", delta_color="inverse")
+        r3.metric("Tasa histórica", pct(resultado["tasa_historica"]))
         st.markdown(f"**Señales:** {resultado['motivo']}.")
         st.caption("La probabilidad individual es orientativa: en la validación no superó a la "
-                   "tasa histórica. Para decidir a quién contactar use la lista D2.")
+                   "tasa histórica. Para decidir a quién contactar use la lista de contactos.")
 
 # --------------------------------------------------------------------------- #
 # Acerca de
@@ -677,6 +716,10 @@ Validación temporal: entrenamiento con los ciclos 2022–2023 y 2023–2024, se
     st.dataframe(tabla_c5.rename(columns={
         "sistema": "Sistema", "lift": "Lift@k", "precision": "Precision@k",
         "recall": "Recall@k"}), hide_index=True, use_container_width=True)
+    st.caption("**Lift@k:** cuántas veces más familias sin matrícula encuentra la lista que una "
+               "selección al azar del mismo tamaño (1 = igual que el azar). **Precision@k:** "
+               "parte de la lista que sí eran casos. **Recall@k:** parte de los casos que "
+               "entró en la lista. El IC 95 % es el rango plausible del resultado.")
     st.plotly_chart(px.bar(c5, x="lift", y="sistema", orientation="h",
                            title="Lift@k en la prueba final (1 = azar)",
                            color_discrete_sequence=[COLOR]).add_vline(x=1, line_dash="dash"),

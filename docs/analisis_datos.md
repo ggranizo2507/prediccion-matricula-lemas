@@ -1,6 +1,6 @@
 # Análisis de datos · Fase 1
 
-> **Estado: cierre de la Fase 1 (01-oct-2026).** Cifras de la segunda ejecución con datos reales de LEMAS, ya con las correcciones D27–D29 y k duplicado (D32). Fuentes: `perfil_lemas.json`, figuras `real_*`, `reporte_6_3_real.csv`, `decision_c1_real.json`, `referencias_C4_real.csv` y `sensibilidad_real.csv`.
+> **Estado: cierre de la Fase 1 (01-oct-2026); última revisión: 19-oct-2026 (D59: declaración sobre el uso de C4 y C5 en esta exploración y estadísticos descriptivos).** Cifras de la segunda ejecución con datos reales de LEMAS, ya con las correcciones D27–D29 y k duplicado (D32). Fuentes: `perfil_lemas.json`, figuras `real_*`, `reporte_6_3_real.csv`, `decision_c1_real.json`, `referencias_C4_real.csv` y `sensibilidad_real.csv`.
 >
 > Todo lo que aparece aquí son **agregados**. Los grupos con menos de 5 casos se muestran como `<5`.
 
@@ -79,6 +79,8 @@ Los **nuevos** pagan sobre todo antes de t0 (entre 107 y 125 por año). No forma
 
 Las correlaciones de Spearman con el resultado son débiles (|ρ| ≤ 0,07). Ninguna variable separa los casos por sí sola, así que se espera una discriminación modesta.
 
+> **Aviso sobre el uso de C4 y C5 en esta sección (declarado en la revisión final, D59).** Las tasas de esta tabla y de las figuras 3 a 6 se calcularon con las **cinco cohortes**, incluidas C4 (selección) y C5 (prueba). De estas tasas salió el orden de las señales de la regla D2. Ningún parámetro se estimó con C4 o C5, pero el diseño de D2 sí las vio de forma agregada. El cuaderno 08 repite el cálculo solo con C1–C3; el resultado está en [modelado.md, sección 9.1](modelado.md#91-el-diseño-de-d2-vio-todas-las-cohortes). En una próxima versión, el análisis exploratorio debe usar solo las cohortes de entrenamiento.
+
 ![Figura 3. Tasa de no matrícula por variable categórica](../results/figures/real_03_tasa_categoricas.png)
 
 *Figura 3.* El pago tardío de la matrícula anterior casi triplica la tasa (barra «tardio» frente a la línea de la media). La reserva extraordinaria y la Preparatoria también suben el riesgo. La sede y la beca casi no cambian nada.
@@ -101,7 +103,7 @@ Las correlaciones de Spearman con el resultado son débiles (|ρ| ≤ 0,07). Nin
 
 ## 6. Comparabilidad de C1 y decisión
 
-- **Diferencias estandarizadas (Figura 8):** al normalizar los cursos, las diferencias por nombre de curso desaparecen. Quedan cinco diferencias reales que superan el umbral de 0,20: promedio (SMD ≈ +0,24; C1 tiene notas más altas), proporción de nuevos (≈ −0,23), sede (≈ ±0,22) y conducta (≈ +0,21).
+- **Diferencias estandarizadas (Figura 8):** al normalizar los cursos, las diferencias por nombre de curso desaparecen. Quedan cinco diferencias reales que superan el umbral de 0,20, en cuatro variables (la sede cuenta dos veces, una por cada sede): promedio (SMD ≈ +0,24; C1 tiene notas más altas), proporción de nuevos (≈ −0,23), sede (≈ ±0,22) y conducta (≈ +0,21).
 ![Figura 8. Diferencias estandarizadas de C1 frente a C2–C4](../results/figures/real_08_comparabilidad_c1.png)
 
 *Figura 8.* Cinco variables superan la diferencia estandarizada de 0,20 (líneas discontinuas). C1 se parece menos a las cohortes posteriores, y por eso se evaluó su exclusión.
@@ -141,7 +143,7 @@ Todas se evalúan en C4, con el mismo k por sede y la misma consolidación por r
 | C2 | 1.236 | 1.046 | 9,1 % | 8,8 % |
 | C3 | 1.305 | 1.289 | 6,2 % | 5,9 % |
 | C4 | 1.374 | 1.196 | 8,9 % | 7,8 % |
-| C5 | 1.411 | 1.375 | 7,0 % | 6,8 % |
+| C5 | 1.411 | 1.375 | 6,9 % | 6,8 % |
 
 Excluir las aprobaciones extraordinarias reduce la tasa entre 0,2 y 1,1 puntos. La conclusión no cambia: las aprobaciones que pudieron ser tardías no distorsionan la etiqueta. Se mantiene la población principal (D08).
 
@@ -150,6 +152,6 @@ Excluir las aprobaciones extraordinarias reduce la tasa entre 0,2 y 1,1 puntos. 
 1. Reducir la dimensión: agrupar `curso` en subnivel o eliminarlo, regularizar con L1/L2 y comparar con gradient boosting con restricciones de monotonía en atrasos. **La meta es superar a D2.**
 2. Tratar `atrasos_pension` con una forma no lineal (por tramos), como sugiere la Figura 4.
 3. Calibrar las probabilidades (Platt o isotónica) en C4 antes de evaluar en C5.
-4. Medir la equidad por sede y por beca (Fairlearn), dada la poca diferencia de tasas entre esos grupos.
+4. Medir la equidad por sede y por beca (con el enfoque de Fairlearn), dada la poca diferencia de tasas entre esos grupos.
 5. Conducta: el ciclo 2022 tiene un 18 % de notas B, frente a 2–3 % en los demás años. El equipo confirmó que la conversión es correcta (D34). Como la variable varía poco, se evaluará también como indicador "A / no A".
 6. Equidad: revisar el desempeño del modelo para los estudiantes con representante de cédula genérica (familias extranjeras), sin usar esa marca como predictor.

@@ -1,0 +1,102 @@
+{
+  "fuente": "sintetica",
+  "k_por_sede": {
+    "Mucho Lote 1": 113,
+    "Mucho Lote 2": 75
+  },
+  "sorteos": 500,
+  "repeticiones": 2000,
+  "incluye_C5": false,
+  "orden_senales": [
+    {
+      "periodo": "C1–C3",
+      "rr_pago_tardio": 1.1,
+      "rr_reserva_extraordinaria": 1.05,
+      "rr_atrasos_pension": 1.85,
+      "orden": "atrasos_pension > pago_tardio > reserva_extraordinaria",
+      "igual_a_D2": false
+    },
+    {
+      "periodo": "C2–C3 (entrenamiento)",
+      "rr_pago_tardio": 1.05,
+      "rr_reserva_extraordinaria": 1.12,
+      "rr_atrasos_pension": 1.83,
+      "orden": "atrasos_pension > reserva_extraordinaria > pago_tardio",
+      "igual_a_D2": false
+    },
+    {
+      "periodo": "C1",
+      "rr_pago_tardio": NaN,
+      "rr_reserva_extraordinaria": 0.88,
+      "rr_atrasos_pension": 2.13,
+      "orden": "atrasos_pension > reserva_extraordinaria > pago_tardio",
+      "igual_a_D2": false
+    },
+    {
+      "periodo": "C2",
+      "rr_pago_tardio": NaN,
+      "rr_reserva_extraordinaria": 1.02,
+      "rr_atrasos_pension": 1.88,
+      "orden": "atrasos_pension > reserva_extraordinaria > pago_tardio",
+      "igual_a_D2": false
+    },
+    {
+      "periodo": "C3",
+      "rr_pago_tardio": NaN,
+      "rr_reserva_extraordinaria": 1.28,
+      "rr_atrasos_pension": 1.72,
+      "orden": "atrasos_pension > reserva_extraordinaria > pago_tardio",
+      "igual_a_D2": false
+    }
+  ],
+  "sorteos_C4": {
+    "sorteos": 500,
+    "lift_media": 1.0819,
+    "lift_p05": 0.9513,
+    "lift_p50": 1.0632,
+    "lift_p95": 1.1752,
+    "lift_min": 0.8954,
+    "lift_max": 1.2311,
+    "lift_semilla_oficial": 1.0632,
+    "percentil_semilla_oficial": 24.2,
+    "recall_media": 0.1973
+  },
+  "pareada_D2_menos_D_C4": {
+    "repeticiones": 2000,
+    "lift_a_media": 1.0912,
+    "ic95_lift_a": [
+      0.6934,
+      1.501
+    ],
+    "lift_b_media": 1.4249,
+    "ic95_lift_b": [
+      0.9641,
+      1.8985
+    ],
+    "diferencia_media": -0.3336,
+    "ic95_diferencia": [
+      -0.9048,
+      0.2194
+    ],
+    "prob_a_mejor": 0.1
+  },
+  "azar_C4": {
+    "repeticiones": 500,
+    "lift_azar_por_estudiante": 1.0237,
+    "lift_azar_por_familia": 0.9928,
+    "estudiantes_por_familia_con_caso": 1.122,
+    "estudiantes_por_familia_sin_caso": 1.098
+  },
+  "sorteos_C5": null,
+  "pareada_D2_menos_D_C5": null,
+  "conclusiones": [
+    "Con C1–C3, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > pago tardío de la matrícula anterior > reserva extraordinaria; es un orden distinto al de D2.",
+    "Con C2–C3 (entrenamiento), las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.",
+    "Con C1, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.",
+    "Con C2, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.",
+    "Con C3, las señales se ordenan así por riesgo relativo: al menos una pensión pagada tarde > reserva extraordinaria > pago tardío de la matrícula anterior; es un orden distinto al de D2.",
+    "En C4, con 500 sorteos de desempate, el Lift@k de D2 tiene media 1,08 (percentiles 5 y 95: 0,95 y 1,18); la semilla oficial da 1,06, más que el 24 % de los sorteos.",
+    "En C4, la diferencia de Lift@k D2 − D es -0,33 [IC 95 %: -0,90; 0,22]; D2 supera a D en el 10 % de las remuestras: no se puede afirmar que D2 sea mejor que D.",
+    "El azar por estudiante da un Lift@k medio de 1,02 y el azar por familia, 0,99. Las familias con caso tienen 1,12 estudiantes en promedio, frente a 1,10 las demás."
+  ]
+}

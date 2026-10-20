@@ -27,6 +27,12 @@ import joblib
 import numpy as np
 import optuna
 import pandas as pd
+from optuna.distributions import (
+    BaseDistribution,
+    CategoricalDistribution,
+    FloatDistribution,
+    IntDistribution,
+)
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.frozen import FrozenEstimator
@@ -41,7 +47,8 @@ from src.data_processing import (
     construir_preprocesador,
 )
 from src.evaluate import consolidar_familias, precision_at_k_familiar
-from src.utils import celda_complementaria
+from src.reglas import puntajes_reglas  # única definición de D y D2 (se reexporta)
+from src.utils import cargar_config, celda_complementaria
 
 log = logging.getLogger("lemas.modelado")
 optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -145,34 +152,54 @@ def construir_modelo(tipo: str, params: dict, semilla: int) -> Pipeline:
     return Pipeline([("prep", prep), ("modelo", modelo)])
 
 
-def _espacio(tipo: str, trial: optuna.Trial) -> dict:
-    if tipo == "hibrido":   # variables fijas: solo se ajusta la regularización
-        return {"balanceado": trial.suggest_categorical("balanceado", [True, False]),
-                "C": trial.suggest_float("C", 1e-3, 10, log=True)}
-    # Mismo orden de sugerencias que en la primera ejecución: resultados reproducibles
-    params = {"conjunto": trial.suggest_categorical("conjunto", list(CONJUNTOS)),
-              "balanceado": trial.suggest_categorical("balanceado", [True, False])}
-    if tipo == "logistica":
-        params.update(C=trial.suggest_float("C", 1e-3, 10, log=True),
-                      l1_ratio=trial.suggest_float("l1_ratio", 0.0, 1.0))
-    else:
-        params.update(
-            learning_rate=trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
-            max_depth=trial.suggest_int("max_depth", 2, 4),
-            max_leaf_nodes=trial.suggest_int("max_leaf_nodes", 4, 15),
-            min_samples_leaf=trial.suggest_int("min_samples_leaf", 20, 120),
-            l2_regularization=trial.suggest_float("l2_regularization", 1e-3, 10, log=True),
-            max_iter=trial.suggest_int("max_iter", 50, 400))
+def distribuciones(espacio: dict) -> dict[str, BaseDistribution]:
+    """Espacio de búsqueda de `config.yaml` (optimizacion.espacios.<tipo>) → distribuciones
+    de Optuna, en el mismo orden. Lo usan la optimización y el análisis de sensibilidad."""
+    salida: dict[str, BaseDistribution] = {}
+    for nombre, d in espacio.items():
+        if d["tipo"] == "categorica":
+            salida[nombre] = CategoricalDistribution(list(d["opciones"]))
+        elif d["tipo"] == "real":
+            salida[nombre] = FloatDistribution(float(d["min"]), float(d["max"]),
+                                               log=bool(d.get("log", False)))
+        elif d["tipo"] == "entero":
+            salida[nombre] = IntDistribution(int(d["min"]), int(d["max"]))
+        else:
+            raise ValueError(f"Tipo de hiperparámetro desconocido en {nombre}: {d['tipo']}")
+    return salida
+
+
+def espacio_de(tipo: str, config: dict | None = None) -> dict[str, BaseDistribution]:
+    """Distribuciones del modelo `tipo` según `config.yaml`."""
+    config = config if config and "optimizacion" in config else cargar_config()
+    return distribuciones(config["optimizacion"]["espacios"][tipo])
+
+
+def _sugerir(trial: optuna.Trial, espacio: dict[str, BaseDistribution]) -> dict:
+    """Pide a Optuna un valor por hiperparámetro, en el orden del espacio (reproducible)."""
+    params = {}
+    for nombre, dist in espacio.items():
+        if isinstance(dist, CategoricalDistribution):
+            params[nombre] = trial.suggest_categorical(nombre, list(dist.choices))
+        elif isinstance(dist, FloatDistribution):
+            params[nombre] = trial.suggest_float(nombre, dist.low, dist.high, log=dist.log)
+        else:
+            params[nombre] = trial.suggest_int(nombre, dist.low, dist.high)
     return params
 
 
 def optimizar(
     tipo: str, X_tr: pd.DataFrame, y_tr: np.ndarray, X_val: pd.DataFrame, y_val: np.ndarray,
-    n_trials: int, semilla: int,
+    n_trials: int, semilla: int, espacio: dict[str, BaseDistribution] | None = None,
 ) -> optuna.Study:
-    """Optuna (TPE con semilla) maximizando PR-AUC en la validación interna."""
+    """Optuna (TPE con semilla) maximizando PR-AUC en la validación interna.
+
+    El espacio de búsqueda sale de `config.yaml` (optimizacion.espacios) si no se pasa.
+    """
+    espacio = espacio or espacio_de(tipo)
+
     def objetivo(trial):
-        modelo = construir_modelo(tipo, _espacio(tipo, trial), semilla).fit(X_tr, y_tr)
+        modelo = construir_modelo(tipo, _sugerir(trial, espacio), semilla).fit(X_tr, y_tr)
         return average_precision_score(y_val, modelo.predict_proba(X_val)[:, 1])
 
     estudio = optuna.create_study(direction="maximize",
@@ -196,15 +223,6 @@ def metricas(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla:
     if np.all((riesgo >= 0) & (riesgo <= 1)):
         salida["brier"] = round(float(brier_score_loss(y, riesgo)), 4)
     return salida
-
-
-def puntajes_reglas(datos: pd.DataFrame) -> dict[str, np.ndarray]:
-    """Reglas sin aprendizaje (Fase 1): D y D2."""
-    atrasos = pd.to_numeric(datos["atrasos_pension"], errors="coerce").fillna(0).to_numpy()
-    tardio = (datos["pago_origen"] == "tardio").to_numpy().astype(float)
-    extra = pd.to_numeric(datos["reserva_extraordinaria"], errors="coerce").fillna(0).to_numpy()
-    return {"D · más atrasos primero": atrasos,
-            "D2 · señales administrativas": 100 * tardio + 20 * extra + atrasos}
 
 
 def bootstrap_ic(
@@ -245,10 +263,16 @@ class Candidato:
 
 def entrenar_candidatos(
     dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
-    k_por_sede: dict, n_trials: int = 40,
+    k_por_sede: dict, n_trials: int | None = None,
 ) -> dict[str, Candidato]:
-    """Optimiza y reentrena cada tipo de modelo; evalúa en entrenamiento y en C4."""
+    """Optimiza y reentrena cada tipo de modelo; evalúa en entrenamiento y en C4.
+
+    Pruebas por modelo y espacios de búsqueda: `config.yaml` (optimizacion).
+    """
     semilla = config["proyecto"]["semilla"]
+    if n_trials is None:
+        n_trials = int((config if "optimizacion" in config else cargar_config())
+                       ["optimizacion"]["trials_por_modelo"])
     entrenamiento = dataset[dataset["cohorte"].isin(cohortes_entrenamiento)]
     seleccion = dataset[dataset["rol"] == "seleccion"]
     # Validación interna temporal: la última cohorte de entrenamiento valida a las previas
@@ -266,7 +290,7 @@ def entrenar_candidatos(
     for tipo in TIPOS:
         estudio = optimizar(tipo, construir_matriz_x(tr), tr["y_no_matricula"].to_numpy(),
                             construir_matriz_x(va), va["y_no_matricula"].to_numpy(),
-                            n_trials, semilla)
+                            n_trials, semilla, espacio_de(tipo, config))
         params = dict(estudio.best_params)
         modelo = construir_modelo(tipo, params, semilla).fit(X_e, y_e)
         candidato = Candidato(tipo, params, modelo, round(estudio.best_value, 4))
