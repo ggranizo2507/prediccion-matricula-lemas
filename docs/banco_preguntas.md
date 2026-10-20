@@ -182,7 +182,7 @@ Con la lista se hacen 7,5 llamadas por cada familia en riesgo encontrada (165 ll
 Reservando al azar una parte de la lista sin llamar y comparando su tasa de no matrícula con la de las familias llamadas. Con la mitad de la lista reservada, detectar que la llamada reduce los casos a la mitad exige unas 634 familias, unas 4 campañas; un efecto del 25 % exige unas 2.900, unas 18 campañas. Con 165 familias al año solo veríamos un efecto grande; por eso proponemos ampliar la reserva a la segunda etapa o acumular cohortes.
 
 **47. ¿El promedio final ya se conocía el 20 de febrero?**
-Está por confirmar con LEMAS para las cohortes históricas: si el promedio del ciclo de origen se cerraba después del 20 de febrero, sería información posterior al corte. Solo lo usa el modelo de apoyo, no la regla D2, así que la lista y sus resultados no dependen de él. En la operación se usaría el promedio que exista a esa fecha.
+Sí. LEMAS confirmó que los promedios finales del ciclo de origen están cerrados al 20 de febrero de cada año, así que no es información posterior al corte. Además, solo lo usa el modelo de apoyo, no la regla D2.
 
 ## Consejos para responder
 
