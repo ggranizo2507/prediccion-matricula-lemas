@@ -242,7 +242,8 @@ def marcar_nuevos(base: pd.DataFrame, config: dict) -> pd.DataFrame:
     for anio in anios:
         filas = datos["anio_origen"] == anio
         if anio - 1 in ids_por_anio:
-            nuevo[filas] = ~datos.loc[filas, "id_estudiante"].isin(ids_por_anio[anio - 1])
+            previo = datos.loc[filas, "id_estudiante"].isin(ids_por_anio[anio - 1])
+            nuevo[filas] = ~previo.to_numpy(dtype=bool)
         else:
             limite = pd.Timestamp(year=int(anio), month=mes, day=dia)
             pago_temprano = datos.loc[filas, "fecha_pago"] < limite

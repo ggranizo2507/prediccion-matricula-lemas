@@ -173,13 +173,16 @@ Porque con 11 eventos la diferencia es incierta y una corrección (reservar cupo
 LEMAS, como responsable del tratamiento, con nuestra participación como equipo técnico. Hubo autorización institucional, los datos estaban seudonimizados y la clave no salió de LEMAS; aun así, son datos personales y lo declaramos como limitación. Para el uso permanente, el modo institucional procesa todo en un equipo de LEMAS. Antes de usarlo, LEMAS debe informar a las familias, hacer la evaluación de impacto y confirmar la base legal.
 
 **44. ¿Cómo se repartió el trabajo y qué parte puede explicar cada uno?**
-*Respuesta que debe preparar el equipo con su reparto real.* Punto de partida: los roles del README (Guillermo, Product Owner: dominio institucional, datos reales y validación con usuarios; José, Scrum Master: repositorio, modelado, optimización y aplicación). Si el historial de git muestra una sola cuenta, explicar por qué (por ejemplo, porque los cambios se subían desde la cuenta que tenía acceso a los datos reales) y que cada uno elija dos o tres decisiones del registro que pueda explicar en detalle.
+Guillermo, Product Owner, aportó el dominio institucional, los datos reales y la validación con usuarios; José, Scrum Master, el repositorio, el modelado, la optimización y la aplicación. El historial de git muestra una sola cuenta porque acordamos revisar y conversar juntos cada cambio y que Guillermo, que custodia los datos reales, sea quien lo suba (D61). *Para preparar:* que cada uno elija dos o tres decisiones del registro que pueda explicar en detalle.
 
 **45. ¿Cuánto esfuerzo ahorra la lista?**
 Con la lista se hacen 7,5 llamadas por cada familia en riesgo encontrada (165 llamadas, 22 casos); al azar serían unas 15. Es la mitad del esfuerzo por caso, con el mismo personal.
 
 **46. ¿Cómo sabrán si la llamada sirve, y cuánto tardarán?**
 Reservando al azar una parte de la lista sin llamar y comparando su tasa de no matrícula con la de las familias llamadas. Con la mitad de la lista reservada, detectar que la llamada reduce los casos a la mitad exige unas 634 familias, unas 4 campañas; un efecto del 25 % exige unas 2.900, unas 18 campañas. Con 165 familias al año solo veríamos un efecto grande; por eso proponemos ampliar la reserva a la segunda etapa o acumular cohortes.
+
+**47. ¿El promedio final ya se conocía el 20 de febrero?**
+Está por confirmar con LEMAS para las cohortes históricas: si el promedio del ciclo de origen se cerraba después del 20 de febrero, sería información posterior al corte. Solo lo usa el modelo de apoyo, no la regla D2, así que la lista y sus resultados no dependen de él. En la operación se usaría el promedio que exista a esa fecha.
 
 ## Consejos para responder
 

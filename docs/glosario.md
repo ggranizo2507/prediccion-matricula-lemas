@@ -27,7 +27,7 @@ Siglas y términos que se repiten en la documentación, en el orden en que suele
 | **Logística híbrida** | El mejor modelo de aprendizaje automático: las señales de D2 más variables académicas. No ordena la lista; se usa, calibrado, para probabilidades y la proyección |
 | **R, B0, B1** | Líneas base de las **probabilidades** (no ordenan familias): R = "si reservó, continúa"; B0 = clase mayoritaria; B1 = tasa histórica de no matrícula |
 | **Calibración de Platt** | Ajuste que convierte el puntaje del modelo en una probabilidad que coincide, en promedio, con lo observado. Se hizo con C4 |
-| **D01 a D60** | Decisiones fechadas del proyecto, en [planificacion.md](planificacion.md) |
+| **D01 a D61** | Decisiones fechadas del proyecto, en [planificacion.md](planificacion.md) |
 
 ## Métricas
 

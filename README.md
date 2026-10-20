@@ -171,7 +171,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | Documento | Contenido |
 |---|---|
 | [`docs/glosario.md`](docs/glosario.md) | Siglas y términos del proyecto (cohortes, reglas, líneas base, métricas y normas). Conviene leerlo primero |
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D60 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D61 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados, análisis de sensibilidad (importancia, dependencia parcial e interacciones), antes/después y diagnóstico de ajuste |
@@ -186,7 +186,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/impacto_social_responsabilidad.md`](docs/impacto_social_responsabilidad.md) | Workshop de la semana 4: stakeholders, impacto social, riesgos éticos con su mitigación, responsabilidad, cumplimiento y compromiso del equipo. Versión entregada: [`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf`](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf) |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
 | [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
-| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 51 preguntas probables de la defensa con sus respuestas, incluidas las de la revisión independiente |
+| [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 52 preguntas probables de la defensa con sus respuestas, incluidas las de la revisión independiente |
 | [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
 
 ## Consideraciones éticas
@@ -216,6 +216,8 @@ Análisis completo en [`docs/consideraciones_eticas.md`](docs/consideraciones_et
 |---|---|
 | Guillermo Leonidas Granizo Veintimilla | Product Owner, dominio institucional, datos reales y validación con usuarios |
 | José Farid Ulloa Manzur | Scrum Master, repositorio, modelado, optimización y aplicación |
+
+**Forma de trabajo.** Acordamos revisar y conversar juntos cada cambio antes de subirlo, y que Guillermo, que custodia los datos reales de LEMAS, sea quien lo suba. Por eso el historial de git muestra una sola cuenta: cada commit es trabajo revisado por los dos (D61).
 
 ## Licencia
 Código bajo licencia [MIT](LICENSE). Los datos reales de LEMAS están excluidos.

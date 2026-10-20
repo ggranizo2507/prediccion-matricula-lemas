@@ -147,7 +147,7 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D60.
+- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D61.
 - **Versiones exactas** en `requirements.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8 y formato) y pytest en cada push, con Python 3.11 y 3.12.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
