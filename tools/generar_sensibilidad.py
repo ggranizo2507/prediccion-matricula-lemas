@@ -62,8 +62,11 @@ def generar(fuente: str) -> dict:
         imp = se.importancias(p, tipo)
         imps.append(imp)
         sustituto = se.ajustar_sustituto(p, tipo)
-        orden = (imp[imp["metodo"] == "fANOVA"].sort_values("importancia", ascending=False)
-                 ["hiperparametro"].tolist())
+        orden = (
+            imp[imp["metodo"] == "fANOVA"]
+            .sort_values("importancia", ascending=False)["hiperparametro"]
+            .tolist()
+        )
         deps.extend(se.dependencia_parcial(sustituto, n) for n in orden)
         inter = se.interacciones(sustituto)
         inters.append(inter)
@@ -77,28 +80,38 @@ def generar(fuente: str) -> dict:
     inter, sen = pd.concat(inters, ignore_index=True), pd.concat(sens, ignore_index=True)
     ant = pd.DataFrame(antes)
     imp.to_csv(METRICAS / f"sensibilidad_importancia_{fuente}.csv", index=False)
-    dep.to_csv(METRICAS / f"sensibilidad_dependencia_{fuente}.csv", index=False,
-               float_format="%.6f")
+    dep.to_csv(
+        METRICAS / f"sensibilidad_dependencia_{fuente}.csv", index=False, float_format="%.6f"
+    )
     inter.to_csv(METRICAS / f"sensibilidad_interacciones_{fuente}.csv", index=False)
     sen.to_csv(METRICAS / f"sensibilidad_uno_a_la_vez_{fuente}.csv", index=False)
     ant.to_csv(METRICAS / f"sensibilidad_antes_despues_{fuente}.csv", index=False)
     textos = se.conclusiones(imp, inter, sen, ant)
-    resumen = {"fuente": fuente, "pruebas_por_modelo": 60, "validacion": "C2 → C3",
-               "tasa_validacion": tasa, "semillas_importancia": list(se.SEMILLAS),
-               "conclusiones": textos}
+    resumen = {
+        "fuente": fuente,
+        "pruebas_por_modelo": 60,
+        "validacion": "C2 → C3",
+        "tasa_validacion": tasa,
+        "semillas_importancia": list(se.SEMILLAS),
+        "conclusiones": textos,
+    }
     (METRICAS / f"sensibilidad_{fuente}.json").write_text(
-        json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     gs.guardar(gs.figura_importancia(imp), FIGURAS / f"{fuente}_31_importancia_hiperparametros.png")
-    gs.guardar(gs.figura_dependencia(dep, pruebas, tasa),
-               FIGURAS / f"{fuente}_32_dependencia_parcial.png")
-    gs.guardar(gs.figura_interacciones(inter, mapas, pares),
-               FIGURAS / f"{fuente}_33_interacciones.png")
+    gs.guardar(
+        gs.figura_dependencia(dep, pruebas, tasa), FIGURAS / f"{fuente}_32_dependencia_parcial.png"
+    )
+    gs.guardar(
+        gs.figura_interacciones(inter, mapas, pares), FIGURAS / f"{fuente}_33_interacciones.png"
+    )
     return resumen
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--fuente", choices=["real", "sintetica"], default="sintetica")
     args = parser.parse_args()
     for texto in generar(args.fuente)["conclusiones"]:

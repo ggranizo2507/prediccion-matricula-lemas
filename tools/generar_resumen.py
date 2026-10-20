@@ -23,7 +23,7 @@ REPORTES = RAIZ / "results" / "reports"
 
 def _n(valor, decimales: int = 2) -> str:
     """Número con coma decimal; vacío si falta."""
-    if valor is None or valor != valor:     # None o NaN
+    if valor is None or valor != valor:  # None o NaN
         return "—"
     return f"{float(valor):.{decimales}f}".replace(".", ",")
 
@@ -35,34 +35,54 @@ def _ic(par) -> str:
 def generar(fuente: str) -> Path:
     """Arma el Markdown y lo guarda; devuelve la ruta."""
     datos = json.loads((METRICAS / f"resultados_finales_{fuente}.json").read_text(encoding="utf-8"))
-    lineas = [f"# Resumen de resultados ({fuente})", "",
-              "Generado por `tools/generar_resumen.py` a partir de `results/metrics/"
-              f"resultados_finales_{fuente}.json`. Solo agregados.", "",
-              f"- Sistema elegido: **{datos['priorizacion']}**",
-              f"- Entrenamiento: {' + '.join(datos['cohortes_entrenamiento'])} · selección: C4 · "
-              "prueba única: C5",
-              f"- k por sede: {', '.join(f'{s}: {k}' for s, k in datos['k_por_sede'].items())}",
-              f"- Huella SHA-256 del sistema congelado: `{datos['sha256_sistema']}`", "",
-              "## Selección en C4", "", "| Candidato | Lift@k | Precision@k | Recall@k | PR-AUC |",
-              "|---|---|---|---|---|"]
+    lineas = [
+        f"# Resumen de resultados ({fuente})",
+        "",
+        "Generado por `tools/generar_resumen.py` a partir de `results/metrics/"
+        f"resultados_finales_{fuente}.json`. Solo agregados.",
+        "",
+        f"- Sistema elegido: **{datos['priorizacion']}**",
+        f"- Entrenamiento: {' + '.join(datos['cohortes_entrenamiento'])} · selección: C4 · "
+        "prueba única: C5",
+        f"- k por sede: {', '.join(f'{s}: {k}' for s, k in datos['k_por_sede'].items())}",
+        f"- Huella SHA-256 del sistema congelado: `{datos['sha256_sistema']}`",
+        "",
+        "## Selección en C4",
+        "",
+        "| Candidato | Lift@k | Precision@k | Recall@k | PR-AUC |",
+        "|---|---|---|---|---|",
+    ]
     for fila in datos["C4"]:
-        lineas.append(f"| {fila['candidato']} | {_n(fila['lift_k'])} | {_n(fila['precision_k'], 3)}"
-                      f" | {_n(fila['recall_k'])} | {_n(fila['pr_auc'], 3)} |")
-    lineas += ["", "## Prueba final en C5 (una sola vez)", "",
-               "| Sistema | Lift@k [IC 95 %] | Precision@k | Recall@k |", "|---|---|---|---|"]
+        lineas.append(
+            f"| {fila['candidato']} | {_n(fila['lift_k'])} | {_n(fila['precision_k'], 3)}"
+            f" | {_n(fila['recall_k'])} | {_n(fila['pr_auc'], 3)} |"
+        )
+    lineas += [
+        "",
+        "## Prueba final en C5 (una sola vez)",
+        "",
+        "| Sistema | Lift@k [IC 95 %] | Precision@k | Recall@k |",
+        "|---|---|---|---|",
+    ]
     for fila in datos["C5"]:
-        lineas.append(f"| {fila['sistema']} | {_n(fila['lift_k'])}{_ic(fila.get('ic95_lift_k'))}"
-                      f" | {_n(fila['precision_k'], 3)} | {_n(fila['recall_k'])} |")
+        lineas.append(
+            f"| {fila['sistema']} | {_n(fila['lift_k'])}{_ic(fila.get('ic95_lift_k'))}"
+            f" | {_n(fila['precision_k'], 3)} | {_n(fila['recall_k'])} |"
+        )
     lineas += ["", "## Calibración y proyección (C5)", "", "| Referencia | Brier |", "|---|---|"]
     lineas += [f"| {f['linea_base']} | {_n(f['brier'], 4)} |" for f in datos["brier_C5"]]
     mape = datos.get("mape_C5", {})
     if mape:
-        lineas += ["", "MAPE de la proyección por sede y subnivel: modelo "
-                   f"{_n(100 * mape['modelo'], 1)} %, B1 {_n(100 * mape['B1'], 1)} %."]
+        lineas += [
+            "",
+            "MAPE de la proyección por sede y subnivel: modelo "
+            f"{_n(100 * mape['modelo'], 1)} %, B1 {_n(100 * mape['B1'], 1)} %.",
+        ]
     lineas += ["", "## Hiperparámetros del sistema congelado", ""]
     for tipo, params in datos["hiperparametros"].items():
-        texto = ", ".join(f"{k} = {_n(v, 4) if isinstance(v, float) else v}"
-                          for k, v in params.items())
+        texto = ", ".join(
+            f"{k} = {_n(v, 4) if isinstance(v, float) else v}" for k, v in params.items()
+        )
         lineas.append(f"- **{tipo}:** {texto}")
     revision = METRICAS / f"revision_{fuente}.json"
     if revision.exists():
@@ -76,8 +96,9 @@ def generar(fuente: str) -> Path:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--fuente", choices=["real", "sintetica"], default="real")
     args = parser.parse_args(argv)
     try:

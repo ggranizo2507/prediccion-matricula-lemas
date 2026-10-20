@@ -30,6 +30,7 @@ flowchart LR
 | `src/evaluate.py` | Consolidación por representante, k por sede y Precision/Recall/Lift@k familiar |
 | `src/reglas.py` | Única definición de las reglas D y D2 (la usan la auditoría, el modelado, los escenarios, el alcance y la aplicación) |
 | `src/modeling.py` | Candidatos, optimización con Optuna (espacio de búsqueda en `config.yaml`), selección en C4, calibración, congelamiento, bootstrap, líneas base R/B0/B1, equidad y proyección |
+| `src/incertidumbre.py` · `tools/generar_incertidumbre.py` | Intervalos de Wilson, prueba exacta de Fisher y razón de selección por grupo; llamadas por caso hallado; tamaño de la reserva al azar para medir el efecto de la llamada (D60). Solo lee agregados |
 | `src/revision.py` | Comprobaciones de la revisión final (D59): orden de las señales de D2 con C1–C3, sorteos de desempate, IC pareado D2 − D, azar por estudiante y por familia, estadísticos descriptivos. Cuaderno `08_revision_final` |
 | `src/diagnostico.py` · `src/graficos_diagnostico.py` | Actividad de la semana 3: seguimiento de métricas por iteración, curvas de aprendizaje de scikit-learn, diagnóstico cuantitativo de sobreajuste y subajuste (con la segunda etapa de D54), estrategias de un solo cambio con bootstrap, réplica y semillas, y sus figuras |
 | `src/alcance.py` · `src/graficos_alcance.py` | Análisis descriptivo del alcance de la lista (D50): desglose del evento, alcance según k y lista semanal frente a lista fija. No usa C5 ni cambia el sistema |
@@ -41,7 +42,7 @@ flowchart LR
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 (construcción y prueba única en C5), luego 04 y 05 (lectura de resultados), `overfitting_analysis`, 06, 07 y 08 (análisis sin C5) |
-| `tests/` | 255 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 263 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -62,6 +63,17 @@ flowchart LR
 | Logística híbrida | Regresión logística con señales de D2 + variables académicas | 1,53 | Se usa para probabilidades y proyección |
 | Regresión logística regularizada | Elastic-net | 1,40 | Descartada |
 | Gradient boosting | HistGradientBoosting, monotonía en atrasos | 1,06 | Descartada (sobreajuste) |
+
+### 3.2 bis Arquitectura interna de cada modelo
+Los tres modelos son un `Pipeline` de scikit-learn (`modeling.construir_modelo`): el preprocesamiento se ajusta solo con el entrenamiento y viaja con el modelo, así que C4, C5 y la aplicación se transforman igual.
+
+| Modelo | Entradas | Preprocesamiento | Clasificador | Hiperparámetros finales (Optuna, C2 → C3) |
+|---|---|---|---|---|
+| Regresión logística regularizada | 11 variables (`CATEGORICAS` + `NUMERICAS`): sede, subnivel, curso, pago de la matrícula anterior, promedio, conducta, años en LEMAS, atrasos, hermanos, beca y reserva extraordinaria | Numéricas: mediana + estandarización. Categóricas: `SIN_DATO` + one-hot; categorías con menos de 10 casos se agrupan como «infrecuentes» (también las nuevas en C4 o C5). 31 columnas con el conjunto completo; sin `curso`, 17 | `LogisticRegression` elastic-net (solver `saga`, hasta 5.000 iteraciones) | Conjunto completo, sin balanceo, `C` = 2,75, `l1_ratio` = 0,87 |
+| Gradient boosting | Las mismas 11 variables | Igual, sin estandarizar | `HistGradientBoostingClassifier` con **monotonía creciente en atrasos** (más atrasos nunca bajan el riesgo) y sin parada temprana | Conjunto completo, con balanceo, `learning_rate` = 0,035, `max_depth` = 3, `max_leaf_nodes` = 6, `min_samples_leaf` = 101, `l2_regularization` = 4,25, `max_iter` = 359 |
+| **Logística híbrida** (modelo de apoyo) | 7 variables derivadas (`modeling.variables_hibridas`): pago tardío, estudiante nuevo, reserva extraordinaria, conducta distinta de A, tramo de atrasos (0, 1-2, 3-5, 6+), subnivel y promedio | Binarias sin cambio; tramo y subnivel en one-hot; promedio con mediana + estandarización. 13 columnas | `LogisticRegression` L2 (hasta 5.000 iteraciones) y después **calibración de Platt** en C4 sobre el modelo congelado (`CalibratedClassifierCV` + `FrozenEstimator`) | Con balanceo, `C` = 9,01 |
+
+Espacios de búsqueda y número de pruebas: `config.yaml` (`optimizacion`) y [optimizacion.md](optimizacion.md). Semilla 42 en todos.
 
 ### 3.3 Arquitectura de la solución final
 1. **Priorización:** regla **D2**, transparente y validada en C5 (Lift@k = 1,97 [1,24; 2,56]). Cada familia ocupa un solo cupo de contacto. Los empates dentro del mismo puntaje D2 se resuelven al azar con semilla fija, con la misma función en la validación y en la aplicación (`evaluate.primeras_k`, D48). La probabilidad del modelo no interviene en el orden.
@@ -135,9 +147,9 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D59.
+- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D60.
 - **Versiones exactas** en `requirements.txt` y en `app/requirements.txt`.
-- **Integración continua** (GitHub Actions): ruff (PEP 8) y pytest en cada push, con Python 3.11 y 3.12.
+- **Integración continua** (GitHub Actions): ruff (PEP 8 y formato) y pytest en cada push, con Python 3.11 y 3.12.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
 - **Cuadernos listos para Colab**, que se pueden ejecutar de punta a punta con la base sintética. Siguen siendo la evidencia académica del proceso; el uso anual en LEMAS ya no los necesita.
 

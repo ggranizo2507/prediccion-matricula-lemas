@@ -22,7 +22,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-from src.utils import Cohorte, cohortes_desde_config, unificar_alias
+from src.utils import Cohorte, cantidad, cohortes_desde_config, unificar_alias
 
 log = logging.getLogger("lemas.datos")
 
@@ -67,12 +67,15 @@ def categoria_reserva(reserva: object, estado: object) -> str:
 
 
 def _beca_binaria(serie: pd.Series) -> pd.Series:
-    """"SI" = 1; vacío o "NO" = 0 (vacío significa que no tiene beca)."""
+    """ "SI" = 1; vacío o "NO" = 0 (vacío significa que no tiene beca)."""
     texto = serie.map(_sin_tildes)
-    resultado = texto.map(lambda v: 1 if v in VALORES_SI else 0 if v in VALORES_NO | {""}
-                          else np.nan)
+    resultado = texto.map(
+        lambda v: 1 if v in VALORES_SI else 0 if v in VALORES_NO | {""} else np.nan
+    )
     if resultado.isna().any():
-        log.warning("%d valores de beca no reconocidos quedan vacíos.", resultado.isna().sum())
+        log.warning(
+            "%s valores de beca no reconocidos quedan vacíos.", cantidad(resultado.isna().sum())
+        )
     return resultado
 
 
@@ -135,8 +138,12 @@ def marcar_representantes_atipicos(base: pd.DataFrame, config: dict) -> pd.DataF
     tam = datos.groupby(["anio_origen", "id_familia"])["id_estudiante"].transform("nunique")
     atipico = datos["id_familia"].notna() & (tam > maximo)
     if atipico.any():
-        log.warning("%d filas tienen un representante con más de %d estudiantes en el año; "
-                    "se tratan como contactos individuales.", int(atipico.sum()), maximo)
+        log.warning(
+            "%s filas tienen un representante con más de %d estudiantes en el año; "
+            "se tratan como contactos individuales.",
+            cantidad(atipico.sum()),
+            maximo,
+        )
         datos.loc[atipico, "id_familia"] = "IND-" + datos.loc[atipico, "id_estudiante"].astype(str)
         datos.loc[atipico, "representante_atipico"] = 1
     return datos
@@ -151,7 +158,8 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         raise KeyError(f"Faltan columnas en la base: {faltantes}")
 
     vacias = df.isna().all(axis=1) | df.astype("string").apply(
-        lambda c: c.str.strip().fillna("") == "").all(axis=1)
+        lambda c: c.str.strip().fillna("") == ""
+    ).all(axis=1)
     if vacias.any():
         log.info("Se descartan %d filas completamente vacías (formato de Excel).", vacias.sum())
         df = df[~vacias]
@@ -170,8 +178,10 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     base["beca"] = _beca_binaria(base["beca"])
     base["fecha_pago"] = _a_fecha(base["fecha_pago"])
     base["fecha_reserva"] = _a_fecha(base["fecha_reserva"])
-    base["categoria_reserva"] = [categoria_reserva(r, e) for r, e in
-                                 zip(base["reserva"], base["estado_reserva"], strict=True)]
+    base["categoria_reserva"] = [
+        categoria_reserva(r, e)
+        for r, e in zip(base["reserva"], base["estado_reserva"], strict=True)
+    ]
 
     if config["conducta"]["formato"] == "letras":
         mapa_letras = config["conducta"]["letras_a_ordinal"]
@@ -179,7 +189,9 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
         base["conducta"] = letras.map(mapa_letras).astype(float)
         invalidas = letras.notna() & base["conducta"].isna()
         if invalidas.any():
-            log.warning("%d notas de conducta fuera de A-E quedan como vacías.", invalidas.sum())
+            log.warning(
+                "%s notas de conducta fuera de A-E quedan como vacías.", cantidad(invalidas.sum())
+            )
     else:
         base["conducta"] = pd.to_numeric(base["conducta"], errors="coerce")
 
@@ -191,16 +203,24 @@ def limpiar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     # identificador vacío se tomarían como "duplicados" entre sí.
     sin_id = base["id_estudiante"].isna() | base["anio_origen"].isna()
     if sin_id.any():
-        log.warning("Se eliminan %d filas sin identificador (%d) o sin año (%d).", sin_id.sum(),
-                    base["id_estudiante"].isna().sum(), base["anio_origen"].isna().sum())
+        log.warning(
+            "Se eliminan %s filas sin identificador (%s) o sin año (%s).",
+            cantidad(sin_id.sum()),
+            cantidad(base["id_estudiante"].isna().sum()),
+            cantidad(base["anio_origen"].isna().sum()),
+        )
         base = base[~sin_id]
 
     duplicados = base.duplicated(["anio_origen", "id_estudiante"], keep="first")
     if duplicados.any():
-        log.warning("Se eliminan %d filas duplicadas (mismo estudiante y año).", duplicados.sum())
+        log.warning(
+            "Se eliminan %s filas duplicadas (mismo estudiante y año).", cantidad(duplicados.sum())
+        )
         base = base[~duplicados]
-    log.info("Filas por año tras la limpieza: %s",
-             base["anio_origen"].value_counts().sort_index().to_dict())
+    log.info(
+        "Filas por año tras la limpieza: %s",
+        base["anio_origen"].value_counts().sort_index().to_dict(),
+    )
     base = marcar_representantes_atipicos(base.reset_index(drop=True), config)
     base = marcar_nuevos(base, config)
     return base
@@ -227,7 +247,9 @@ def marcar_nuevos(base: pd.DataFrame, config: dict) -> pd.DataFrame:
             limite = pd.Timestamp(year=int(anio), month=mes, day=dia)
             pago_temprano = datos.loc[filas, "fecha_pago"] < limite
             codigo_reciente = datos.loc[filas, "anio_ingreso"].fillna(0) >= anio
-            nuevo[filas] = (pago_temprano | codigo_reciente).astype(bool)
+            nuevo[filas] = pago_temprano.to_numpy(
+                dtype=bool, na_value=False
+            ) | codigo_reciente.to_numpy(dtype=bool, na_value=False)
     datos["es_nuevo"] = nuevo.astype(bool)
     return datos
 
@@ -288,8 +310,11 @@ def construir_cohorte(
     reporte = {"cohorte": cohorte.nombre, "origen_total": len(origen)}
 
     if destino.empty:
-        log.warning("%s: no hay filas con anoa = %d; la etiqueta no puede construirse.",
-                    cohorte.nombre, cohorte.anio_destino)
+        log.warning(
+            "%s: no hay filas con anoa = %d; la etiqueta no puede construirse.",
+            cohorte.nombre,
+            cohorte.anio_destino,
+        )
         return pd.DataFrame(), {**reporte, "estado": "sin_destino"}
 
     origen = agregar_predictores(origen, config)
@@ -303,7 +328,8 @@ def construir_cohorte(
     # fuera de la población del modelo; se reportan aparte.
     fuera = ~categorias.isin(estados) & ~terminal_origen
     reporte["matriculados_sin_reserva_aprobada"] = int(
-        origen.loc[fuera, "id_estudiante"].isin(set(destino["id_estudiante"])).sum())
+        origen.loc[fuera, "id_estudiante"].isin(set(destino["id_estudiante"])).sum()
+    )
     paso = origen[categorias.isin(estados)]
     reporte["aprobados"] = len(paso)
     if "representante_atipico" in paso:
@@ -341,9 +367,18 @@ def construir_cohorte(
     if "representante_atipico" not in paso:
         paso["representante_atipico"] = 0
     # representante_atipico solo se usa para revisar equidad: no es predictor
-    columnas = ["cohorte", "rol", "id_estudiante", "id_familia", *CATEGORICAS, *NUMERICAS,
-                "representante_atipico", "fecha_pago_destino", "y_no_matricula",
-                "matricula_tardia"]
+    columnas = [
+        "cohorte",
+        "rol",
+        "id_estudiante",
+        "id_familia",
+        *CATEGORICAS,
+        *NUMERICAS,
+        "representante_atipico",
+        "fecha_pago_destino",
+        "y_no_matricula",
+        "matricula_tardia",
+    ]
     return paso[columnas].reset_index(drop=True), reporte
 
 
@@ -357,9 +392,13 @@ def construir_dataset(
         reportes.append(reporte)
         if not tabla.empty:
             tablas.append(tabla)
-            log.info("%s: %d modelables, %d no matrícula (%.1f%%).", cohorte.nombre,
-                     reporte["modelables"], reporte["no_matricula"],
-                     100 * reporte["no_matricula"] / max(reporte["modelables"], 1))
+            log.info(
+                "%s: %d modelables, %d no matrícula (%.1f%%).",
+                cohorte.nombre,
+                reporte["modelables"],
+                reporte["no_matricula"],
+                100 * reporte["no_matricula"] / max(reporte["modelables"], 1),
+            )
     dataset = pd.concat(tablas, ignore_index=True) if tablas else pd.DataFrame()
     return dataset, pd.DataFrame(reportes)
 
@@ -378,8 +417,10 @@ def construir_matriz_x(dataset: pd.DataFrame) -> pd.DataFrame:
 
 
 def construir_preprocesador(
-    escalar: bool = True, min_frecuencia: int = 10,
-    categoricas: list[str] | None = None, numericas: list[str] | None = None,
+    escalar: bool = True,
+    min_frecuencia: int = 10,
+    categoricas: list[str] | None = None,
+    numericas: list[str] | None = None,
 ) -> ColumnTransformer:
     """Imputación + escalado (numéricas) y one-hot (categóricas).
 
@@ -392,11 +433,19 @@ def construir_preprocesador(
         pasos_num.append(("escalar", StandardScaler()))
     columnas_cat = CATEGORICAS if categoricas is None else categoricas
     columnas_num = NUMERICAS if numericas is None else numericas
-    transformador_cat = Pipeline([
-        ("imputar", SimpleImputer(strategy="constant", fill_value="SIN_DATO")),
-        ("onehot", OneHotEncoder(handle_unknown="infrequent_if_exist",
-                                 min_frequency=min_frecuencia, sparse_output=False)),
-    ])
+    transformador_cat = Pipeline(
+        [
+            ("imputar", SimpleImputer(strategy="constant", fill_value="SIN_DATO")),
+            (
+                "onehot",
+                OneHotEncoder(
+                    handle_unknown="infrequent_if_exist",
+                    min_frequency=min_frecuencia,
+                    sparse_output=False,
+                ),
+            ),
+        ]
+    )
     return ColumnTransformer(
         [("num", Pipeline(pasos_num), columnas_num), ("cat", transformador_cat, columnas_cat)],
         verbose_feature_names_out=False,

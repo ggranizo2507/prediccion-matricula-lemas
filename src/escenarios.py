@@ -45,15 +45,17 @@ from src.modeling import calibrar, construir_modelo, metricas, puntajes_reglas
 
 REGLA = "D2 · señales administrativas"
 HIBRIDO = "Logística híbrida"
-SENALES = {"pago_tardio": "Pago tardío de la matrícula anterior",
-           "reserva_extraordinaria": "Reserva extraordinaria",
-           "atrasos_pension": "Pensiones pagadas tarde",
-           "promedio": "Promedio (solo logística híbrida)"}
+SENALES = {
+    "pago_tardio": "Pago tardío de la matrícula anterior",
+    "reserva_extraordinaria": "Reserva extraordinaria",
+    "atrasos_pension": "Pensiones pagadas tarde",
+    "promedio": "Promedio (solo logística híbrida)",
+}
 NIVELES_RUIDO = (0.0, 0.01, 0.02, 0.05, 0.10, 0.20)
 SIGMAS_PROMEDIO = (0.0, 0.25, 0.5, 1.0, 2.0)
 NIVELES_FALTANTES = (0.0, 0.10, 0.20, 0.30, 0.40, 0.50)
 TASAS_DESBALANCE = (None, 0.05, 0.03, 0.01)
-UMBRAL_UTIL = 1.20            # meta del proyecto: Lift@k ≥ 1,20 (también umbral de alerta)
+UMBRAL_UTIL = 1.20  # meta del proyecto: Lift@k ≥ 1,20 (también umbral de alerta)
 
 Puntuador = Callable[[pd.DataFrame], np.ndarray]
 
@@ -68,7 +70,8 @@ def puntuador_d2(datos: pd.DataFrame) -> np.ndarray:
 def entrenar_hibrido(entrenamiento: pd.DataFrame, params: dict, semilla: int):
     """La logística híbrida de la Fase 2 (mismos hiperparámetros, mismas cohortes)."""
     return construir_modelo("hibrido", params, semilla).fit(
-        construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"].to_numpy())
+        construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"].to_numpy()
+    )
 
 
 def puntuador_modelo(modelo) -> Puntuador:
@@ -103,9 +106,14 @@ def ruido_registro(datos: pd.DataFrame, p: float, rng: np.random.Generator) -> p
     return salida
 
 
-def ruido_gaussiano(datos: pd.DataFrame, columna: str, sigma: float,
-                    rng: np.random.Generator, minimo: float = 0.0,
-                    maximo: float = 10.0) -> pd.DataFrame:
+def ruido_gaussiano(
+    datos: pd.DataFrame,
+    columna: str,
+    sigma: float,
+    rng: np.random.Generator,
+    minimo: float = 0.0,
+    maximo: float = 10.0,
+) -> pd.DataFrame:
     """Ruido N(0, σ) en una variable numérica, recortado a su rango válido."""
     salida = datos.copy()
     if sigma <= 0:
@@ -115,8 +123,9 @@ def ruido_gaussiano(datos: pd.DataFrame, columna: str, sigma: float,
     return salida
 
 
-def faltantes(datos: pd.DataFrame, senal: str, fraccion: float,
-              rng: np.random.Generator) -> pd.DataFrame:
+def faltantes(
+    datos: pd.DataFrame, senal: str, fraccion: float, rng: np.random.Generator
+) -> pd.DataFrame:
     """Una fracción de la señal llega vacía, como una celda en blanco en el Excel.
 
     Pago tardío vacío → «sin_dato» (sin prioridad); reserva y atrasos vacíos → dato
@@ -143,8 +152,9 @@ def senal_caida(datos: pd.DataFrame, senal: str) -> pd.DataFrame:
     """La señal llega constante: la columna no se calculó o se exportó vacía."""
     salida = datos.copy()
     if senal == "pago_tardio":
-        salida["pago_origen"] = np.where(_con_dato_de_pago(salida), "en_plazo",
-                                         salida["pago_origen"].astype(object))
+        salida["pago_origen"] = np.where(
+            _con_dato_de_pago(salida), "en_plazo", salida["pago_origen"].astype(object)
+        )
     elif senal == "reserva_extraordinaria":
         salida["reserva_extraordinaria"] = 0
     elif senal == "atrasos_pension":
@@ -160,8 +170,7 @@ def senal_caida(datos: pd.DataFrame, senal: str) -> pd.DataFrame:
     return salida
 
 
-def desbalance(datos: pd.DataFrame, tasa: float | None,
-               rng: np.random.Generator) -> pd.DataFrame:
+def desbalance(datos: pd.DataFrame, tasa: float | None, rng: np.random.Generator) -> pd.DataFrame:
     """Quita familias con caso (con todos sus estudiantes) hasta la tasa familiar `tasa`."""
     if tasa is None:
         return datos.copy()
@@ -183,7 +192,7 @@ def medir(datos: pd.DataFrame, puntuador: Puntuador, k_por_sede: dict, semilla: 
     """Lift@k, Recall@k, Precision@k y PR-AUC (y Brier si son probabilidades)."""
     m = metricas(datos, puntuador(datos), k_por_sede, semilla)
     salida = {c: m.get(c, np.nan) for c in ("lift_k", "recall_k", "precision_k", "pr_auc", "brier")}
-    if puntuador is puntuador_d2:   # el puntaje de D2 no es una probabilidad
+    if puntuador is puntuador_d2:  # el puntaje de D2 no es una probabilidad
         salida["brier"] = np.nan
     return salida
 
@@ -202,10 +211,18 @@ def _resumir(valores: list[dict]) -> dict:
     return salida
 
 
-def barrer(datos: pd.DataFrame, sistemas: dict[str, Puntuador], k_por_sede: dict,
-           semilla: int, escenario: str, variable: str, niveles,
-           perturbar: Callable[[pd.DataFrame, object, np.random.Generator], pd.DataFrame],
-           repeticiones: int, solo: set[str] | None = None) -> pd.DataFrame:
+def barrer(
+    datos: pd.DataFrame,
+    sistemas: dict[str, Puntuador],
+    k_por_sede: dict,
+    semilla: int,
+    escenario: str,
+    variable: str,
+    niveles,
+    perturbar: Callable[[pd.DataFrame, object, np.random.Generator], pd.DataFrame],
+    repeticiones: int,
+    solo: set[str] | None = None,
+) -> pd.DataFrame:
     """Mide cada sistema en cada nivel de perturbación, `repeticiones` veces."""
     filas = []
     for nivel in niveles:
@@ -214,24 +231,53 @@ def barrer(datos: pd.DataFrame, sistemas: dict[str, Puntuador], k_por_sede: dict
         for r in range(veces):
             rng = np.random.default_rng(semilla + 1000 * r + 7)
             perturbados = perturbar(datos, nivel, rng)
-            for nombre in por_sistema:   # el sorteo de empates también cambia con r
-                por_sistema[nombre].append(medir(perturbados, sistemas[nombre], k_por_sede,
-                                                 semilla + r))
+            for nombre in por_sistema:  # el sorteo de empates también cambia con r
+                por_sistema[nombre].append(
+                    medir(perturbados, sistemas[nombre], k_por_sede, semilla + r)
+                )
         for nombre, valores in por_sistema.items():
-            filas.append({"escenario": escenario, "variable": variable, "sistema": nombre,
-                          "nivel": "base" if nivel is None else nivel, "repeticiones": veces,
-                          **_resumir(valores)})
+            filas.append(
+                {
+                    "escenario": escenario,
+                    "variable": variable,
+                    "sistema": nombre,
+                    "nivel": "base" if nivel is None else nivel,
+                    "repeticiones": veces,
+                    **_resumir(valores),
+                }
+            )
     return pd.DataFrame(filas)
 
 
 def escenario_ruido(datos, sistemas, k_por_sede, semilla, repeticiones) -> pd.DataFrame:
-    partes = [barrer(datos, sistemas, k_por_sede, semilla, "ruido", "errores_registro",
-                     NIVELES_RUIDO, ruido_registro, repeticiones)]
+    partes = [
+        barrer(
+            datos,
+            sistemas,
+            k_por_sede,
+            semilla,
+            "ruido",
+            "errores_registro",
+            NIVELES_RUIDO,
+            ruido_registro,
+            repeticiones,
+        )
+    ]
     if HIBRIDO in sistemas:
-        partes.append(barrer(
-            datos, sistemas, k_por_sede, semilla, "ruido", "promedio_gaussiano",
-            SIGMAS_PROMEDIO, lambda d, s, rng: ruido_gaussiano(d, "promedio", s, rng),
-            repeticiones, solo={HIBRIDO}))
+        partes.append(
+            barrer(
+                datos,
+                sistemas,
+                k_por_sede,
+                semilla,
+                "ruido",
+                "promedio_gaussiano",
+                SIGMAS_PROMEDIO,
+                lambda d, s, rng: ruido_gaussiano(d, "promedio", s, rng),
+                repeticiones,
+                solo={HIBRIDO},
+            )
+        )
     return pd.concat(partes, ignore_index=True)
 
 
@@ -241,15 +287,35 @@ def escenario_faltantes(datos, sistemas, k_por_sede, semilla, repeticiones) -> p
         solo = {HIBRIDO} if senal == "promedio" else None
         if solo and HIBRIDO not in sistemas:
             continue
-        partes.append(barrer(
-            datos, sistemas, k_por_sede, semilla, "faltantes", senal, NIVELES_FALTANTES,
-            lambda d, f, rng, s=senal: faltantes(d, s, f, rng), repeticiones, solo=solo))
+        partes.append(
+            barrer(
+                datos,
+                sistemas,
+                k_por_sede,
+                semilla,
+                "faltantes",
+                senal,
+                NIVELES_FALTANTES,
+                lambda d, f, rng, s=senal: faltantes(d, s, f, rng),
+                repeticiones,
+                solo=solo,
+            )
+        )
     return pd.concat(partes, ignore_index=True)
 
 
 def escenario_desbalance(datos, sistemas, k_por_sede, semilla, repeticiones) -> pd.DataFrame:
-    tabla = barrer(datos, sistemas, k_por_sede, semilla, "desbalance", "tasa_familiar",
-                   TASAS_DESBALANCE, desbalance, repeticiones)
+    tabla = barrer(
+        datos,
+        sistemas,
+        k_por_sede,
+        semilla,
+        "desbalance",
+        "tasa_familiar",
+        TASAS_DESBALANCE,
+        desbalance,
+        repeticiones,
+    )
     base = datos.groupby("id_familia")["y_no_matricula"].max().mean()
     tabla["tasa_real"] = [round(float(base), 4) if n == "base" else n for n in tabla["nivel"]]
     return tabla
@@ -264,11 +330,19 @@ def escenario_caida(datos, sistemas, k_por_sede, semilla, repeticiones) -> pd.Da
         for nombre, puntuador in sistemas.items():
             if senal == "promedio" and nombre != HIBRIDO:
                 continue
-            valores = [medir(perturbados, puntuador, k_por_sede, semilla + r)
-                       for r in range(repeticiones)]
-            filas.append({"escenario": "senal_caida", "variable": senal, "sistema": nombre,
-                          "nivel": "constante" if senal != "ninguna" else "base",
-                          "repeticiones": repeticiones, **_resumir(valores)})
+            valores = [
+                medir(perturbados, puntuador, k_por_sede, semilla + r) for r in range(repeticiones)
+            ]
+            filas.append(
+                {
+                    "escenario": "senal_caida",
+                    "variable": senal,
+                    "sistema": nombre,
+                    "nivel": "constante" if senal != "ninguna" else "base",
+                    "repeticiones": repeticiones,
+                    **_resumir(valores),
+                }
+            )
     return pd.DataFrame(filas)
 
 
@@ -283,8 +357,7 @@ class Corte:
     grupo_b: object
 
 
-CORTES = (Corte("sede", "sede", "Mucho Lote 1", "Mucho Lote 2"),
-          Corte("beca", "beca", 0, 1))
+CORTES = (Corte("sede", "sede", "Mucho Lote 1", "Mucho Lote 2"), Corte("beca", "beca", 0, 1))
 
 
 def _grupo(datos: pd.DataFrame, columna: str, valor) -> pd.DataFrame:
@@ -294,25 +367,39 @@ def _grupo(datos: pd.DataFrame, columna: str, valor) -> pd.DataFrame:
     return datos[serie == valor]
 
 
-def _probabilidades(y: np.ndarray, prob: np.ndarray, minimo: int,
-                    es_probabilidad: bool = True) -> dict:
+def _probabilidades(
+    y: np.ndarray, prob: np.ndarray, minimo: int, es_probabilidad: bool = True
+) -> dict:
     eventos = int(y.sum())
     if eventos < minimo or eventos == len(y):
-        return {"eventos": f"<{minimo}" if eventos < minimo else eventos, "pr_auc": np.nan,
-                "roc_auc": np.nan, "brier": np.nan, "observados_sobre_esperados": np.nan}
-    salida = {"eventos": eventos,
-              "pr_auc": round(float(average_precision_score(y, prob)), 4),
-              "roc_auc": round(float(roc_auc_score(y, prob)), 4),
-              "brier": np.nan, "observados_sobre_esperados": np.nan}
+        return {
+            "eventos": f"<{minimo}" if eventos < minimo else eventos,
+            "pr_auc": np.nan,
+            "roc_auc": np.nan,
+            "brier": np.nan,
+            "observados_sobre_esperados": np.nan,
+        }
+    salida = {
+        "eventos": eventos,
+        "pr_auc": round(float(average_precision_score(y, prob)), 4),
+        "roc_auc": round(float(roc_auc_score(y, prob)), 4),
+        "brier": np.nan,
+        "observados_sobre_esperados": np.nan,
+    }
     if es_probabilidad:
         salida["brier"] = round(float(brier_score_loss(y, prob)), 4)
         salida["observados_sobre_esperados"] = round(float(y.sum() / prob.sum()), 3)
     return salida
 
 
-def escenario_cambio(entrenamiento: pd.DataFrame, seleccion: pd.DataFrame, params: dict,
-                     semilla: int, minimo: int = 5,
-                     cortes: tuple[Corte, ...] = CORTES) -> pd.DataFrame:
+def escenario_cambio(
+    entrenamiento: pd.DataFrame,
+    seleccion: pd.DataFrame,
+    params: dict,
+    semilla: int,
+    minimo: int = 5,
+    cortes: tuple[Corte, ...] = CORTES,
+) -> pd.DataFrame:
     """Entrenar con un subgrupo y probar con otro (A → B y B → A).
 
     Para cada dirección se compara, en C4 del grupo de destino:
@@ -335,33 +422,54 @@ def escenario_cambio(entrenamiento: pd.DataFrame, seleccion: pd.DataFrame, param
             X = construir_matriz_x(prueba)
             transferido = entrenar_hibrido(tr, params, semilla)
             puede_calibrar = cal["y_no_matricula"].sum() >= minimo
-            prob_t = (calibrar(transferido, cal).predict_proba(X)[:, 1] if puede_calibrar
-                      else np.full(len(prueba), np.nan))
-            base = {"corte": corte.nombre, "origen": str(origen), "destino": str(destino),
-                    "estudiantes_destino": len(prueba)}
+            prob_t = (
+                calibrar(transferido, cal).predict_proba(X)[:, 1]
+                if puede_calibrar
+                else np.full(len(prueba), np.nan)
+            )
+            base = {
+                "corte": corte.nombre,
+                "origen": str(origen),
+                "destino": str(destino),
+                "estudiantes_destino": len(prueba),
+            }
             if puede_calibrar:
-                filas.append({**base, "modelo": "transferido",
-                              **_probabilidades(y, prob_t, minimo)})
-            filas.append({**base, "modelo": "referencia (todos)",
-                          **_probabilidades(y, referencia_cal.predict_proba(X)[:, 1], minimo)})
-            filas.append({**base, "modelo": "regla D2 (sin aprendizaje)",
-                          **_probabilidades(y, puntuador_d2(prueba), minimo, False)})
+                filas.append(
+                    {**base, "modelo": "transferido", **_probabilidades(y, prob_t, minimo)}
+                )
+            filas.append(
+                {
+                    **base,
+                    "modelo": "referencia (todos)",
+                    **_probabilidades(y, referencia_cal.predict_proba(X)[:, 1], minimo),
+                }
+            )
+            filas.append(
+                {
+                    **base,
+                    "modelo": "regla D2 (sin aprendizaje)",
+                    **_probabilidades(y, puntuador_d2(prueba), minimo, False),
+                }
+            )
     return pd.DataFrame(filas)
 
 
 # --------------------------------------------------------------------------- #
 # Límites operativos
 # --------------------------------------------------------------------------- #
-def limites(resultados: pd.DataFrame, umbral: float = UMBRAL_UTIL,
-            sistema: str = REGLA) -> pd.DataFrame:
+def limites(
+    resultados: pd.DataFrame, umbral: float = UMBRAL_UTIL, sistema: str = REGLA
+) -> pd.DataFrame:
     """Para cada barrido, el mayor nivel en que la lista sigue siendo útil (Lift ≥ umbral).
 
     «Útil» se exige en la media y en el percentil 5 de las repeticiones, para que no dependa
     de una perturbación favorable.
     """
     filas = []
-    datos = resultados[(resultados["sistema"] == sistema)
-                       & resultados["escenario"].isin(["ruido", "faltantes", "desbalance"])]
+    datos = resultados[
+        (resultados["sistema"] == sistema)
+        & resultados["escenario"].isin(["ruido", "faltantes", "desbalance"])
+    ]
     for (escenario, variable), grupo in datos.groupby(["escenario", "variable"], sort=False):
         grupo = grupo.copy()
         grupo["_nivel"] = pd.to_numeric(grupo["nivel"].replace("base", np.nan), errors="coerce")
@@ -369,7 +477,8 @@ def limites(resultados: pd.DataFrame, umbral: float = UMBRAL_UTIL,
         util = (grupo["lift_k"] >= umbral) & (p05.fillna(grupo["lift_k"]) >= umbral)
         if escenario == "desbalance":
             grupo = grupo.assign(_orden=grupo["_nivel"].fillna(1.0)).sort_values(
-                "_orden", ascending=False)
+                "_orden", ascending=False
+            )
         else:
             grupo = grupo.assign(_orden=grupo["_nivel"].fillna(0.0)).sort_values("_orden")
         util = util.loc[grupo.index]
@@ -379,22 +488,36 @@ def limites(resultados: pd.DataFrame, umbral: float = UMBRAL_UTIL,
                 break
             ultimo = grupo.loc[indice, "_orden"]
         primero_falla = grupo.loc[~util, "_orden"]
-        filas.append({"escenario": escenario, "variable": variable, "sistema": sistema,
-                      "umbral_lift": umbral,
-                      "ultimo_nivel_util": ultimo,
-                      "primer_nivel_no_util": (float(primero_falla.iloc[0])
-                                               if not primero_falla.empty else None),
-                      "lift_base": float(grupo["lift_k"].iloc[0])})
-    caida = resultados[(resultados["sistema"] == sistema)
-                       & (resultados["escenario"] == "senal_caida")]
+        filas.append(
+            {
+                "escenario": escenario,
+                "variable": variable,
+                "sistema": sistema,
+                "umbral_lift": umbral,
+                "ultimo_nivel_util": ultimo,
+                "primer_nivel_no_util": (
+                    float(primero_falla.iloc[0]) if not primero_falla.empty else None
+                ),
+                "lift_base": float(grupo["lift_k"].iloc[0]),
+            }
+        )
+    caida = resultados[
+        (resultados["sistema"] == sistema) & (resultados["escenario"] == "senal_caida")
+    ]
     for _, fila in caida.iterrows():
         if fila["variable"] == "ninguna":
             continue
-        filas.append({"escenario": "senal_caida", "variable": fila["variable"],
-                      "sistema": sistema, "umbral_lift": umbral,
-                      "ultimo_nivel_util": "constante" if fila["lift_k"] >= umbral else None,
-                      "primer_nivel_no_util": None if fila["lift_k"] >= umbral else "constante",
-                      "lift_base": fila["lift_k"]})
+        filas.append(
+            {
+                "escenario": "senal_caida",
+                "variable": fila["variable"],
+                "sistema": sistema,
+                "umbral_lift": umbral,
+                "ultimo_nivel_util": "constante" if fila["lift_k"] >= umbral else None,
+                "primer_nivel_no_util": None if fila["lift_k"] >= umbral else "constante",
+                "lift_base": fila["lift_k"],
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -402,41 +525,54 @@ def _pct(valor) -> str:
     return f"{numero(100 * float(valor), 0)} %"
 
 
-def conclusiones(resultados: pd.DataFrame, cambio: pd.DataFrame, lim: pd.DataFrame,
-                 umbral: float = UMBRAL_UTIL) -> list[str]:
+def conclusiones(
+    resultados: pd.DataFrame, cambio: pd.DataFrame, lim: pd.DataFrame, umbral: float = UMBRAL_UTIL
+) -> list[str]:
     """Frases con las cifras de la ejecución, para el documento y el cuaderno."""
     textos = []
     d2 = resultados[resultados["sistema"] == REGLA]
     base = d2[(d2["escenario"] == "senal_caida") & (d2["variable"] == "ninguna")]
     if not base.empty:
-        textos.append(f"Sin perturbar, la regla D2 tiene en C4 un Lift@k de "
-                      f"{numero(base['lift_k'].iloc[0], 2)} y un Recall@k de "
-                      f"{_pct(base['recall_k'].iloc[0])}.")
+        textos.append(
+            f"Sin perturbar, la regla D2 tiene en C4 un Lift@k de "
+            f"{numero(base['lift_k'].iloc[0], 2)} y un Recall@k de "
+            f"{_pct(base['recall_k'].iloc[0])}."
+        )
     lift_base = float(base["lift_k"].iloc[0]) if not base.empty else np.nan
     if lift_base < umbral:
-        textos.append(f"Sin perturbar, la lista ya está por debajo del umbral de utilidad "
-                      f"(Lift ≥ {numero(umbral, 2)}) en esta cohorte, así que no se pueden fijar "
-                      "límites operativos con estos datos; se describe solo cómo cambia.")
+        textos.append(
+            f"Sin perturbar, la lista ya está por debajo del umbral de utilidad "
+            f"(Lift ≥ {numero(umbral, 2)}) en esta cohorte, así que no se pueden fijar "
+            "límites operativos con estos datos; se describe solo cómo cambia."
+        )
     else:
         ruido = lim[(lim["escenario"] == "ruido") & (lim["variable"] == "errores_registro")]
         if not ruido.empty:
             f = ruido.iloc[0]
             if f["primer_nivel_no_util"] is None or pd.isna(f["primer_nivel_no_util"]):
-                textos.append("Con errores de registro de hasta el "
-                              f"{_pct(max(NIVELES_RUIDO))} en cada señal, la lista sigue por "
-                              f"encima del umbral (Lift ≥ {numero(umbral, 2)}).")
+                textos.append(
+                    "Con errores de registro de hasta el "
+                    f"{_pct(max(NIVELES_RUIDO))} en cada señal, la lista sigue por "
+                    f"encima del umbral (Lift ≥ {numero(umbral, 2)})."
+                )
             else:
-                textos.append(f"La lista tolera errores de registro hasta el "
-                              f"{_pct(f['ultimo_nivel_util'] or 0)} de las filas; desde el "
-                              f"{_pct(f['primer_nivel_no_util'])} cae bajo el umbral.")
+                textos.append(
+                    f"La lista tolera errores de registro hasta el "
+                    f"{_pct(f['ultimo_nivel_util'] or 0)} de las filas; desde el "
+                    f"{_pct(f['primer_nivel_no_util'])} cae bajo el umbral."
+                )
         for _, f in lim[lim["escenario"] == "faltantes"].iterrows():
             nombre = SENALES.get(f["variable"], f["variable"]).lower()
             if f["primer_nivel_no_util"] is None or pd.isna(f["primer_nivel_no_util"]):
-                textos.append(f"Con hasta el {_pct(max(NIVELES_FALTANTES))} de vacíos en "
-                              f"{nombre}, la lista sigue siendo útil.")
+                textos.append(
+                    f"Con hasta el {_pct(max(NIVELES_FALTANTES))} de vacíos en "
+                    f"{nombre}, la lista sigue siendo útil."
+                )
             else:
-                textos.append(f"Con vacíos en {nombre}, la lista deja de ser útil desde el "
-                              f"{_pct(f['primer_nivel_no_util'])} de las filas.")
+                textos.append(
+                    f"Con vacíos en {nombre}, la lista deja de ser útil desde el "
+                    f"{_pct(f['primer_nivel_no_util'])} de las filas."
+                )
     caida = d2[(d2["escenario"] == "senal_caida") & (d2["variable"] != "ninguna")]
     for _, f in caida.iterrows():
         if f["variable"] == "promedio":
@@ -446,21 +582,28 @@ def conclusiones(resultados: pd.DataFrame, cambio: pd.DataFrame, lim: pd.DataFra
         else:
             nombre = SENALES.get(f["variable"], f["variable"]).lower()
             sujeto = f"la señal «{nombre}» llega constante"
-        textos.append(f"Si {sujeto}, el Lift@k pasa a "
-                      f"{numero(f['lift_k'], 2)} (Recall@k {_pct(f['recall_k'])}).")
+        textos.append(
+            f"Si {sujeto}, el Lift@k pasa a "
+            f"{numero(f['lift_k'], 2)} (Recall@k {_pct(f['recall_k'])})."
+        )
     desb = d2[d2["escenario"] == "desbalance"]
     for _, f in desb.iterrows():
         if f["nivel"] == "base":
             continue
         rango = ""
         if "lift_k_p05" in f and pd.notna(f.get("lift_k_p05")):
-            rango = (f" (del {numero(f['lift_k_p05'], 2)} al {numero(f['lift_k_p95'], 2)} "
-                     "según qué familias queden)")
-        textos.append(f"Con una tasa familiar del {_pct(f['nivel'])}, el Lift@k medio es "
-                      f"{numero(f['lift_k'], 2)}{rango}.")
+            rango = (
+                f" (del {numero(f['lift_k_p05'], 2)} al {numero(f['lift_k_p95'], 2)} "
+                "según qué familias queden)"
+            )
+        textos.append(
+            f"Con una tasa familiar del {_pct(f['nivel'])}, el Lift@k medio es "
+            f"{numero(f['lift_k'], 2)}{rango}."
+        )
     if not cambio.empty:
-        for (_corte, origen, destino), grupo in cambio.groupby(["corte", "origen", "destino"],
-                                                              sort=False):
+        for (_corte, origen, destino), grupo in cambio.groupby(
+            ["corte", "origen", "destino"], sort=False
+        ):
             t = grupo[grupo["modelo"] == "transferido"]
             r = grupo[grupo["modelo"] == "referencia (todos)"]
             if t.empty or r.empty or pd.isna(t["pr_auc"].iloc[0]):
@@ -471,5 +614,6 @@ def conclusiones(resultados: pd.DataFrame, cambio: pd.DataFrame, lim: pd.DataFra
                 f"Logística híbrida entrenada con {o} y probada con {d}: PR-AUC "
                 f"{numero(t['pr_auc'].iloc[0], 3)} frente a {numero(r['pr_auc'].iloc[0], 3)} "
                 "del modelo entrenado con todos; observados / esperados = "
-                f"{numero(t['observados_sobre_esperados'].iloc[0], 2)}.")
+                f"{numero(t['observados_sobre_esperados'].iloc[0], 2)}."
+            )
     return textos

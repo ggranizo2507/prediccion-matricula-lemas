@@ -18,8 +18,12 @@ from src.graficos_costo import figura_costo  # noqa: E402
 @pytest.fixture
 def por_k() -> pd.DataFrame:
     """Cohorte de 1.000 familias y 100 casos; k = 100."""
-    filas = [("C4", 0.5, 50, 15), ("C4", 1.0, 100, 22), ("C4", 2.0, 200, 32),
-             ("C4", "todas", 1000, 100)]
+    filas = [
+        ("C4", 0.5, 50, 15),
+        ("C4", 1.0, 100, 22),
+        ("C4", 2.0, 200, 32),
+        ("C4", "todas", 1000, 100),
+    ]
     tabla = pd.DataFrame(filas, columns=["cohorte", "multiplicador", "contactos", "aciertos"])
     tabla["pct_familias"] = tabla["contactos"] / 1000
     tabla["precision"] = tabla["aciertos"] / tabla["contactos"]
@@ -28,9 +32,15 @@ def por_k() -> pd.DataFrame:
 
 @pytest.fixture
 def semanal() -> pd.DataFrame:
-    return pd.DataFrame({"cohorte": ["Todas", "Todas"], "semana": [1, 5],
-                         "tasa_base": [0.1, 0.4], "pendientes_por_campana": [1000, 250],
-                         "dias_ventana_restante": [69, 41]})
+    return pd.DataFrame(
+        {
+            "cohorte": ["Todas", "Todas"],
+            "semana": [1, 5],
+            "tasa_base": [0.1, 0.4],
+            "pendientes_por_campana": [1000, 250],
+            "dias_ventana_restante": [69, 41],
+        }
+    )
 
 
 def test_razon_equilibrio():
@@ -74,22 +84,32 @@ def test_curva_y_mejor_tamano(por_k):
     assert fila["beneficio_lista"] == pytest.approx(0.1 * 50 * 22 - 100)
     assert fila["beneficio_azar"] == pytest.approx(0.1 * 50 * 10 - 100)
     mejor = costo.mejor_tamano(curva).set_index("razon")
-    assert mejor.loc[50, "contactos"] == 50          # solo compensa la primera mitad
-    assert mejor.loc[200, "contactos"] == 1000       # con un caso muy valioso, llamar a todas
+    assert mejor.loc[50, "contactos"] == 50  # solo compensa la primera mitad
+    assert mejor.loc[200, "contactos"] == 1000  # con un caso muy valioso, llamar a todas
 
 
 def test_escenarios_y_conclusiones(por_k, semanal):
     c5 = {"precision_k": 0.13, "lift_k": 2.0}
     esc = costo.escenarios(por_k, semanal, c5, "C4", 5)
     nombres = [e["escenario"] for e in esc]
-    assert nombres == ["azar", "primera_mitad", "lista_k", "tramo_k_2k",
-                       "pendientes_semana_5", "lista_k_c5", "azar_c5"]
+    assert nombres == [
+        "azar",
+        "primera_mitad",
+        "lista_k",
+        "tramo_k_2k",
+        "pendientes_semana_5",
+        "lista_k_c5",
+        "azar_c5",
+    ]
     eq = costo.tabla_equilibrio(esc).set_index("escenario")
     assert eq.loc["tramo_k_2k", "precision"] == pytest.approx(0.10)
     assert eq.loc["azar_c5", "precision"] == pytest.approx(0.065)
     assert eq.loc["lista_k", "razon_equilibrio_e10"] < eq.loc["azar", "razon_equilibrio_e10"]
-    textos = costo.conclusiones(eq.reset_index(), costo.marginales(por_k, "C4"),
-                                costo.mejor_tamano(costo.curva_beneficio(por_k, "C4")))
+    textos = costo.conclusiones(
+        eq.reset_index(),
+        costo.marginales(por_k, "C4"),
+        costo.mejor_tamano(costo.curva_beneficio(por_k, "C4")),
+    )
     assert any("semana 5" in t for t in textos)
     assert any("divide por 2,0" in t for t in textos)
 

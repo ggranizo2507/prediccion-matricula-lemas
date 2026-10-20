@@ -16,15 +16,59 @@ from src.data_processing import (
 from src.synthetic import generar
 from src.utils import cargar_config, cohortes_desde_config, tasa_por_grupo
 
-COLUMNAS = ["hoja", "anoa", "anos", "Sede", "Nivel", "Paralelo", "P.Académico", "P.Conducta",
-            "fecha_pago", "Reserva", "RColegio", "Fecha Reserva", "Tiempo", "beca",
-            "# meses caído", "anio_ingreso", "id_seudonimo", "id_familia_seudonimo"]
+COLUMNAS = [
+    "hoja",
+    "anoa",
+    "anos",
+    "Sede",
+    "Nivel",
+    "Paralelo",
+    "P.Académico",
+    "P.Conducta",
+    "fecha_pago",
+    "Reserva",
+    "RColegio",
+    "Fecha Reserva",
+    "Tiempo",
+    "beca",
+    "# meses caído",
+    "anio_ingreso",
+    "id_seudonimo",
+    "id_familia_seudonimo",
+]
 
 
-def _fila(anio, est, fam, pago, reserva="SI", estado="Aprobar", fecha_reserva="2021-10-01 10:00",
-          nivel="5to EGB A - Básica Media", ingreso=2018):
-    return [f"{anio}-{anio + 1}", anio, anio + 1, "Mucho Lote 1", nivel, "A", "8.5", "A",
-            pago, reserva, estado, fecha_reserva, "ORDINARIA", "NO", "1", ingreso, est, fam]
+def _fila(
+    anio,
+    est,
+    fam,
+    pago,
+    reserva="SI",
+    estado="Aprobar",
+    fecha_reserva="2021-10-01 10:00",
+    nivel="5to EGB A - Básica Media",
+    ingreso=2018,
+):
+    return [
+        f"{anio}-{anio + 1}",
+        anio,
+        anio + 1,
+        "Mucho Lote 1",
+        nivel,
+        "A",
+        "8.5",
+        "A",
+        pago,
+        reserva,
+        estado,
+        fecha_reserva,
+        "ORDINARIA",
+        "NO",
+        "1",
+        ingreso,
+        est,
+        fam,
+    ]
 
 
 @pytest.fixture(scope="module")
@@ -40,18 +84,18 @@ def cohorte_c1(config):
 @pytest.fixture(scope="module")
 def base(config):
     origen = [
-        _fila(2021, "E01", "F1", "2021-03-01"),                      # matricula en plazo
-        _fila(2021, "E02", "F2", "2021-03-01"),                      # no aparece en destino
-        _fila(2021, "E03", "F3", "2021-03-01"),                      # matrícula tardía
-        _fila(2021, "E04", "F4", "2021-03-01"),                      # pagó antes de t0
+        _fila(2021, "E01", "F1", "2021-03-01"),  # matricula en plazo
+        _fila(2021, "E02", "F2", "2021-03-01"),  # no aparece en destino
+        _fila(2021, "E03", "F3", "2021-03-01"),  # matrícula tardía
+        _fila(2021, "E04", "F4", "2021-03-01"),  # pagó antes de t0
         _fila(2021, "E05", "F5", "2021-03-01", reserva="NO"),
         _fila(2021, "E06", "F6", "2021-03-01", estado="En proceso"),
         _fila(2021, "E07", "F7", "2021-03-01", nivel="3ro BGU A - BGU"),
         _fila(2021, "E08", "F8", "2021-03-01", fecha_reserva="2022-03-01 09:00"),
         _fila(2021, "E09", "F9", "2021-03-01", estado="Aprobar extraordinaria"),
-        _fila(2021, "E10", "F1", "2021-03-01"),                      # hermano de E01
-        _fila(2021, "E11", "F11", "2021-03-01"),                     # pago justo en t0
-        _fila(2021, "E12", "F12", "2021-03-01"),                     # pago justo en H
+        _fila(2021, "E10", "F1", "2021-03-01"),  # hermano de E01
+        _fila(2021, "E11", "F11", "2021-03-01"),  # pago justo en t0
+        _fila(2021, "E12", "F12", "2021-03-01"),  # pago justo en H
     ]
     destino = [
         _fila(2022, "E01", "F1", "2022-03-01"),
@@ -87,8 +131,9 @@ def test_filtros_de_elegibilidad(base, cohorte_c1, config):
 
 
 def test_sensibilidad_excluye_aprobaciones_extraordinarias(base, cohorte_c1, config):
-    tabla, _ = construir_cohorte(base, cohorte_c1, config,
-                                 config["elegibilidad"]["estados_sensibilidad"])
+    tabla, _ = construir_cohorte(
+        base, cohorte_c1, config, config["elegibilidad"]["estados_sensibilidad"]
+    )
     assert "E09" not in set(tabla["id_estudiante"])
 
 
@@ -124,8 +169,9 @@ def test_pipeline_completo_con_datos_sinteticos(config):
 
 
 def test_conducta_en_letras_es_ordinal(config):
-    crudo = pd.DataFrame([_fila(2021, f"E{i}", "F", "2021-03-01") for i in range(4)],
-                         columns=COLUMNAS)
+    crudo = pd.DataFrame(
+        [_fila(2021, f"E{i}", "F", "2021-03-01") for i in range(4)], columns=COLUMNAS
+    )
     crudo["P.Conducta"] = ["A", " b", "E", "Z"]
     limpia = limpiar_base(crudo, config)
     assert limpia["conducta"].tolist()[:3] == [5.0, 4.0, 1.0]
@@ -151,35 +197,39 @@ def test_tasa_por_grupo_oculta_grupos_pequenos():
     assert tabla["g"].tolist() == ["a"] and tabla["n"].iloc[0] == 6
 
 
-@pytest.mark.parametrize(("reserva", "estado", "esperado"), [
-    ("SI", "Aprobar", "aprobada"),
-    ("SI", "Aprobado", "aprobada"),
-    ("SI", "Aprobación extraordinaria", "aprobada_extraordinaria"),
-    ("SI", "Aprobado Extraordinaria", "aprobada_extraordinaria"),
-    ("SI", "En revisión", "pendiente"),
-    ("SI", "En Revisión Extraordinaria", "pendiente"),
-    ("SI", "En Proceso", "pendiente"),
-    ("NO HIZO", "NO HIZO", "sin_reserva"),
-    ("NO", None, "sin_reserva"),
-    ("SI", "", "sin_reserva"),
-])
+@pytest.mark.parametrize(
+    ("reserva", "estado", "esperado"),
+    [
+        ("SI", "Aprobar", "aprobada"),
+        ("SI", "Aprobado", "aprobada"),
+        ("SI", "Aprobación extraordinaria", "aprobada_extraordinaria"),
+        ("SI", "Aprobado Extraordinaria", "aprobada_extraordinaria"),
+        ("SI", "En revisión", "pendiente"),
+        ("SI", "En Revisión Extraordinaria", "pendiente"),
+        ("SI", "En Proceso", "pendiente"),
+        ("NO HIZO", "NO HIZO", "sin_reserva"),
+        ("NO", None, "sin_reserva"),
+        ("SI", "", "sin_reserva"),
+    ],
+)
 def test_categoria_reserva_unifica_textos(reserva, estado, esperado):
     assert categoria_reserva(reserva, estado) == esperado
 
 
 def test_beca_vacia_es_cero(config):
-    crudo = pd.DataFrame([_fila(2021, f"E{i}", "F", "2021-03-01") for i in range(3)],
-                         columns=COLUMNAS)
+    crudo = pd.DataFrame(
+        [_fila(2021, f"E{i}", "F", "2021-03-01") for i in range(3)], columns=COLUMNAS
+    )
     crudo["beca"] = ["SI", "", None]
     assert limpiar_base(crudo, config)["beca"].tolist() == [1, 0, 0]
 
 
 def test_nuevo_por_presencia_en_el_anio_anterior(config):
     filas = [
-        _fila(2021, "A1", "F1", "2021-03-01", ingreso=2019),   # primer año: pago en plazo
-        _fila(2021, "N0", "F2", "2021-01-07", ingreso=2020),   # primer año: pago temprano
-        _fila(2022, "A1", "F1", "2022-03-01", ingreso=2019),   # estaba en 2021 → antiguo
-        _fila(2022, "N1", "F3", "2022-01-10", ingreso=2021),   # no estaba en 2021 → nuevo
+        _fila(2021, "A1", "F1", "2021-03-01", ingreso=2019),  # primer año: pago en plazo
+        _fila(2021, "N0", "F2", "2021-01-07", ingreso=2020),  # primer año: pago temprano
+        _fila(2022, "A1", "F1", "2022-03-01", ingreso=2019),  # estaba en 2021 → antiguo
+        _fila(2022, "N1", "F3", "2022-01-10", ingreso=2021),  # no estaba en 2021 → nuevo
     ]
     base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
     nuevos = base.set_index(["anio_origen", "id_estudiante"])["es_nuevo"]
@@ -192,7 +242,7 @@ def test_matriculados_sin_reserva_aprobada_se_reportan(config, cohorte_c1):
         _fila(2021, "E1", "F1", "2021-03-01"),
         _fila(2021, "D1", "F2", "2021-03-01", reserva="NO HIZO", estado="NO HIZO"),
         _fila(2022, "E1", "F1", "2022-03-01"),
-        _fila(2022, "D1", "F2", "2022-03-05"),   # matriculado por autorización del director
+        _fila(2022, "D1", "F2", "2022-03-05"),  # matriculado por autorización del director
     ]
     base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
     tabla, reporte = construir_cohorte(base, cohorte_c1, config)
@@ -202,6 +252,7 @@ def test_matriculados_sin_reserva_aprobada_se_reportan(config, cohorte_c1):
 
 def test_base_seud_equivocada_se_borra(tmp_path):
     from src.utils import obtener_base_seud
+
     ruta = tmp_path / "base_seud.csv"
     ruta.write_text("Nombre,Nota\nX,1\n", encoding="utf-8")
     with pytest.raises(ValueError, match="faltan columnas"):
@@ -212,6 +263,7 @@ def test_base_seud_equivocada_se_borra(tmp_path):
 @pytest.mark.parametrize("valor", ["2021", "2021.0", "2021-2022", "2021 - 2022", "Ciclo 2021-2022"])
 def test_anio_de_ciclo_acepta_formatos(valor):
     from src.data_processing import anio_de_ciclo
+
     assert anio_de_ciclo(pd.Series([valor])).iloc[0] == 2021
 
 
@@ -228,17 +280,26 @@ def test_anoa_en_texto_y_filas_vacias_no_rompen_cohortes(config, cohorte_c1):
 
 def test_anoa_vacio_se_completa_con_la_hoja(tmp_path):
     from src.utils import leer_base_seud
+
     ruta = tmp_path / "base_seud.csv"
-    pd.DataFrame({"hoja": ["2021", "2022"], "anoa": ["2021", None], "fecha_pago": ["", ""],
-                  "id_seudonimo": ["E", "E"], "id_familia_seudonimo": ["F", "F"]}).to_csv(ruta,
-                                                                                      index=False)
+    pd.DataFrame(
+        {
+            "hoja": ["2021", "2022"],
+            "anoa": ["2021", None],
+            "fecha_pago": ["", ""],
+            "id_seudonimo": ["E", "E"],
+            "id_familia_seudonimo": ["F", "F"],
+        }
+    ).to_csv(ruta, index=False)
     assert leer_base_seud(ruta)["anoa"].tolist() == ["2021", "2022"]
 
 
 def test_excel_con_encabezados_distintos_entre_hojas(tmp_path):
     import sys
+
     sys.path.insert(0, "tools")
     from seudonimizar import _leer
+
     ruta = tmp_path / "x.xlsx"
     with pd.ExcelWriter(ruta) as w:
         pd.DataFrame({"anoa": ["2021"], "CI": ["1"]}).to_excel(w, sheet_name="2021", index=False)
@@ -258,25 +319,32 @@ def test_alias_anoaa_y_fecha_se_unifican(config, cohorte_c1):
     assert tabla["y_no_matricula"].tolist() == [0]
 
 
-@pytest.mark.parametrize(("texto", "esperado"), [
-    ("Segundo Grado EGB", "Segundo Grado"),
-    ("Segundo Grado", "Segundo Grado"),
-    ("Primer Curso", "Primero de bachillerato"),
-    ("Tercer Curso", "Tercero de bachillerato"),
-    ("Tercero de bachillerato", "Tercero de bachillerato"),
-    ("Inicial 2", "Inicial 2"),
-    ("", "SIN_DATO"),
-])
+@pytest.mark.parametrize(
+    ("texto", "esperado"),
+    [
+        ("Segundo Grado EGB", "Segundo Grado"),
+        ("Segundo Grado", "Segundo Grado"),
+        ("Primer Curso", "Primero de bachillerato"),
+        ("Tercer Curso", "Tercero de bachillerato"),
+        ("Tercero de bachillerato", "Tercero de bachillerato"),
+        ("Inicial 2", "Inicial 2"),
+        ("", "SIN_DATO"),
+    ],
+)
 def test_normalizar_curso_unifica_formatos(texto, esperado):
     from src.data_processing import normalizar_curso
+
     assert normalizar_curso(texto) == esperado
 
 
 def test_tercer_curso_es_terminal(config, cohorte_c1):
-    filas = [_fila(2021, "E1", "F1", "2021-03-01", nivel="Tercer Curso A - Bachillerato"),
-             _fila(2021, "E2", "F2", "2021-03-01",
-                   nivel="Tercer Grado EGB A - Educación General Básica"),
-             _fila(2022, "E2", "F2", "2022-03-01")]
+    filas = [
+        _fila(2021, "E1", "F1", "2021-03-01", nivel="Tercer Curso A - Bachillerato"),
+        _fila(
+            2021, "E2", "F2", "2021-03-01", nivel="Tercer Grado EGB A - Educación General Básica"
+        ),
+        _fila(2022, "E2", "F2", "2022-03-01"),
+    ]
     base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
     tabla, reporte = construir_cohorte(base, cohorte_c1, config)
     assert set(tabla["id_estudiante"]) == {"E2"} and reporte["terminales_excluidos"] == 1
@@ -285,8 +353,11 @@ def test_tercer_curso_es_terminal(config, cohorte_c1):
 def test_representante_atipico_se_individualiza(config, cohorte_c1):
     maximo = config["familias"]["max_estudiantes_por_representante"]
     filas = [_fila(2021, f"E{i}", "GEN", "2021-03-01") for i in range(maximo + 1)]
-    filas += [_fila(2021, "H1", "F1", "2021-03-01"), _fila(2021, "H2", "F1", "2021-03-01"),
-              _fila(2022, "H1", "F1", "2022-03-01")]
+    filas += [
+        _fila(2021, "H1", "F1", "2021-03-01"),
+        _fila(2021, "H2", "F1", "2021-03-01"),
+        _fila(2022, "H1", "F1", "2022-03-01"),
+    ]
     base = limpiar_base(pd.DataFrame(filas, columns=COLUMNAS), config)
     assert base["representante_atipico"].sum() == maximo + 1
     assert base.loc[base["representante_atipico"] == 1, "id_familia"].nunique() == maximo + 1

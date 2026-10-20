@@ -16,7 +16,7 @@ Maestría en Inteligencia Artificial · Universidad de Especialidades Espíritu 
 
 **Problema que resuelve.** En la Unidad Educativa LEMAS (Guayaquil, sedes Mucho Lote 1 y Mucho Lote 2), una reserva aprobada no garantiza la matrícula. Cada año, entre el 6 % y el 11 % de los estudiantes con reserva aprobada no paga la matrícula entre el 20 de febrero y el 30 de abril. La institución se entera tarde y no alcanza a ofrecer apoyo. Hay 69 días y 10 personas para las dos sedes.
 
-**Funcionalidad principal.** El 20 de febrero el sistema ordena a las familias con reserva aprobada para decidir a cuáles llamar primero, y muestra el motivo de cada una. El orden sale de una regla simple (D2): primero quien pagó tarde la matrícula anterior, luego quien hizo reserva extraordinaria y luego quien tuvo más pensiones atrasadas. También proyecta la matrícula por sede y subnivel y, unas semanas después, lista a las familias que siguen sin pagar. Comparamos tres modelos de aprendizaje automático con esa regla y ninguno la superó: la IA nos sirvió para descubrir la regla, validarla y medir su incertidumbre.
+**Funcionalidad principal.** El 20 de febrero el sistema ordena a las familias con reserva aprobada para decidir a cuáles llamar primero, y muestra el motivo de cada una. El orden sale de una regla simple (D2): primero quien pagó tarde la matrícula anterior, luego quien hizo reserva extraordinaria y luego quien tuvo más pensiones atrasadas. También proyecta la matrícula por sede y subnivel y, unas semanas después, lista a las familias que siguen sin pagar. Comparamos tres modelos de aprendizaje automático con esa regla y ninguno la superó: la regla salió del análisis de datos, y el aprendizaje automático sirvió para comprobar que no había más señal que aprovechar y para medir su incertidumbre.
 
 **Usuarios objetivo.** Secretaría y Admisiones usan la lista, Dirección revisa los resultados y el custodio de datos guarda la clave de seudonimización. Las familias no usan el sistema: reciben la llamada.
 
@@ -62,12 +62,14 @@ Maestría en Inteligencia Artificial · Universidad de Especialidades Espíritu 
 
 **Tabla 3. Impactos positivos**
 
-| **Impacto**                                | **Descripción**                                                                                                                                                             | **Grupos beneficiados**                            | **Evidencia**                                                                                                                                 |
-|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| **1. Apoyo más oportuno y mejor dirigido** | La lista queda disponible el 20 de febrero, 69 días antes del cierre, y concentra los casos                                                                                 | Familias en riesgo de no matricularse; estudiantes | Prueba final: 22 de 74 casos con una lista de 165 familias. Al azar serían unos 11. Lift 1,97 (IC 95 %: 1,24 a 2,56)                          |
-| **2. Trabajo del personal mejor enfocado** | Diez personas saben por dónde empezar. No reemplaza ningún puesto                                                                                                           | Secretaría y Admisiones                            | La aplicación genera la lista en segundos y cada familia lleva su motivo. Son 118 y 47 familias por sede                                      |
-| **3. Planificación con cifras**            | Proyección de matrículas por sede y subnivel al 20 de febrero                                                                                                               | Dirección y Coordinación académica                 | Error del 2,8 % en la prueba final. Es el mismo error que da la tasa histórica: sirve, pero no mejora lo que ya se podía calcular             |
-| **4. Datos de menores mejor protegidos**   | El análisis se hace con seudónimos. Los datos con nombres y la clave no salen de LEMAS; la base seudonimizada se analizó en Google Colab con autorización de la institución | Estudiantes y familias; la institución             | Seudonimización HMAC-SHA256 con clave custodiada; la aplicación pública solo acepta datos sintéticos; el repositorio no contiene datos reales |
+| **Impacto** | **Descripción** | **Grupos beneficiados** | **Evidencia** | **Estado** |
+|---|---|---|---|---|
+| **1. Apoyo más oportuno y mejor dirigido** | La lista queda disponible el 20 de febrero, 69 días antes del cierre, y concentra los casos | Familias en riesgo de no matricularse; estudiantes | Prueba final: 22 de 74 casos con una lista de 165 familias. Al azar serían unos 11. Lift 1,97 (IC 95 %: 1,24 a 2,56). Son 7,5 llamadas por caso hallado, frente a unas 15 al azar | **Medido:** a quién encuentra la lista. **Pendiente de medir:** si la llamada aumenta la matrícula (reserva al azar, Parte 5) |
+| **2. Trabajo del personal mejor enfocado** | Diez personas saben por dónde empezar. No reemplaza ningún puesto | Secretaría y Admisiones | La aplicación genera la lista en segundos y cada familia lleva su motivo. Son 118 y 47 familias por sede | **Pendiente de medir** con el personal (validación con usuarios, anexo E del documento técnico) |
+| **3. Planificación con cifras** | Proyección de matrículas por sede y subnivel al 20 de febrero | Dirección y Coordinación académica | Error del 2,8 % en la prueba final. Es el mismo error que da la tasa histórica: sirve, pero no mejora lo que ya se podía calcular | **Medido** |
+| **4. Datos de menores mejor protegidos** | El análisis se hace con seudónimos. Los datos con nombres y la clave no salen de LEMAS; la base seudonimizada se analizó en Google Colab con autorización de la institución | Estudiantes y familias; la institución | Seudonimización HMAC-SHA256 con clave custodiada; la aplicación pública solo acepta datos sintéticos; el repositorio no contiene datos reales | **Implementado** |
+
+Los impactos 1 y 2 son **esperados, no comprobados**: la prueba final mide a quién encuentra la lista, no si la llamada cambia la decisión de la familia ni cuánto tiempo ahorra al personal.
 
 ### 3.2 Impactos negativos y riesgos
 
@@ -93,7 +95,7 @@ Maestría en Inteligencia Artificial · Universidad de Especialidades Espíritu 
 
 - **Barreras.** Las familias extranjeras que comparten una cédula genérica (39 estudiantes) se tratan como contactos individuales, pero no pudimos evaluar la equidad para ellas. Y las familias que la regla no prioriza quedan fuera: el 70 % de los casos en la prueba final.
 
-Con 11 casos entre becadas no sabemos si la diferencia es real. La informamos como alerta y la vigilamos (Parte 5).
+Con 11 casos entre becadas no sabemos si la diferencia es real. **Intervalos y prueba exacta (agregados en la revisión final, D60):** el recall de las becadas es 18 % [IC 95 % de Wilson: 5 %; 48 %] y el de las demás, 32 % [22 %; 44 %]; la prueba exacta de Fisher da p = 0,49, y la razón de selección es 0,66 [0,41; 1,05] (p = 0,08). Entre sedes, el recall es 32 % [20 %; 47 %] en Mucho Lote 1 y 27 % [14 %; 44 %] en Mucho Lote 2 (p = 0,80); la menor selección en Mucho Lote 2 sale del diseño (k proporcional a cada sede). Ninguna brecha es demostrable, pero tampoco descartable con tan pocos casos. La informamos como alerta y la vigilamos acumulando cohortes (Parte 5).
 
 ## Parte 4. Riesgos éticos específicos
 
@@ -105,7 +107,7 @@ Con 11 casos entre becadas no sabemos si la diferencia es real. La informamos co
 | **Privacidad**       | Datos administrativos de menores y representantes: curso, promedio, conducta, pagos, reserva y beca. No hubo consentimiento informado específico, solo autorización institucional. Las cédulas se reemplazan por seudónimos y se eliminan nombres y saldos. Reidentificar exige la clave y el Excel original; la base seudonimizada nunca se publica |
 | **Transparencia**    | El personal entiende el sistema: la regla cabe en una frase y cada familia lleva su motivo. Las limitaciones están en la aplicación, el README y la ficha del modelo. Las familias todavía no saben que existe                                                                                                                                       |
 | **Autonomía**        | Una persona decide a quién llamar y qué ofrecer. La aplicación no contacta a nadie. El riesgo de coacción está en el uso: llamar para cobrar                                                                                                                                                                                                         |
-| **Seguridad**        | Si la regla falla, la familia recibe la atención habitual. Los errores posibles son una llamada innecesaria o una familia no listada. Hay 255 pruebas automáticas y un criterio para suspender el sistema                                                                                                                                            |
+| **Seguridad**        | Si la regla falla, la familia recibe la atención habitual. Los errores posibles son una llamada innecesaria o una familia no listada. Hay 263 pruebas automáticas y un criterio para suspender el sistema                                                                                                                                            |
 | **Accountability**   | Responde LEMAS, a través de Dirección. No existe todavía un proceso de apelación para las familias. La auditoría anual está propuesta                                                                                                                                                                                                                |
 
 **Tabla 6. Riesgos éticos analizados**
@@ -152,7 +154,7 @@ Una estrategia por riesgo. La última columna dice qué está hecho y qué queda
 <td>Técnica y política</td>
 <td><p>1. Calcular selección y recall por beca, sede y subnivel, acumulando cohortes.</p>
 <p>2. Revisar a las becadas con atrasos aunque no estén en la lista.</p>
-<p>3. Reservar parte de los contactos para familias elegidas al azar</p></td>
+<p>3. Reservar parte de los contactos para familias elegidas al azar. Con la mitad de la lista reservada, detectar que la llamada reduce la no matrícula a la mitad exige unas 634 familias (unas 4 campañas); un efecto del 25 %, unas 2.900 (unas 18). Para efectos moderados hay que ampliar la reserva a la segunda etapa o acumular cohortes (D60)</p></td>
 <td>Cada campaña y cada mayo. Equipo técnico (métricas), Secretaría (revisión)</td>
 <td><strong>Media.</strong> Métricas implementadas; reserva al azar propuesta</td>
 </tr>
@@ -207,7 +209,7 @@ Nos guiamos por los principios de la Recomendación de la UNESCO sobre la ética
 
 | **Rol**                                              | **Responsabilidades**                                        | **Rendición de cuentas**                                                                                                   |
 |------------------------------------------------------|--------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
-| **Desarrolladores** (Guillermo Granizo y José Ulloa) | Implementación técnica correcta y documentación              | 255 pruebas automáticas e integración continua en cada cambio; los cambios entran por pull request                         |
+| **Desarrolladores** (Guillermo Granizo y José Ulloa) | Implementación técnica correcta y documentación              | 263 pruebas automáticas e integración continua en cada cambio; los cambios entran por pull request                         |
 | **Científicos de datos** (el mismo equipo)           | Calidad de los datos, protocolo de validación y equidad      | Sistema congelado con huella SHA-256 antes de la prueba final, hecha una sola vez; tabla de equidad por grupo              |
 | **Product Owner** (Guillermo Granizo)                | Decisiones de diseño y de alcance                            | Registro de 53 decisiones con fecha y motivo                                                                               |
 | **Custodio de datos** (LEMAS)                        | Extracción, seudonimización y resguardo de la clave          | Acta con huella SHA-256 en cada extracción; huella de la clave en pantalla                                                 |
@@ -256,6 +258,7 @@ Nos guiamos por los principios de la Recomendación de la UNESCO sobre la ética
 | **No discriminación e interés superior del niño** (Constitución, arts. 11.2, 44 y 66.19; Código de la Niñez, art. 11) | **Sí**          | No discriminar y poner primero el interés de niñas, niños y adolescentes                                                                                                                                                                                        | **Sí en el diseño:** no usa nacionalidad, etnia, religión ni salud. La brecha en becadas está en observación                                                 | Seguimiento anual por grupo                                                                                                                                                        |
 | **AI Act de la UE** (Reglamento 2024/1689) \[3\]                                                                      | No (referencia) | Clasifica como alto riesgo los sistemas que determinan el acceso o la admisión a instituciones educativas                                                                                                                                                       | A nuestro juicio queda fuera: no decide admisiones                                                                                                           | Mantener prohibido el uso para negar cupos                                                                                                                                         |
 | **GDPR, CCPA, HIPAA**                                                                                                 | No              | Titulares y responsable están en Ecuador; no hay datos de salud. Usamos el GDPR como referencia                                                                                                                                                                 | —                                                                                                                                                            | —                                                                                                                                                                                  |
+| **Normativa educativa** (LOEI; Reglamento General de 2023; Acuerdo MINEDUC-MINEDUC-2025-00030-A sobre matrículas y pensiones) | **Sí** | Cobrar solo rubros autorizados; no retener documentos ni impedir evaluaciones por falta de pago; procedimiento formal ante el distrito con más de tres meses de mora | Cumple: la lista no genera cobros y su uso para cobrar, negar matrícula o iniciar ese procedimiento está prohibido. Artículos de la LOEI por confirmar con el asesor (agregado en D60) | LEMAS: confirmar los artículos vigentes con su asesor |
 | **Leyes laborales**                                                                                                   | No              | El sistema no decide sobre empleo                                                                                                                                                                                                                               | —                                                                                                                                                            | No usar la lista para evaluar al personal                                                                                                                                          |
 
 *Esta lectura es de un equipo técnico. Para una implementación real, LEMAS necesita la asesoría de su abogado o de su delegado de protección de datos.*
@@ -296,18 +299,11 @@ Como creadores de este sistema de IA, nos comprometemos a:
 
 - Mantener la transparencia sobre las limitaciones: la lista no alcanza al 70 % de los casos y los modelos de IA no superaron a una regla simple.
 
-<table>
-<tbody>
-<tr class="odd">
-<td><p><strong>Guillermo Leonidas Granizo Veintimilla</strong></p>
-<p>Product Owner</p></td>
-<td><p><strong>José Farid Ulloa Manzur</strong></p>
-<p>Scrum Master</p></td>
-</tr>
-</tbody>
-</table>
+**Aprobado por los autores**
 
-Guayaquil, 3 de octubre de 2026
+Guillermo Leonidas Granizo Veintimilla (Product Owner) y José Farid Ulloa Manzur (Scrum Master)
+
+Guayaquil, 3 de octubre de 2026 · revisado el 20 de octubre de 2026
 
 ## Referencias
 

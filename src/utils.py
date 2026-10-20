@@ -80,6 +80,16 @@ def tasa_por_grupo(
     return tabla[tabla["n"] >= minimo].reset_index()
 
 
+def cantidad(n, minimo: int = 5) -> str:
+    """Conteo para mensajes y registros: «menos de 5» si es pequeño (privacidad), si no el número.
+
+    Los avisos de los cuadernos quedan guardados en sus salidas; un «1» publicado sería una
+    celda pequeña.
+    """
+    n = int(n)
+    return f"menos de {minimo}" if 0 < n < minimo else str(n)
+
+
 def suprimir_celdas(conteos: pd.Series, minimo: int = 5) -> pd.Series:
     """Reemplaza conteos menores al mínimo por '<minimo' para reportes públicos."""
     return conteos.astype(object).where(conteos >= minimo, f"<{minimo}")
@@ -147,7 +157,9 @@ def completar_anoa_desde_hoja(df: pd.DataFrame) -> pd.DataFrame:
         por_hoja = df.loc[completables, "hoja"].value_counts().sort_index().to_dict()
         logging.getLogger("lemas.datos").warning(
             "anoa vacío en %d filas; se completó con el nombre de la hoja: %s",
-            int(completables.sum()), por_hoja)
+            int(completables.sum()),
+            por_hoja,
+        )
     return df
 
 

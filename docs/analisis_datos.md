@@ -26,7 +26,7 @@
 | `P.Conducta` con el valor "-" en menos de 5 casos | Queda vacía y se imputa en el preprocesamiento |
 | 88 textos de `Nivel` con dos formatos ("Segundo Grado EGB" frente a "Segundo Grado"; "Tercer Curso" frente a "Tercero de bachillerato") | Se normaliza el curso (D27) |
 | Un representante figura con 39 estudiantes en un mismo año | Se trata como representante atípico (D29) |
-| `anio_ingreso` vacío en el 0,01 % | Años de permanencia vacíos, que se imputan |
+| `anio_ingreso` vacío en menos de 5 filas | Años de permanencia vacíos, que se imputan |
 
 ## 3. Población modelable y eventos (tabla 6.3 del v5)
 
@@ -153,10 +153,12 @@ Todas se evalúan en C4, con el mismo k por sede y la misma consolidación por r
 
 | Referencia | Precision@k | Lift@k | Recall@k | PR-AUC |
 |---|---|---|---|---|
-| A · selección al azar de k familias | 0,103 | 1,13 | 0,18 | 0,089 |
+| A · selección al azar de k familias | 0,103 | 1,13* | 0,18 | 0,089 |
 | D · más atrasos primero | 0,170 | 1,86 | 0,29 | 0,112 |
 | **D2 · señales administrativas** (pago anterior tardío → reserva extraordinaria → atrasos) | **0,176** | **1,93** | **0,31** | **0,137** |
 | RL · regresión logística base (C2+C3) | 0,139 | 1,53 | 0,24 | 0,119 |
+
+\* El azar sortea un número por estudiante y la familia toma el máximo, como cualquier puntaje; eso favorece a las familias con más hijos, que tienen más casos. Con un sorteo uniforme por familia, el Lift@k del azar en C4 es 1,00 (D59, [modelado.md, sección 9.4](modelado.md#94-por-qué-el-azar-da-108-y-no-100)). El valor de 1,13 sale de 500 sorteos con otra semilla; el cuaderno 08 obtuvo 1,12.
 
 - **Hallazgo clave:** las reglas simples D y D2 **superan** a la regresión logística con todas las variables, que discrimina poco (ROC-AUC ≈ 0,54). Con 193 eventos en el entrenamiento y muchas categorías de curso, el modelo completo tiende a sobreajustar. En la ejecución anterior su ROC-AUC llegaba a 0,59, pero se apoyaba en el falso grupo de 38 hermanos, que D29 eliminó.
 - **Meta para la Fase 2:** el modelo optimizado debe superar a **D2** (Lift@k ≈ 1,93, Recall@k ≈ 0,31) en C4. Si no lo logra, se recomendará la regla D2 como solución operativa, y eso también es un resultado válido del proyecto.

@@ -1,0 +1,28 @@
+{
+  "fuente": "real",
+  "cohorte": "C5",
+  "regla": "D2 · señales administrativas",
+  "familias": 1093,
+  "familias_con_caso": 74,
+  "carga_operativa": {
+    "llamadas": 165,
+    "casos_hallados": 22,
+    "llamadas_por_caso_lista": 7.5,
+    "llamadas_por_caso_azar": 14.77
+  },
+  "supuestos_reserva": {
+    "tasa_sin_llamar": 0.1333,
+    "alfa": 0.05,
+    "potencia": 0.8,
+    "familias_por_campana": 165
+  },
+  "conclusiones": [
+    "beca = 1 frente a 0: Recall@k 18 % [5 %–48 %] frente a 32 % [22 %–44 %]; prueba exacta de Fisher p = 0,49. Razón de selección 0,66 [0,41–1,05], p = 0,075.",
+    "sede = Mucho Lote 2 frente a Mucho Lote 1: Recall@k 27 % [14 %–44 %] frente a 32 % [20 %–47 %]; prueba exacta de Fisher p = 0,80. Razón de selección 0,56 [0,41–0,77], p = 0,000.",
+    "subnivel = Preparatoria frente a Educación General Básica: Recall@k 42 % [19 %–68 %] frente a 27 % [17 %–40 %]; prueba exacta de Fisher p = 0,32. Razón de selección 0,70 [0,41–1,20], p = 0,213.",
+    "Carga operativa: 7,5 llamadas por familia en riesgo hallada con la lista, frente a 14,8 al azar.",
+    "Para detectar que la llamada reduce la no matrícula un 50 % (reservando la mitad de la lista sin llamar) se necesitan unas 634 familias, unas 3,8 campañas de la lista actual.",
+    "Para detectar que la llamada reduce la no matrícula un 25 % (reservando la mitad de la lista sin llamar) se necesitan unas 2.912 familias, unas 17,6 campañas de la lista actual.",
+    "Para detectar que la llamada reduce la no matrícula un 10 % (reservando la mitad de la lista sin llamar) se necesitan unas 19.540 familias, unas 118,4 campañas de la lista actual."
+  ]
+}

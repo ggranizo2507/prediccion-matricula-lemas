@@ -30,11 +30,16 @@ def main(argv: list[str] | None = None) -> int:
     """Entrena los candidatos, imprime la tabla de selección en C4 y el diagnóstico de ajuste."""
     configurar_logging()
     config = cargar_config()
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--fuente", choices=["real", "sintetica"], default="sintetica")
-    parser.add_argument("--trials", type=int, default=None,
-                        help="pruebas de Optuna por modelo (por defecto, config.yaml)")
+    parser.add_argument(
+        "--trials",
+        type=int,
+        default=None,
+        help="pruebas de Optuna por modelo (por defecto, config.yaml)",
+    )
     parser.add_argument("--salida", default=None, help="CSV donde guardar la tabla de selección")
     args = parser.parse_args(argv)
 
@@ -52,8 +57,12 @@ def main(argv: list[str] | None = None) -> int:
     clave = "con_C1" if datos_decision["incluir_C1"] else "sin_C1"
     cohortes = config["auditoria"]["configuraciones_entrenamiento"][clave]
     k = datos_decision["k_por_sede"]
-    log.info("Fuente: %s | entrenamiento: %s | k por sede: %s | C5 no se usa", args.fuente,
-             "+".join(cohortes), k)
+    log.info(
+        "Fuente: %s | entrenamiento: %s | k por sede: %s | C5 no se usa",
+        args.fuente,
+        "+".join(cohortes),
+        k,
+    )
 
     candidatos = entrenar_candidatos(dataset, config, cohortes, k, n_trials=args.trials)
     tabla = tabla_seleccion(candidatos, dataset, k, config["proyecto"]["semilla"])

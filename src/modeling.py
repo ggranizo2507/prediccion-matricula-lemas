@@ -59,9 +59,11 @@ CONJUNTOS = {
     "reducido": ([c for c in CATEGORICAS if c != "curso"], NUMERICAS),
 }
 TIPOS = ("logistica", "arboles", "hibrido")
-NOMBRES = {"logistica": "Regresión logística regularizada",
-           "arboles": "Gradient boosting (árboles, monotonía en atrasos)",
-           "hibrido": "Logística híbrida (señales de D2 + variables académicas)"}
+NOMBRES = {
+    "logistica": "Regresión logística regularizada",
+    "arboles": "Gradient boosting (árboles, monotonía en atrasos)",
+    "hibrido": "Logística híbrida (señales de D2 + variables académicas)",
+}
 
 # Modelo híbrido (D39, registrado antes de evaluarlo en C4): parte de las señales de la
 # regla D2 y agrega pocas variables académicas, para medir si la IA aporta algo más.
@@ -73,17 +75,22 @@ HIBRIDAS_NUMERICAS = ["promedio"]
 def variables_hibridas(X: pd.DataFrame) -> pd.DataFrame:
     """Deriva las variables del modelo híbrido a partir de la matriz X estándar."""
     atrasos = pd.to_numeric(X["atrasos_pension"], errors="coerce").fillna(0)
-    return pd.DataFrame({
-        "pago_tardio": (X["pago_origen"] == "tardio").astype(float),
-        "es_nuevo": (X["pago_origen"] == "nuevo").astype(float),
-        "reserva_extraordinaria": pd.to_numeric(X["reserva_extraordinaria"],
-                                                errors="coerce").fillna(0),
-        "conducta_no_A": (pd.to_numeric(X["conducta"], errors="coerce") < 5).astype(float),
-        "atrasos_tramo": pd.cut(atrasos, [-1, 0, 2, 5, 99],
-                                labels=["0", "1-2", "3-5", "6+"]).astype(str),
-        "subnivel": X["subnivel"].astype(str),
-        "promedio": pd.to_numeric(X["promedio"], errors="coerce"),
-    }, index=X.index)
+    return pd.DataFrame(
+        {
+            "pago_tardio": (X["pago_origen"] == "tardio").astype(float),
+            "es_nuevo": (X["pago_origen"] == "nuevo").astype(float),
+            "reserva_extraordinaria": pd.to_numeric(
+                X["reserva_extraordinaria"], errors="coerce"
+            ).fillna(0),
+            "conducta_no_A": (pd.to_numeric(X["conducta"], errors="coerce") < 5).astype(float),
+            "atrasos_tramo": pd.cut(
+                atrasos, [-1, 0, 2, 5, 99], labels=["0", "1-2", "3-5", "6+"]
+            ).astype(str),
+            "subnivel": X["subnivel"].astype(str),
+            "promedio": pd.to_numeric(X["promedio"], errors="coerce"),
+        },
+        index=X.index,
+    )
 
 
 def _nombres_hibridas(_transformador, _entrada):
@@ -95,17 +102,33 @@ def _preprocesador_hibrido() -> Pipeline:
     from sklearn.impute import SimpleImputer
     from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
-    columnas = ColumnTransformer([
-        ("bin", "passthrough", HIBRIDAS_BINARIAS),
-        ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False),
-         HIBRIDAS_CATEGORICAS),
-        ("num", Pipeline([("imputar", SimpleImputer(strategy="median")),
-                          ("escalar", StandardScaler())]), HIBRIDAS_NUMERICAS),
-    ], verbose_feature_names_out=False)
-    return Pipeline([
-        ("derivar", FunctionTransformer(variables_hibridas, feature_names_out=_nombres_hibridas)),
-        ("columnas", columnas),
-    ])
+    columnas = ColumnTransformer(
+        [
+            ("bin", "passthrough", HIBRIDAS_BINARIAS),
+            (
+                "cat",
+                OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                HIBRIDAS_CATEGORICAS,
+            ),
+            (
+                "num",
+                Pipeline(
+                    [("imputar", SimpleImputer(strategy="median")), ("escalar", StandardScaler())]
+                ),
+                HIBRIDAS_NUMERICAS,
+            ),
+        ],
+        verbose_feature_names_out=False,
+    )
+    return Pipeline(
+        [
+            (
+                "derivar",
+                FunctionTransformer(variables_hibridas, feature_names_out=_nombres_hibridas),
+            ),
+            ("columnas", columnas),
+        ]
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -124,29 +147,41 @@ def construir_modelo(tipo: str, params: dict, semilla: int) -> Pipeline:
     """Pipeline preprocesamiento + clasificador a partir de los hiperparámetros."""
     categoricas, numericas = CONJUNTOS[params.get("conjunto", "completo")]
     if tipo == "logistica":
-        prep = construir_preprocesador(escalar=True, categoricas=categoricas,
-                                       numericas=numericas)
+        prep = construir_preprocesador(escalar=True, categoricas=categoricas, numericas=numericas)
         modelo = LogisticRegression(
-            C=params["C"], l1_ratio=params.get("l1_ratio", 0.0), solver="saga",
+            C=params["C"],
+            l1_ratio=params.get("l1_ratio", 0.0),
+            solver="saga",
             class_weight="balanced" if params.get("balanceado", True) else None,
-            max_iter=5000, random_state=semilla, **_penalizacion_elastica())
+            max_iter=5000,
+            random_state=semilla,
+            **_penalizacion_elastica(),
+        )
     elif tipo == "hibrido":
         prep = _preprocesador_hibrido()
         modelo = LogisticRegression(
-            C=params["C"], class_weight="balanced" if params.get("balanceado", True) else None,
-            max_iter=5000, random_state=semilla)
+            C=params["C"],
+            class_weight="balanced" if params.get("balanceado", True) else None,
+            max_iter=5000,
+            random_state=semilla,
+        )
     elif tipo == "arboles":
-        prep = construir_preprocesador(escalar=False, categoricas=categoricas,
-                                       numericas=numericas).set_output(transform="pandas")
+        prep = construir_preprocesador(
+            escalar=False, categoricas=categoricas, numericas=numericas
+        ).set_output(transform="pandas")
         modelo = HistGradientBoostingClassifier(
-            learning_rate=params["learning_rate"], max_depth=params["max_depth"],
+            learning_rate=params["learning_rate"],
+            max_depth=params["max_depth"],
             max_leaf_nodes=params["max_leaf_nodes"],
             min_samples_leaf=params["min_samples_leaf"],
-            l2_regularization=params["l2_regularization"], max_iter=params["max_iter"],
+            l2_regularization=params["l2_regularization"],
+            max_iter=params["max_iter"],
             class_weight="balanced" if params.get("balanceado", True) else None,
             # Más pensiones pagadas tarde nunca reducen el riesgo (supuesto de dominio)
-            monotonic_cst={"atrasos_pension": 1}, early_stopping=False,
-            random_state=semilla)
+            monotonic_cst={"atrasos_pension": 1},
+            early_stopping=False,
+            random_state=semilla,
+        )
     else:
         raise ValueError(f"Tipo de modelo desconocido: {tipo}")
     return Pipeline([("prep", prep), ("modelo", modelo)])
@@ -160,8 +195,9 @@ def distribuciones(espacio: dict) -> dict[str, BaseDistribution]:
         if d["tipo"] == "categorica":
             salida[nombre] = CategoricalDistribution(list(d["opciones"]))
         elif d["tipo"] == "real":
-            salida[nombre] = FloatDistribution(float(d["min"]), float(d["max"]),
-                                               log=bool(d.get("log", False)))
+            salida[nombre] = FloatDistribution(
+                float(d["min"]), float(d["max"]), log=bool(d.get("log", False))
+            )
         elif d["tipo"] == "entero":
             salida[nombre] = IntDistribution(int(d["min"]), int(d["max"]))
         else:
@@ -189,8 +225,14 @@ def _sugerir(trial: optuna.Trial, espacio: dict[str, BaseDistribution]) -> dict:
 
 
 def optimizar(
-    tipo: str, X_tr: pd.DataFrame, y_tr: np.ndarray, X_val: pd.DataFrame, y_val: np.ndarray,
-    n_trials: int, semilla: int, espacio: dict[str, BaseDistribution] | None = None,
+    tipo: str,
+    X_tr: pd.DataFrame,
+    y_tr: np.ndarray,
+    X_val: pd.DataFrame,
+    y_val: np.ndarray,
+    n_trials: int,
+    semilla: int,
+    espacio: dict[str, BaseDistribution] | None = None,
 ) -> optuna.Study:
     """Optuna (TPE con semilla) maximizando PR-AUC en la validación interna.
 
@@ -202,8 +244,9 @@ def optimizar(
         modelo = construir_modelo(tipo, _sugerir(trial, espacio), semilla).fit(X_tr, y_tr)
         return average_precision_score(y_val, modelo.predict_proba(X_val)[:, 1])
 
-    estudio = optuna.create_study(direction="maximize",
-                                  sampler=optuna.samplers.TPESampler(seed=semilla))
+    estudio = optuna.create_study(
+        direction="maximize", sampler=optuna.samplers.TPESampler(seed=semilla)
+    )
     estudio.optimize(objetivo, n_trials=n_trials, show_progress_bar=False)
     return estudio
 
@@ -214,19 +257,28 @@ def optimizar(
 def metricas(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: int) -> dict:
     """Métrica principal por familia (Precision/Lift/Recall@k) y complementarias."""
     y = datos["y_no_matricula"].to_numpy()
-    total = precision_at_k_familiar(consolidar_familias(datos, riesgo), k_por_sede,
-                                    semilla).query("sede == 'TOTAL'").iloc[0]
-    salida = {"precision_k": total["precision_k"], "lift_k": total["lift_k"],
-              "recall_k": total["recall_k"],
-              "pr_auc": round(float(average_precision_score(y, riesgo)), 4),
-              "roc_auc": round(float(roc_auc_score(y, riesgo)), 4)}
+    total = (
+        precision_at_k_familiar(consolidar_familias(datos, riesgo), k_por_sede, semilla)
+        .query("sede == 'TOTAL'")
+        .iloc[0]
+    )
+    salida = {
+        "precision_k": total["precision_k"],
+        "lift_k": total["lift_k"],
+        "recall_k": total["recall_k"],
+        "pr_auc": round(float(average_precision_score(y, riesgo)), 4),
+        "roc_auc": round(float(roc_auc_score(y, riesgo)), 4),
+    }
     if np.all((riesgo >= 0) & (riesgo <= 1)):
         salida["brier"] = round(float(brier_score_loss(y, riesgo)), 4)
     return salida
 
 
 def bootstrap_ic(
-    datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: int,
+    datos: pd.DataFrame,
+    riesgo: np.ndarray,
+    k_por_sede: dict,
+    semilla: int,
     repeticiones: int = 2000,
 ) -> dict:
     """IC 95 % de Precision@k, Lift@k y Recall@k remuestreando representantes por sede."""
@@ -242,9 +294,13 @@ def bootstrap_ic(
         total = precision_at_k_familiar(muestra, k_por_sede, semilla).query("sede == 'TOTAL'")
         for clave in valores:
             valores[clave].append(float(total[clave].iloc[0]))
-    return {clave: [round(float(np.nanpercentile(v, 2.5)), 4),
-                    round(float(np.nanpercentile(v, 97.5)), 4)]
-            for clave, v in valores.items()}
+    return {
+        clave: [
+            round(float(np.nanpercentile(v, 2.5)), 4),
+            round(float(np.nanpercentile(v, 97.5)), 4),
+        ]
+        for clave, v in valores.items()
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -258,12 +314,15 @@ class Candidato:
     pr_auc_validacion_interna: float
     metricas_entrenamiento: dict = field(default_factory=dict)
     metricas_c4: dict = field(default_factory=dict)
-    historial: pd.DataFrame = field(default_factory=pd.DataFrame)   # trials de Optuna
+    historial: pd.DataFrame = field(default_factory=pd.DataFrame)  # trials de Optuna
 
 
 def entrenar_candidatos(
-    dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
-    k_por_sede: dict, n_trials: int | None = None,
+    dataset: pd.DataFrame,
+    config: dict,
+    cohortes_entrenamiento: list[str],
+    k_por_sede: dict,
+    n_trials: int | None = None,
 ) -> dict[str, Candidato]:
     """Optimiza y reentrena cada tipo de modelo; evalúa en entrenamiento y en C4.
 
@@ -271,8 +330,11 @@ def entrenar_candidatos(
     """
     semilla = config["proyecto"]["semilla"]
     if n_trials is None:
-        n_trials = int((config if "optimizacion" in config else cargar_config())
-                       ["optimizacion"]["trials_por_modelo"])
+        n_trials = int(
+            (config if "optimizacion" in config else cargar_config())["optimizacion"][
+                "trials_por_modelo"
+            ]
+        )
     entrenamiento = dataset[dataset["cohorte"].isin(cohortes_entrenamiento)]
     seleccion = dataset[dataset["rol"] == "seleccion"]
     # Validación interna temporal: la última cohorte de entrenamiento valida a las previas
@@ -282,39 +344,60 @@ def entrenar_candidatos(
         raise ValueError("Se necesitan al menos dos cohortes de entrenamiento.")
     tr = entrenamiento[entrenamiento["cohorte"].isin(previas)]
     va = entrenamiento[entrenamiento["cohorte"] == ultima]
-    log.info("Optimización: %s → %s (%d trials por modelo)", "+".join(previas), ultima,
-             n_trials)
+    log.info("Optimización: %s → %s (%d trials por modelo)", "+".join(previas), ultima, n_trials)
 
     candidatos = {}
     X_e, y_e = construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"].to_numpy()
     for tipo in TIPOS:
-        estudio = optimizar(tipo, construir_matriz_x(tr), tr["y_no_matricula"].to_numpy(),
-                            construir_matriz_x(va), va["y_no_matricula"].to_numpy(),
-                            n_trials, semilla, espacio_de(tipo, config))
+        estudio = optimizar(
+            tipo,
+            construir_matriz_x(tr),
+            tr["y_no_matricula"].to_numpy(),
+            construir_matriz_x(va),
+            va["y_no_matricula"].to_numpy(),
+            n_trials,
+            semilla,
+            espacio_de(tipo, config),
+        )
         params = dict(estudio.best_params)
         modelo = construir_modelo(tipo, params, semilla).fit(X_e, y_e)
         candidato = Candidato(tipo, params, modelo, round(estudio.best_value, 4))
         candidato.historial = estudio.trials_dataframe(attrs=("number", "value", "params"))
         candidato.metricas_entrenamiento = metricas(
-            entrenamiento, modelo.predict_proba(X_e)[:, 1], k_por_sede, semilla)
+            entrenamiento, modelo.predict_proba(X_e)[:, 1], k_por_sede, semilla
+        )
         candidato.metricas_c4 = metricas(
-            seleccion, modelo.predict_proba(construir_matriz_x(seleccion))[:, 1],
-            k_por_sede, semilla)
+            seleccion,
+            modelo.predict_proba(construir_matriz_x(seleccion))[:, 1],
+            k_por_sede,
+            semilla,
+        )
         candidatos[tipo] = candidato
-        log.info("%s: PR-AUC interna %.3f | Lift@k C4 %.2f", tipo,
-                 candidato.pr_auc_validacion_interna, candidato.metricas_c4["lift_k"])
+        log.info(
+            "%s: PR-AUC interna %.3f | Lift@k C4 %.2f",
+            tipo,
+            candidato.pr_auc_validacion_interna,
+            candidato.metricas_c4["lift_k"],
+        )
     return candidatos
 
 
-def tabla_seleccion(candidatos: dict[str, Candidato], dataset: pd.DataFrame,
-                    k_por_sede: dict, semilla: int) -> pd.DataFrame:
+def tabla_seleccion(
+    candidatos: dict[str, Candidato], dataset: pd.DataFrame, k_por_sede: dict, semilla: int
+) -> pd.DataFrame:
     """Candidatos y reglas en C4, ordenados por Lift@k (desempate: PR-AUC)."""
     seleccion = dataset[dataset["rol"] == "seleccion"]
-    filas = [{"candidato": NOMBRES[c.tipo], "tipo": c.tipo, **c.metricas_c4}
-             for c in candidatos.values()]
+    filas = [
+        {"candidato": NOMBRES[c.tipo], "tipo": c.tipo, **c.metricas_c4} for c in candidatos.values()
+    ]
     for nombre, puntaje in puntajes_reglas(seleccion).items():
-        filas.append({"candidato": nombre, "tipo": "regla",
-                      **metricas(seleccion, puntaje, k_por_sede, semilla)})
+        filas.append(
+            {
+                "candidato": nombre,
+                "tipo": "regla",
+                **metricas(seleccion, puntaje, k_por_sede, semilla),
+            }
+        )
     tabla = pd.DataFrame(filas).sort_values(["lift_k", "pr_auc"], ascending=False)
     return tabla.reset_index(drop=True)
 
@@ -325,10 +408,18 @@ def diagnostico_ajuste(candidatos: dict[str, Candidato]) -> pd.DataFrame:
     for c in candidatos.values():
         tr, c4 = c.metricas_entrenamiento["pr_auc"], c.metricas_c4["pr_auc"]
         brecha = round(tr - c4, 4)
-        estado = ("sobreajuste" if brecha > 0.10 else
-                  "subajuste" if tr < 0.15 else "ajuste razonable")
-        filas.append({"modelo": NOMBRES[c.tipo], "pr_auc_entrenamiento": tr,
-                      "pr_auc_C4": c4, "brecha": brecha, "diagnostico": estado})
+        estado = (
+            "sobreajuste" if brecha > 0.10 else "subajuste" if tr < 0.15 else "ajuste razonable"
+        )
+        filas.append(
+            {
+                "modelo": NOMBRES[c.tipo],
+                "pr_auc_entrenamiento": tr,
+                "pr_auc_C4": c4,
+                "brecha": brecha,
+                "diagnostico": estado,
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -349,7 +440,8 @@ def guardar_sistema(sistema: dict, ruta: Path) -> str:
     meta = {k: v for k, v in sistema.items() if k not in {"modelo", "calibrado"}}
     ruta.with_suffix(".json").write_text(
         json.dumps({**meta, "sha256": huella}, indent=2, ensure_ascii=False, default=str),
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     return huella
 
 
@@ -365,22 +457,32 @@ def lineas_base_brier(datos: pd.DataFrame, entrenamiento: pd.DataFrame) -> pd.Da
     y = datos["y_no_matricula"].to_numpy()
     tasa = float(entrenamiento["y_no_matricula"].mean())
     cero = np.zeros(len(y))
-    filas = [{"linea_base": "R · si reservó, continúa", "brier": brier_score_loss(y, cero)},
-             {"linea_base": "B0 · clase mayoritaria", "brier": brier_score_loss(y, cero)},
-             {"linea_base": f"B1 · tasa histórica ({tasa:.3f})",
-              "brier": brier_score_loss(y, np.full(len(y), tasa))}]
+    filas = [
+        {"linea_base": "R · si reservó, continúa", "brier": brier_score_loss(y, cero)},
+        {"linea_base": "B0 · clase mayoritaria", "brier": brier_score_loss(y, cero)},
+        {
+            "linea_base": f"B1 · tasa histórica ({tasa:.3f})",
+            "brier": brier_score_loss(y, np.full(len(y), tasa)),
+        },
+    ]
     return pd.DataFrame(filas).round(4)
 
 
-def equidad(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: int,
-            grupos: list[str], minimo: int = 5) -> pd.DataFrame:
+def equidad(
+    datos: pd.DataFrame,
+    riesgo: np.ndarray,
+    k_por_sede: dict,
+    semilla: int,
+    grupos: list[str],
+    minimo: int = 5,
+) -> pd.DataFrame:
     """Por grupo: familias, eventos, tasa de selección, precisión y recall dentro del top-k.
 
     Se calcula por representante (unidad de contacto). Los grupos y los conteos de eventos
     menores que `minimo` se ocultan, y se aplica supresión complementaria (D48).
     """
     familias = consolidar_familias(datos, riesgo)
-    propios = [g for g in grupos if g != "sede"]   # la sede ya viene de la consolidación
+    propios = [g for g in grupos if g != "sede"]  # la sede ya viene de la consolidación
     atributos = datos.groupby(["cohorte", "id_familia"])[propios].max().reset_index()
     familias = familias.merge(atributos, on=["cohorte", "id_familia"], how="left")
     seleccionadas = set()
@@ -395,14 +497,22 @@ def equidad(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semilla: 
         for valor, g in familias.groupby(variable):
             eventos = int(g["evento"].sum())
             elegidas = g[g["seleccionada"]]
-            fila = {"variable": variable, "grupo": str(valor), "familias": len(g),
-                    "eventos": eventos,
-                    "tasa_seleccion": round(len(elegidas) / len(g), 4),
-                    "precision_k": round(elegidas["evento"].mean(), 4) if len(elegidas) else np.nan,
-                    "recall_k": round(elegidas["evento"].sum() / eventos, 4) if eventos else np.nan}
+            fila = {
+                "variable": variable,
+                "grupo": str(valor),
+                "familias": len(g),
+                "eventos": eventos,
+                "tasa_seleccion": round(len(elegidas) / len(g), 4),
+                "precision_k": round(elegidas["evento"].mean(), 4) if len(elegidas) else np.nan,
+                "recall_k": round(elegidas["evento"].sum() / eventos, 4) if eventos else np.nan,
+            }
             if len(g) < minimo or (0 < eventos < minimo):
-                fila.update(familias=f"<{minimo}" if len(g) < minimo else len(g),
-                            eventos=f"<{minimo}", precision_k=np.nan, recall_k=np.nan)
+                fila.update(
+                    familias=f"<{minimo}" if len(g) < minimo else len(g),
+                    eventos=f"<{minimo}",
+                    precision_k=np.nan,
+                    recall_k=np.nan,
+                )
             filas.append(fila)
     return completar_supresion(pd.DataFrame(filas), minimo)
 
@@ -435,22 +545,24 @@ def completar_supresion(tabla: pd.DataFrame, minimo: int = 5) -> pd.DataFrame:
     return salida
 
 
-def proyeccion(datos: pd.DataFrame, riesgo_calibrado: np.ndarray, tasa_b1: float,
-               minimo: int = 10) -> pd.DataFrame:
+def proyeccion(
+    datos: pd.DataFrame, riesgo_calibrado: np.ndarray, tasa_b1: float, minimo: int = 10
+) -> pd.DataFrame:
     """Matrículas esperadas (suma de p = 1 − riesgo) frente a observadas por sede y subnivel.
 
     MAPE solo en grupos con al menos `minimo` matrículas observadas (v5, 6.2), comparado
     con B1 (N × tasa histórica de continuidad).
     """
-    tabla = datos.assign(p=1 - np.asarray(riesgo_calibrado),
-                         m=1 - datos["y_no_matricula"])
-    grupos = tabla.groupby(["sede", "subnivel"]).agg(N=("m", "size"), observadas=("m", "sum"),
-                                                     esperadas_modelo=("p", "sum"))
+    tabla = datos.assign(p=1 - np.asarray(riesgo_calibrado), m=1 - datos["y_no_matricula"])
+    grupos = tabla.groupby(["sede", "subnivel"]).agg(
+        N=("m", "size"), observadas=("m", "sum"), esperadas_modelo=("p", "sum")
+    )
     grupos["esperadas_B1"] = grupos["N"] * (1 - tasa_b1)
     grupos = grupos[grupos["observadas"] >= minimo].copy()
     for col in ("modelo", "B1"):
-        grupos[f"ape_{col}"] = (grupos[f"esperadas_{col}"] - grupos["observadas"]).abs() / \
-            grupos["observadas"]
+        grupos[f"ape_{col}"] = (grupos[f"esperadas_{col}"] - grupos["observadas"]).abs() / grupos[
+            "observadas"
+        ]
     return grupos.round(3).reset_index()
 
 
@@ -475,8 +587,9 @@ def proyeccion_publicable(tabla: pd.DataFrame, minimo: int = 5) -> pd.DataFrame:
         bloques.append(bloque)
     salida = pd.concat(bloques, ignore_index=True)
     for col in ("modelo", "B1"):
-        salida[f"ape_{col}"] = ((salida[f"esperadas_{col}"] - salida["observadas"]).abs()
-                                / salida["observadas"])
+        salida[f"ape_{col}"] = (salida[f"esperadas_{col}"] - salida["observadas"]).abs() / salida[
+            "observadas"
+        ]
     salida = salida.round(3)
     salida["observadas"] = salida["observadas"].astype(int).astype(object)
 

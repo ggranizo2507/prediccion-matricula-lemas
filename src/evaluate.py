@@ -32,7 +32,9 @@ def consolidar_familias(
     tabla["riesgo"] = np.asarray(riesgo, dtype=float)
     tabla = tabla.sort_values("riesgo", ascending=False)
     familias = tabla.groupby(["cohorte", col_familia], sort=False).agg(
-        sede=("sede", "first"), score=("riesgo", "max"), evento=(col_objetivo, "max"),
+        sede=("sede", "first"),
+        score=("riesgo", "max"),
+        evento=(col_objetivo, "max"),
         estudiantes=(col_objetivo, "size"),
     )
     return familias.reset_index().rename(columns={col_familia: "id_familia"})
@@ -46,8 +48,9 @@ def calcular_k_por_sede(
     El multiplicador vive en config.yaml (capacidad.multiplicador_k)."""
     por_cohorte = familias_entrenamiento.groupby(["sede", "cohorte"])["evento"].sum()
     promedio = por_cohorte.groupby(level="sede").mean()
-    return {str(sede): max(int(round(multiplicador * valor)), 1)
-            for sede, valor in promedio.items()}
+    return {
+        str(sede): max(int(round(multiplicador * valor)), 1) for sede, valor in promedio.items()
+    }
 
 
 def verificar_capacidad(k_por_sede: dict[str, int], config: dict) -> pd.DataFrame:
@@ -58,9 +61,15 @@ def verificar_capacidad(k_por_sede: dict[str, int], config: dict) -> pd.DataFram
         personal = capacidad["personal_por_sede"].get(sede)
         por_persona = k / personal if personal else np.nan
         por_semana = por_persona / capacidad["semanas_campania"]
-        filas.append({"sede": sede, "k": k, "personal": personal,
-                      "familias_por_persona": round(por_persona, 1),
-                      "familias_por_persona_semana": round(por_semana, 2)})
+        filas.append(
+            {
+                "sede": sede,
+                "k": k,
+                "personal": personal,
+                "familias_por_persona": round(por_persona, 1),
+                "familias_por_persona_semana": round(por_semana, 2),
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -71,7 +80,8 @@ def primeras_k(grupo: pd.DataFrame, k: int, semilla: int) -> pd.DataFrame:
     """
     desempate = np.random.default_rng(semilla).random(len(grupo))
     ordenado = grupo.assign(_desempate=desempate).sort_values(
-        ["score", "_desempate"], ascending=[False, True])
+        ["score", "_desempate"], ascending=[False, True]
+    )
     return ordenado.head(min(k, len(grupo))).drop(columns="_desempate")
 
 
@@ -91,13 +101,26 @@ def precision_at_k_familiar(
         seleccion = primeras_k(grupo, k, semilla)
         positivos = int(grupo["evento"].sum())
         aciertos = int(seleccion["evento"].sum())
-        filas.append({"cohorte": cohorte, "sede": sede, "familias": len(grupo),
-                      "k_efectivo": len(seleccion), "positivos": positivos, "aciertos": aciertos})
+        filas.append(
+            {
+                "cohorte": cohorte,
+                "sede": sede,
+                "familias": len(grupo),
+                "k_efectivo": len(seleccion),
+                "positivos": positivos,
+                "aciertos": aciertos,
+            }
+        )
     tabla = pd.DataFrame(filas)
     if tabla.empty:
         return tabla
-    total = tabla.groupby("cohorte", as_index=False)[
-        ["familias", "k_efectivo", "positivos", "aciertos"]].sum().assign(sede="TOTAL")
+    total = (
+        tabla.groupby("cohorte", as_index=False)[
+            ["familias", "k_efectivo", "positivos", "aciertos"]
+        ]
+        .sum()
+        .assign(sede="TOTAL")
+    )
     tabla = pd.concat([tabla, total], ignore_index=True)
     tabla["precision_k"] = tabla["aciertos"] / tabla["k_efectivo"]
     tabla["recall_k"] = tabla["aciertos"] / tabla["positivos"].replace(0, np.nan)

@@ -45,8 +45,8 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D59, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
-| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 255 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D60, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 263 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
 ## 3. Dilemas éticos del proyecto
@@ -103,7 +103,19 @@ Fuente: `results/metrics/equidad_C5_real.csv`. Las celdas con menos de 5 casos n
 - **Razón de selección** (paridad demográfica): 10,4 % frente a 15,9 %, es decir 0,66. Como orientación, suele considerarse una alerta un valor menor que 0,80.
 - **Diferencia de Recall@k** (igualdad de oportunidades): 0,18 frente a 0,32, una diferencia de 0,14. En casos: 2 de 11 frente a 20 de 63.
 
-**Lectura.** El sistema no trata igual a todos los grupos: las familias becadas reciben menos contactos de los que les corresponderían. Con 11 eventos no podemos decir si la diferencia es real o producto del azar (no calculamos intervalos por grupo), y por eso la informamos como una alerta y no como una conclusión.
+**Intervalos y prueba exacta (D60).** A pedido de la docente se calcularon intervalos de Wilson, adecuados con pocos casos, y la prueba exacta de Fisher para cada brecha:
+
+| Comparación | Recall@k [IC 95 % Wilson] | Prueba exacta de Fisher (recall) | Razón de selección [IC 95 %] |
+|---|---|---|---|
+| Con beca frente a sin beca | 18 % [5 %; 48 %] frente a 32 % [22 %; 44 %] | p = 0,49 | 0,66 [0,41; 1,05], p = 0,08 |
+| Mucho Lote 2 frente a Mucho Lote 1 | 27 % [14 %; 44 %] frente a 32 % [20 %; 47 %] | p = 0,80 | 0,56 [0,41; 0,77] (por diseño: k proporcional a cada sede) |
+| Preparatoria frente a Educación General Básica | 42 % [19 %; 68 %] frente a 27 % [17 %; 40 %] | p = 0,32 | 0,70 [0,41; 1,20] |
+
+Fuente: `results/metrics/equidad_ic_real.csv` y `equidad_comparaciones_real.csv` (`src/incertidumbre.py`, `tools/generar_incertidumbre.py`, D60). Inicial y Bachillerato no se comparan en recall porque sus eventos están ocultos.
+
+**Lectura.** Ninguna brecha de recall es estadísticamente demostrable: los intervalos se solapan y los valores p son altos. Eso **no** prueba que no exista: con 11 eventos en becadas, el intervalo va de 5 % a 48 %, y una brecha real del tamaño observado no se podría detectar con un solo año. Por eso se mantiene como **alerta por vigilar**, no como conclusión, y se acumulan cohortes cada mayo. La razón de selección entre sedes es baja por diseño (cada sede tiene su k, proporcional a su historial), no por la regla.
+
+**Excepción a la regla de celdas pequeñas.** Los conteos «2 de 11» y «20 de 63» (familias becadas y no becadas con caso halladas por la lista) se publican aunque 2 es menor que 5, porque el análisis de equidad no se puede verificar sin ellos y la docente los usó en su revisión. Son conteos agregados sobre 163 y 930 familias, sin ningún otro atributo, y no permiten identificar a nadie. Es la única excepción del proyecto (D60).
 
 Hay una tensión que no resolvimos. La regla selecciona más a las familias con atrasos de pago, pero selecciona menos a las becadas. Una explicación posible es que quien tiene beca paga menos y acumula menos atrasos, de modo que la regla no ve su dificultad. No lo comprobamos.
 
@@ -198,7 +210,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 | Una familia que no se matricula no estaba en la lista | Ninguna adicional: recibe la atención habitual | Secretaría | La lista no reemplaza la atención a todas las familias |
 | Una familia listada sí pensaba matricularse | Una llamada innecesaria | Secretaría | Contacto breve y de apoyo; se registra el resultado |
 | La regla deja de ordenar mejor que el azar | Esfuerzo mal dirigido | Equipo técnico y Dirección | Revalidación anual; se suspende si no supera al azar (9.4) |
-| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 255 pruebas automáticas |
+| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 263 pruebas automáticas |
 | Uso indebido (cobro, exclusión) | Daño a la familia y a la confianza | Dirección | Uso prohibido documentado; revisión anual por Dirección |
 | Fuga de datos personales | Daño a los titulares | LEMAS como responsable del tratamiento; custodio | Protocolo de incidentes (9.5) |
 
@@ -208,7 +220,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D59; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D60; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
@@ -249,6 +261,16 @@ En los términos de la norma ecuatoriana sobre IA y datos personales (sección 1
 | Efecto del contacto | Tras dos campañas | — | Piloto controlado para medir si la llamada cambia la decisión |
 
 **Una advertencia sobre este plan.** Cuando la lista se use de verdad, las llamadas pueden cambiar el resultado: si funcionan, las familias contactadas se matriculan y el Lift medido baja aunque el sistema sea útil. Para poder medirlo, proponemos reservar desde la primera campaña una parte pequeña de los contactos para familias elegidas al azar. Sirve de grupo de comparación y, además, da una oportunidad a familias que la regla no ve. Con unos 74 eventos por año, el Lift de un solo ciclo es incierto; por eso el criterio de suspensión mira dos años.
+
+**Tamaño de la reserva (D60).** Si se reserva al azar la mitad de la lista sin llamar y se compara su tasa de no matrícula con la de las familias llamadas (13,3 % esperado sin llamada, la Precision@k de C5; α = 5 %, potencia del 80 %), hacen falta:
+
+| Efecto real de la llamada | Familias necesarias | Campañas de 165 familias |
+|---|---|---|
+| Reduce la no matrícula a la mitad | 634 | 3,8 |
+| La reduce en un 25 % | 2.912 | 17,6 |
+| La reduce en un 10 % | 19.540 | 118 |
+
+Reservar solo una cuarta parte de la lista (para llamar a más familias) exige un 25 % más de familias. **Con 165 familias al año, la reserva solo detectaría un efecto grande, y tras unos cuatro años.** Para medir efectos moderados el diseño debe crecer: aplicar la reserva también a la segunda etapa (200 a 230 familias pendientes por año), acumular cohortes o medir un resultado más frecuente, como el pago en las primeras cuatro semanas. Fuente: `results/metrics/reserva_potencia_real.csv`.
 
 El modelo calibrado se reentrena solo con cohortes de resultado cerrado. Cada versión se etiqueta en el repositorio.
 
@@ -319,6 +341,17 @@ Como referencia, la Ley de IA de la Unión Europea clasifica como de **alto ries
 | Resolución SPDP-SPD-2025-0030-R (2025) | Reglas para seudonimizar, anonimizar, bloquear y eliminar datos personales |
 | Resolución SPDP-SPD-2026-0009-R (febrero de 2026) | Norma sobre protección de datos en sistemas de IA: información clara al titular, gestión de riesgos y evaluación de impacto previa, registro de las actividades de tratamiento con IA, medidas de seguridad y auditorías según el riesgo |
 
+**Normativa educativa sobre matrículas y pensiones (agregada en la revisión final, D60).** La lista usa atrasos de pago como señal, así que también importa lo que la normativa educativa dice sobre cobros y deudas:
+
+| Norma | Qué dice en lo que nos toca | Consecuencia para el sistema |
+|---|---|---|
+| LOEI, art. 92 (citado en el Acuerdo MINEDUC-MINEDUC-2025-00030-A) | Todo cobro de rubros no autorizados por la Autoridad Educativa debe reembolsarse | La reserva no tiene costo y el sistema no genera ningún cobro |
+| Reglamento General a la LOEI (R.O. 254, 22-feb-2023), arts. 102, 103 y 105 (citados en el mismo Acuerdo) | La matrícula se paga una sola vez al año y la pensión de forma prorrateada; protección del estudiante si fallece su representante; reglas de becas | Los conceptos de matrícula, pensión y beca que usa el proyecto son los de la norma |
+| Acuerdo MINEDUC-MINEDUC-2025-00030-A (5-ago-2025, R.O. 109, 25-ago-2025) | Reglamento de cobro de matrículas y pensiones en instituciones particulares y fiscomisionales; deroga el Acuerdo MINEDUC-MINEDUC-2021-00061-A | Fija los valores, no el contacto con las familias: no restringe una llamada de apoyo |
+| LOEI (reforma vigente; artículo según la prensa y textos de divulgación, por verificar en el texto oficial) | Con más de tres meses de mora, la institución particular puede pedir al distrito un cupo fiscal para el estudiante; no puede retener documentos ni impedir evaluaciones por falta de pago, y el derecho a la educación no puede condicionarse al pago | La lista **no** puede usarse para iniciar ese procedimiento, ni para condicionar la matrícula, los documentos o las evaluaciones. Refuerza la prohibición de usarla para cobrar (sección 1) |
+
+*La lectura de la normativa educativa es la de un equipo técnico, con el texto oficial del Acuerdo de 2025 y, para la LOEI, con fuentes secundarias. Antes del uso operativo, el asesor jurídico de LEMAS debe confirmar los artículos vigentes.*
+
 Enlaces oficiales y fechas de cada norma en la sección *Referencias*, al final de este documento.
 
 **Comparación con el RGPD.** La ley ecuatoriana sigue una estructura parecida: bases de licitud (RGPD art. 6; LOPDP art. 7), consentimiento cuando los titulares son menores (art. 8; art. 21), decisiones automatizadas (art. 22; art. 20) y evaluación de impacto (art. 35; art. 42). Una diferencia que nos afecta: el RGPD habla de decisiones basadas *únicamente* en el tratamiento automatizado, y la ley ecuatoriana incluye las basadas *parcialmente* en él.
@@ -376,7 +409,7 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 - Las probabilidades individuales **no mejoran a la tasa histórica** (Brier 0,0648 frente a 0,0647): la app lo advierte.
 - Las métricas se reportan con **intervalos de confianza** y en una cohorte nunca usada para ajustar.
 - El sistema **no predice** estudiantes nuevos, reservas pendientes ni abandono durante el año.
-- El Lift de la regla **no es un número fijo**: fue 1,38, 1,49, 1,93 y 1,97 en cuatro cohortes, y en C4 cambia de 1,53 a 1,99 según el sorteo entre familias empatadas (media 1,75). La regla ayuda al inicio de la campaña y deja de hacerlo hacia la cuarta semana ([alcance_lista.md](alcance_lista.md)).
+- El Lift de la regla **no es un número fijo**: fue 1,38, 1,49, 1,93 y 1,97 en cuatro cohortes, y en C4 cambia según el sorteo entre familias empatadas: de 1,40 a 2,06 en 500 sorteos, con media 1,77 (D59). La regla ayuda al inicio de la campaña y deja de hacerlo hacia la cuarta semana ([alcance_lista.md](alcance_lista.md)).
 
 ## 14. Limitaciones éticas reconocidas
 1. **Las familias no fueron consultadas ni informadas** sobre el uso de sus datos para este análisis. El estudio se hizo con autorización de LEMAS y con datos seudonimizados. Antes de un uso operativo, LEMAS debe informar a las familias y confirmar con su asesor la base legal para tratar datos de menores con este fin.
@@ -433,6 +466,9 @@ Usted puede pedir que le expliquemos por qué fue contactado, qué datos se usar
 
 **Normativa**
 - República del Ecuador. *Ley Orgánica de Protección de Datos Personales*. Registro Oficial, Quinto Suplemento n.º 459, 26 de mayo de 2021.
+- Ministerio de Educación del Ecuador. *Acuerdo Nro. MINEDUC-MINEDUC-2025-00030-A*, parámetros para el cobro de matrículas y pensiones en instituciones particulares y fiscomisionales, 5 de agosto de 2025 (R.O. 109, 25 de agosto de 2025). https://www.gob.ec/regulaciones/acuerdo-nro-mineduc-mineduc-2025-00030 (consulta: 20-oct-2026).
+- República del Ecuador. *Reglamento General a la Ley Orgánica de Educación Intercultural*, R.O. 254, 22 de febrero de 2023. https://www.gob.ec/regulaciones/reglamento-general-ley-organica-educacion-intercultural-0 (consulta: 20-oct-2026).
+- Expreso. *Exámenes en colegios: ¿pueden prohibir rendirlos si no se ha pagado la pensión?*, 19 de julio de 2023. https://www.expreso.ec/actualidad/examenes-colegios-prohibir-rendirlos-pagado-pension-167236.html (fuente secundaria sobre la LOEI).
 - República del Ecuador. *Reglamento General de la Ley Orgánica de Protección de Datos Personales*. Decreto Ejecutivo 904, noviembre de 2023.
 - Superintendencia de Protección de Datos Personales. *Resolución SPDP-SPD-2025-0030-R*, reglamento para la seudonimización, anonimización, bloqueo y eliminación de datos personales, 7 de agosto de 2025. https://spdp.gob.ec/wp-content/uploads/2025/08/0030-R.pdf
 - Superintendencia de Protección de Datos Personales. *Resolución SPDP-SPD-2026-0009-R*, Norma general para la garantía del derecho de protección de datos personales en el uso de sistemas de inteligencia artificial, 12 de febrero de 2026. https://spdp.gob.ec/wp-content/uploads/2026/02/ResolIA.pdf

@@ -62,8 +62,15 @@ def _numero(valor) -> float:
 
 
 def _leyenda(fig: Figure, claves: list, columnas: int = 4) -> None:
-    fig.legend(handles=claves, loc="lower center", ncol=columnas, frameon=False, fontsize=9,
-               labelcolor=TINTA, bbox_to_anchor=(0.5, 0.0))
+    fig.legend(
+        handles=claves,
+        loc="lower center",
+        ncol=columnas,
+        frameon=False,
+        fontsize=9,
+        labelcolor=TINTA,
+        bbox_to_anchor=(0.5, 0.0),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -76,9 +83,17 @@ def figura_desglose(desglose: pd.DataFrame, cohortes: str) -> Figure:
     casos = {tipo: _numero(total[tipo]) for tipo in TIPOS}
     visibles = [v for v in casos.values() if not np.isnan(v)]
     if not visibles:
-        ax.text(0.5, 0.5, "Todas las celdas tienen menos casos que el mínimo publicable:\n"
-                "el desglose no se muestra.", ha="center", va="center", fontsize=10,
-                color=TINTA_SUAVE, transform=ax.transAxes)
+        ax.text(
+            0.5,
+            0.5,
+            "Todas las celdas tienen menos casos que el mínimo publicable:\n"
+            "el desglose no se muestra.",
+            ha="center",
+            va="center",
+            fontsize=10,
+            color=TINTA_SUAVE,
+            transform=ax.transAxes,
+        )
         ax.set_axis_off()
     else:
         # Una celda oculta («<5» u «oculto») se dibuja sin barra y se dice que está oculta
@@ -86,8 +101,15 @@ def figura_desglose(desglose: pd.DataFrame, cohortes: str) -> Figure:
         for fila, tipo in enumerate(TIPOS):
             aciertos = _numero(total[f"aciertos_{tipo}"])
             if np.isnan(casos[tipo]):
-                ax.text(0, fila, "  número de casos oculto por privacidad", va="center",
-                        fontsize=9, color=TINTA_SUAVE, style="italic")
+                ax.text(
+                    0,
+                    fila,
+                    "  número de casos oculto por privacidad",
+                    va="center",
+                    fontsize=9,
+                    color=TINTA_SUAVE,
+                    style="italic",
+                )
                 continue
             ax.barh(fila, casos[tipo], color=CLARO[REGLA_COLOR], height=0.55)
             if np.isnan(aciertos):
@@ -104,10 +126,19 @@ def figura_desglose(desglose: pd.DataFrame, cohortes: str) -> Figure:
         ax.set_xlim(0, max(max(visibles), 1) * 1.6)
         ax.tick_params(axis="y", labelsize=9, colors=TINTA)
         ax.grid(axis="y", visible=False)
-    _titulo(fig, "¿A quién encuentra la lista?",
-            f"Regla D2 con el k aprobado · cohortes {cohortes} · C5 no interviene")
-    _leyenda(fig, [Patch(color=CLARO[REGLA_COLOR], label="Casos de cada tipo"),
-                   Patch(color=REGLA_COLOR, label="Casos que están en la lista")], 2)
+    _titulo(
+        fig,
+        "¿A quién encuentra la lista?",
+        f"Regla D2 con el k aprobado · cohortes {cohortes} · C5 no interviene",
+    )
+    _leyenda(
+        fig,
+        [
+            Patch(color=CLARO[REGLA_COLOR], label="Casos de cada tipo"),
+            Patch(color=REGLA_COLOR, label="Casos que están en la lista"),
+        ],
+        2,
+    )
     _ajustar(fig)
     return fig
 
@@ -123,40 +154,71 @@ def figura_por_k(por_k: pd.DataFrame, cohortes: str) -> Figure:
         if nombre == TODAS:
             continue
         for ax, columna in ((ax_r, "recall"), (ax_p, "precision")):
-            ax.plot(grupo["pct_familias"], _numerica(grupo[columna]), color=REGLA_COLOR,
-                    lw=0.9, alpha=0.35)
+            ax.plot(
+                grupo["pct_familias"],
+                _numerica(grupo[columna]),
+                color=REGLA_COLOR,
+                lw=0.9,
+                alpha=0.35,
+            )
         maximo = max(maximo, float(_numerica(grupo["precision"]).max()))
     total = por_k[por_k["cohorte"] == TODAS]
     x = total["pct_familias"].to_numpy()
     recall, precision = _numerica(total["recall"]), _numerica(total["precision"])
     ax_r.plot([0, 1], [0, 1], color=NEUTRO, lw=1.2, ls="--")
     ax_r.plot(x, recall, color=REGLA_COLOR, lw=2, marker="o", ms=5, markeredgecolor="white")
-    tasa = float(precision.iloc[-1])                      # contactar a todas = tasa de casos
+    tasa = float(precision.iloc[-1])  # contactar a todas = tasa de casos
     ax_p.axhline(tasa, color=NEUTRO, lw=1.2, ls="--")
     ax_p.plot(x, precision, color=REGLA_COLOR, lw=2, marker="o", ms=5, markeredgecolor="white")
 
     actual = total[total["multiplicador"].astype(str).isin({"1.0", "1"})].iloc[0]
     _estilo(ax_r, "Casos alcanzados", "Familias contactadas", "Recall (casos en la lista)")
-    _estilo(ax_p, "Aciertos por contacto", "Familias contactadas",
-            "Precisión (casos entre los contactados)")
+    _estilo(
+        ax_p,
+        "Aciertos por contacto",
+        "Familias contactadas",
+        "Precisión (casos entre los contactados)",
+    )
     for ax, columna in ((ax_r, "recall"), (ax_p, "precision")):
         valor = _numero(actual[columna])
         if not np.isnan(valor):
-            ax.annotate("k aprobado", xy=(actual["pct_familias"], valor),
-                        xytext=(16, -24 if columna == "recall" else 24),
-                        textcoords="offset points", fontsize=8, color=TINTA_SUAVE,
-                        arrowprops={"arrowstyle": "-", "color": NEUTRO, "lw": 0.8})
+            ax.annotate(
+                "k aprobado",
+                xy=(actual["pct_familias"], valor),
+                xytext=(16, -24 if columna == "recall" else 24),
+                textcoords="offset points",
+                fontsize=8,
+                color=TINTA_SUAVE,
+                arrowprops={"arrowstyle": "-", "color": NEUTRO, "lw": 0.8},
+            )
         ax.xaxis.set_major_formatter(PORCENTAJE)
         ax.yaxis.set_major_formatter(PORCENTAJE)
         ax.set_xlim(0, 1.02)
     ax_r.set_ylim(0, 1.03)
     tope = np.nanmax([maximo, float(precision.max()), tasa, 0.0])
     ax_p.set_ylim(0, tope * 1.15 if tope > 0 else 1)
-    _titulo(fig, "Qué se alcanza con más o con menos contactos",
-            f"Regla D2 · cohortes {cohortes} · línea fina: cada cohorte · C5 no interviene")
-    _leyenda(fig, [Line2D([], [], color=REGLA_COLOR, lw=2, marker="o", ms=5,
-                          markeredgecolor="white", label="Regla D2 (todas las cohortes)"),
-                   Line2D([], [], color=NEUTRO, lw=1.2, ls="--", label="Selección al azar")], 2)
+    _titulo(
+        fig,
+        "Qué se alcanza con más o con menos contactos",
+        f"Regla D2 · cohortes {cohortes} · línea fina: cada cohorte · C5 no interviene",
+    )
+    _leyenda(
+        fig,
+        [
+            Line2D(
+                [],
+                [],
+                color=REGLA_COLOR,
+                lw=2,
+                marker="o",
+                ms=5,
+                markeredgecolor="white",
+                label="Regla D2 (todas las cohortes)",
+            ),
+            Line2D([], [], color=NEUTRO, lw=1.2, ls="--", label="Selección al azar"),
+        ],
+        2,
+    )
     _ajustar(fig)
     return fig
 
@@ -171,30 +233,89 @@ def figura_semanal(semanal: pd.DataFrame, cohortes: str) -> Figure:
     fig, (ax_g, ax_r) = plt.subplots(1, 2, figsize=(11, 4.4))
 
     ax_g.bar(semanas, _numerica(total["pct_pendientes"]), color=CLARO[NEUTRO], width=0.7)
-    ax_g.plot(semanas, _numerica(total["tasa_base"]), color=SEGUNDO_COLOR, lw=2, marker="o",
-              ms=5, markeredgecolor="white")
-    _estilo(ax_g, "El grupo se achica y los casos se concentran", "Semana de la campaña",
-            "Porcentaje")
-    ax_r.plot(semanas, _numerica(total["recall_azar"]), color=NEUTRO, lw=1.6, ls="--",
-              marker="s", ms=4, markeredgecolor="white")
-    ax_r.plot(semanas, _numerica(total["recall"]), color=REGLA_COLOR, lw=2, marker="o", ms=5,
-              markeredgecolor="white")
-    _estilo(ax_r, "Casos que contendría una lista de k familias hecha esa semana",
-            "Semana de la campaña", "Recall (casos en la lista)")
+    ax_g.plot(
+        semanas,
+        _numerica(total["tasa_base"]),
+        color=SEGUNDO_COLOR,
+        lw=2,
+        marker="o",
+        ms=5,
+        markeredgecolor="white",
+    )
+    _estilo(
+        ax_g, "El grupo se achica y los casos se concentran", "Semana de la campaña", "Porcentaje"
+    )
+    ax_r.plot(
+        semanas,
+        _numerica(total["recall_azar"]),
+        color=NEUTRO,
+        lw=1.6,
+        ls="--",
+        marker="s",
+        ms=4,
+        markeredgecolor="white",
+    )
+    ax_r.plot(
+        semanas,
+        _numerica(total["recall"]),
+        color=REGLA_COLOR,
+        lw=2,
+        marker="o",
+        ms=5,
+        markeredgecolor="white",
+    )
+    _estilo(
+        ax_r,
+        "Casos que contendría una lista de k familias hecha esa semana",
+        "Semana de la campaña",
+        "Recall (casos en la lista)",
+    )
     for ax in (ax_g, ax_r):
         ax.yaxis.set_major_formatter(PORCENTAJE)
         ax.set_xticks(semanas)
         ax.set_ylim(0, 1.05)
-    _titulo(fig, "Esperar concentra los casos, pero deja menos tiempo para ayudar",
-            f"Familias que siguen sin pagar cada semana · cohortes {cohortes} · C5 no interviene")
-    _leyenda(fig, [
-        Patch(color=CLARO[NEUTRO], label="Familias que aún no pagan"),
-        Line2D([], [], color=SEGUNDO_COLOR, lw=2, marker="o", ms=5, markeredgecolor="white",
-               label="Casos entre las pendientes"),
-        Line2D([], [], color=REGLA_COLOR, lw=2, marker="o", ms=5, markeredgecolor="white",
-               label="Lista con la regla D2"),
-        Line2D([], [], color=NEUTRO, lw=1.6, ls="--", marker="s", ms=4,
-               markeredgecolor="white", label="Lista al azar entre pendientes")])
+    _titulo(
+        fig,
+        "Esperar concentra los casos, pero deja menos tiempo para ayudar",
+        f"Familias que siguen sin pagar cada semana · cohortes {cohortes} · C5 no interviene",
+    )
+    _leyenda(
+        fig,
+        [
+            Patch(color=CLARO[NEUTRO], label="Familias que aún no pagan"),
+            Line2D(
+                [],
+                [],
+                color=SEGUNDO_COLOR,
+                lw=2,
+                marker="o",
+                ms=5,
+                markeredgecolor="white",
+                label="Casos entre las pendientes",
+            ),
+            Line2D(
+                [],
+                [],
+                color=REGLA_COLOR,
+                lw=2,
+                marker="o",
+                ms=5,
+                markeredgecolor="white",
+                label="Lista con la regla D2",
+            ),
+            Line2D(
+                [],
+                [],
+                color=NEUTRO,
+                lw=1.6,
+                ls="--",
+                marker="s",
+                ms=4,
+                markeredgecolor="white",
+                label="Lista al azar entre pendientes",
+            ),
+        ],
+    )
     _ajustar(fig)
     return fig
 
@@ -230,11 +351,19 @@ def figura_campana(estrategias: pd.DataFrame, cohortes: str) -> Figure:
     ax.tick_params(axis="y", labelsize=9, colors=TINTA)
     ax.grid(axis="y", visible=False)
     ax.axvline(1.0, color=REJILLA, lw=1)
-    _titulo(fig, "Tres formas de usar los mismos contactos",
-            f"Simulación con las fechas de pago históricas · cohortes {cohortes} · "
-            "C5 no interviene")
-    _leyenda(fig, [Patch(color=CLARO[REGLA_COLOR], label="Casos alcanzados en toda la campaña"),
-                   Patch(color=REGLA_COLOR, label="Alcanzados en la primera mitad"),
-                   Patch(color=NEUTRO, label="Sin regla (al azar)")], 3)
+    _titulo(
+        fig,
+        "Tres formas de usar los mismos contactos",
+        f"Simulación con las fechas de pago históricas · cohortes {cohortes} · C5 no interviene",
+    )
+    _leyenda(
+        fig,
+        [
+            Patch(color=CLARO[REGLA_COLOR], label="Casos alcanzados en toda la campaña"),
+            Patch(color=REGLA_COLOR, label="Alcanzados en la primera mitad"),
+            Patch(color=NEUTRO, label="Sin regla (al azar)"),
+        ],
+        3,
+    )
     _ajustar(fig)
     return fig

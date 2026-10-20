@@ -80,7 +80,7 @@ Llamando al 15 % de las familias se llega al 30 % de las que no pagan la matríc
 | Preparatoria | 113 | 12 | 0,38 | 0,42 |
 | Bachillerato | 122 | <5 | — | — |
 
-La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por diferencia.
+La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por diferencia. Intervalos de Wilson del Recall@k: con beca 5 %–48 %, sin beca 22 %–44 %; Mucho Lote 1 20 %–47 %, Mucho Lote 2 14 %–44 %. Ninguna brecha es significativa con la prueba exacta de Fisher (p ≥ 0,32), pero con tan pocos casos tampoco se puede descartar (D60).
 
 ## 7. Consideraciones éticas
 

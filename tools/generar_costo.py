@@ -72,21 +72,29 @@ def generar(fuente: str, cohorte: str = "C4", semana: int = 5) -> dict:
     equilibrio.to_csv(METRICAS / f"costo_equilibrio_{fuente}.csv", index=False)
     pd.concat([marg, marg_todas]).to_csv(METRICAS / f"costo_marginal_{fuente}.csv", index=False)
     curva.to_csv(METRICAS / f"costo_beneficio_{fuente}.csv", index=False)
-    resumen = {"fuente": fuente, "cohorte": cohorte, "semana_segunda_llamada": semana,
-               "supuestos": {"eficacias": list(costo.EFICACIAS),
-                             "razones_cFN_cFP": list(costo.RAZONES),
-                             "unidad": "llamadas (cFP = 1)"},
-               "mejor_tamano": mejor.to_dict(orient="records"),
-               "conclusiones": textos}
+    resumen = {
+        "fuente": fuente,
+        "cohorte": cohorte,
+        "semana_segunda_llamada": semana,
+        "supuestos": {
+            "eficacias": list(costo.EFICACIAS),
+            "razones_cFN_cFP": list(costo.RAZONES),
+            "unidad": "llamadas (cFP = 1)",
+        },
+        "mejor_tamano": mejor.to_dict(orient="records"),
+        "conclusiones": textos,
+    }
     (METRICAS / f"costo_{fuente}.json").write_text(
-        json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
+        json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     guardar(figura_costo(equilibrio, curva, cohorte), FIGURAS / f"{fuente}_28_costo_esperado.png")
     return resumen
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--fuente", choices=["real", "sintetica"], default="sintetica")
     parser.add_argument("--cohorte", default="C4")
     parser.add_argument("--semana", type=int, default=5)

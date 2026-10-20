@@ -60,8 +60,11 @@ def generar_clave(ruta: Path) -> None:
         raise FileExistsError(f"Ya existe {ruta}. No se sobrescribe una clave.")
     ruta.parent.mkdir(parents=True, exist_ok=True)
     ruta.write_text(nueva_clave(), encoding="utf-8")
-    log.info("Clave creada en %s. Guárdela con respaldo cifrado: "
-             "si se pierde, no se podrá reidentificar a nadie.", ruta)
+    log.info(
+        "Clave creada en %s. Guárdela con respaldo cifrado: "
+        "si se pierde, no se podrá reidentificar a nadie.",
+        ruta,
+    )
 
 
 def nueva_clave() -> str:
@@ -179,7 +182,7 @@ def leer_tabla(origen: Path | bytes, nombre: str | None = None) -> pd.DataFrame:
     if sufijo in {".xlsx", ".xls"}:
         hojas = pd.read_excel(origen, sheet_name=None, dtype=str)
         partes = []
-        canonicas: dict[str, str] = {}   # encabezado normalizado -> nombre de la 1.ª hoja
+        canonicas: dict[str, str] = {}  # encabezado normalizado -> nombre de la 1.ª hoja
         for nombre, df in hojas.items():
             df = df.dropna(how="all")
             nombres = []
@@ -198,8 +201,9 @@ def leer_tabla(origen: Path | bytes, nombre: str | None = None) -> pd.DataFrame:
             if faltan:
                 log.warning("Hoja '%s': no tiene las columnas %s", p["hoja"].iloc[0], faltan)
             if vacias:
-                log.warning("Hoja '%s': columnas completamente vacías %s",
-                            p["hoja"].iloc[0], vacias)
+                log.warning(
+                    "Hoja '%s': columnas completamente vacías %s", p["hoja"].iloc[0], vacias
+                )
         return pd.concat(partes, ignore_index=True)
     return pd.read_csv(origen, dtype=str)
 
@@ -242,8 +246,11 @@ def seudonimizar_tabla(
     if derivar_anio_ingreso:
         # El código interno solo se usa para el año de ingreso (2 primeros dígitos).
         df["anio_ingreso"] = df[col_codigo].map(anio_ingreso)
-        log.info("anio_ingreso derivado de %s; %d filas sin valor.",
-                 col_codigo, df["anio_ingreso"].isna().sum())
+        log.info(
+            "anio_ingreso derivado de %s; %d filas sin valor.",
+            col_codigo,
+            df["anio_ingreso"].isna().sum(),
+        )
 
     for col, (tipo, destino) in columnas.items():
         if validar_cedula:
@@ -266,15 +273,23 @@ def columnas_identificatorias(df: pd.DataFrame, muestra: int = 300) -> list[str]
     problemas = [c for c in df.columns if "nombre" in str(c).lower()]
     for col in df.columns:
         valores = df[col].dropna().head(muestra)
-        if len(valores) and valores.map(
-                lambda v: validar_cedula_ec(normalizar(v) or "")).mean() > 0.5:
+        if (
+            len(valores)
+            and valores.map(lambda v: validar_cedula_ec(normalizar(v) or "")).mean() > 0.5
+        ):
             problemas.append(col)
     return sorted(set(problemas))
 
 
-def construir_acta(df: pd.DataFrame, csv: bytes, entrada: str, salida: str,
-                   eliminadas: list[str], col_estudiante: str,
-                   clave: bytes | None = None) -> dict:
+def construir_acta(
+    df: pd.DataFrame,
+    csv: bytes,
+    entrada: str,
+    salida: str,
+    eliminadas: list[str],
+    col_estudiante: str,
+    clave: bytes | None = None,
+) -> dict:
     """Acta de extracción: qué se generó, cuándo y con qué huella (sin datos personales)."""
     acta = {
         "fecha_utc": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -284,7 +299,8 @@ def construir_acta(df: pd.DataFrame, csv: bytes, entrada: str, salida: str,
         "filas": len(df),
         "estudiantes_unicos": int(df["id_seudonimo"].nunique()),
         "familias_unicas": int(df["id_familia_seudonimo"].nunique())
-        if "id_familia_seudonimo" in df else None,
+        if "id_familia_seudonimo" in df
+        else None,
         "columnas_eliminadas": eliminadas,
         "llave_estudiante": col_estudiante,
         "tecnica": "HMAC-SHA256 con clave secreta, truncado a 60 bits, base32",
@@ -294,8 +310,14 @@ def construir_acta(df: pd.DataFrame, csv: bytes, entrada: str, salida: str,
     return acta
 
 
-def reidentificar_tabla(entrada: pd.DataFrame, padron: pd.DataFrame, clave: bytes,
-                        col_seudonimo: str, col_padron: str, tipo: str) -> pd.DataFrame:
+def reidentificar_tabla(
+    entrada: pd.DataFrame,
+    padron: pd.DataFrame,
+    clave: bytes,
+    col_seudonimo: str,
+    col_padron: str,
+    tipo: str,
+) -> pd.DataFrame:
     """Une seudónimos con el padrón institucional. Solo para personal autorizado."""
     if col_seudonimo not in entrada.columns or col_padron not in padron.columns:
         raise KeyError("Revise --col-seudonimo y --col-padron.")
@@ -310,35 +332,59 @@ def reidentificar_tabla(entrada: pd.DataFrame, padron: pd.DataFrame, clave: byte
 def cmd_seudonimizar(args: argparse.Namespace) -> None:
     clave = cargar_clave(Path(args.clave))
     df, eliminadas = seudonimizar_tabla(
-        _leer(Path(args.entrada)), clave, args.col_estudiante, args.col_familia,
-        args.eliminar, args.derivar_anio_ingreso, args.col_codigo, args.validar_cedula)
+        _leer(Path(args.entrada)),
+        clave,
+        args.col_estudiante,
+        args.col_familia,
+        args.eliminar,
+        args.derivar_anio_ingreso,
+        args.col_codigo,
+        args.validar_cedula,
+    )
     salida = Path(args.salida)
     df.to_csv(salida, index=False, encoding="utf-8")
 
-    acta = construir_acta(df, salida.read_bytes(), Path(args.entrada).name, salida.name,
-                          eliminadas, args.col_estudiante)
+    acta = construir_acta(
+        df,
+        salida.read_bytes(),
+        Path(args.entrada).name,
+        salida.name,
+        eliminadas,
+        args.col_estudiante,
+    )
     salida.with_suffix(".acta.json").write_text(
-        json.dumps(acta, indent=2, ensure_ascii=False), encoding="utf-8")
-    log.info("Listo: %s (%d filas). Acta de extracción: %s",
-             salida, len(df), salida.with_suffix(".acta.json").name)
+        json.dumps(acta, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    log.info(
+        "Listo: %s (%d filas). Acta de extracción: %s",
+        salida,
+        len(df),
+        salida.with_suffix(".acta.json").name,
+    )
 
 
 def cmd_reidentificar(args: argparse.Namespace) -> None:
     """Solo para personal autorizado de LEMAS: une seudónimos con el padrón."""
     clave = cargar_clave(Path(args.clave))
-    resultado = reidentificar_tabla(_leer(Path(args.entrada)), _leer(Path(args.padron)),
-                                    clave, args.col_seudonimo, args.col_padron, args.tipo)
+    resultado = reidentificar_tabla(
+        _leer(Path(args.entrada)),
+        _leer(Path(args.padron)),
+        clave,
+        args.col_seudonimo,
+        args.col_padron,
+        args.tipo,
+    )
     sin_match = resultado[args.col_padron].isna().sum()
     if sin_match:
         log.warning("%d registros no se encontraron en el padrón.", sin_match)
     resultado.to_csv(args.salida, index=False, encoding="utf-8")
-    log.info("Archivo interno generado: %s. No debe salir del entorno de LEMAS.",
-             args.salida)
+    log.info("Archivo interno generado: %s. No debe salir del entorno de LEMAS.", args.salida)
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     sub = parser.add_subparsers(dest="comando", required=True)
 
     p_clave = sub.add_parser("generar-clave", help="Crea la clave secreta del custodio")
@@ -350,15 +396,24 @@ def main(argv: list[str] | None = None) -> int:
     p_seud.add_argument("--clave", required=True)
     p_seud.add_argument("--col-estudiante", required=True)
     p_seud.add_argument("--col-familia")
-    p_seud.add_argument("--eliminar", nargs="*", default=[],
-                        help="Columnas identificatorias adicionales a borrar")
-    p_seud.add_argument("--derivar-anio-ingreso", action="store_true",
-                        help="Crea anio_ingreso con los 2 primeros dígitos del código")
-    p_seud.add_argument("--col-codigo",
-                        help="Columna del código interno para el año de ingreso "
-                             "(por defecto, la misma de --col-estudiante)")
-    p_seud.add_argument("--validar-cedula", action="store_true",
-                        help="Advierte si la columna no contiene cédulas válidas")
+    p_seud.add_argument(
+        "--eliminar", nargs="*", default=[], help="Columnas identificatorias adicionales a borrar"
+    )
+    p_seud.add_argument(
+        "--derivar-anio-ingreso",
+        action="store_true",
+        help="Crea anio_ingreso con los 2 primeros dígitos del código",
+    )
+    p_seud.add_argument(
+        "--col-codigo",
+        help="Columna del código interno para el año de ingreso "
+        "(por defecto, la misma de --col-estudiante)",
+    )
+    p_seud.add_argument(
+        "--validar-cedula",
+        action="store_true",
+        help="Advierte si la columna no contiene cédulas válidas",
+    )
 
     p_reid = sub.add_parser("reidentificar", help="Uso interno: seudónimo -> padrón")
     p_reid.add_argument("--entrada", required=True)
@@ -371,9 +426,11 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     try:
-        {"generar-clave": lambda a: generar_clave(Path(a.salida)),
-         "seudonimizar": cmd_seudonimizar,
-         "reidentificar": cmd_reidentificar}[args.comando](args)
+        {
+            "generar-clave": lambda a: generar_clave(Path(a.salida)),
+            "seudonimizar": cmd_seudonimizar,
+            "reidentificar": cmd_reidentificar,
+        }[args.comando](args)
     except (OSError, ValueError, KeyError, RuntimeError) as exc:
         log.error("%s", exc)
         return 1

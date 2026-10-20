@@ -29,27 +29,46 @@ log = logging.getLogger("lemas.sintetico")
 
 # Nombres de curso y subnivel como aparecen en el sistema de LEMAS
 GRADOS = [
-    ("Inicial 1", "Inicial"), ("Inicial 2", "Inicial"),
+    ("Inicial 1", "Inicial"),
+    ("Inicial 2", "Inicial"),
     ("Primer Grado EGB", "Preparatoria"),
-    *[(f"{g} Grado EGB", "Educación General Básica") for g in
-      ("Segundo", "Tercer", "Cuarto", "Quinto", "Sexto", "Séptimo", "Octavo", "Noveno",
-       "Décimo")],
-    ("Primero de bachillerato", "Bachillerato"), ("Segundo de bachillerato", "Bachillerato"),
+    *[
+        (f"{g} Grado EGB", "Educación General Básica")
+        for g in (
+            "Segundo",
+            "Tercer",
+            "Cuarto",
+            "Quinto",
+            "Sexto",
+            "Séptimo",
+            "Octavo",
+            "Noveno",
+            "Décimo",
+        )
+    ],
+    ("Primero de bachillerato", "Bachillerato"),
+    ("Segundo de bachillerato", "Bachillerato"),
     ("Tercero de bachillerato", "Bachillerato"),
 ]
 ULTIMO_GRADO = len(GRADOS) - 1
-ESTADOS_HASTA_2023 = {"aprobada": ["Aprobar"], "extraordinaria": ["Aprobación extraordinaria"],
-                      "pendiente": ["En revisión"]}
-ESTADOS_DESDE_2024 = {"aprobada": ["Aprobado", "Aprobar"],
-                      "extraordinaria": ["Aprobado Extraordinaria"],
-                      "pendiente": ["En Revisión", "En Proceso", "En Revisión Extraordinaria"]}
+ESTADOS_HASTA_2023 = {
+    "aprobada": ["Aprobar"],
+    "extraordinaria": ["Aprobación extraordinaria"],
+    "pendiente": ["En revisión"],
+}
+ESTADOS_DESDE_2024 = {
+    "aprobada": ["Aprobado", "Aprobar"],
+    "extraordinaria": ["Aprobado Extraordinaria"],
+    "pendiente": ["En Revisión", "En Proceso", "En Revisión Extraordinaria"],
+}
 # Grados donde entran más estudiantes nuevos (pesos relativos)
 PESO_INGRESO = np.array([8, 3, 5, 1, 1, 1, 1, 1, 1, 3, 1, 1, 2, 0.5, 0.2])
 
 PARAMETROS_BASE = {
     "sedes": {"Mucho Lote 1": 0.6, "Mucho Lote 2": 0.4},
     "tasa_beca": 0.15,
-    "promedio_media": 8.7, "promedio_desv": 0.6,
+    "promedio_media": 8.7,
+    "promedio_desv": 0.6,
     "conducta_letras": {"A": 0.55, "B": 0.30, "C": 0.11, "D": 0.03, "E": 0.01},
     "atrasos_media": 1.5,
 }
@@ -146,9 +165,14 @@ def generar(
             fid = nueva_familia()
         if grado is None:
             grado = int(rng.choice(len(GRADOS), p=PESO_INGRESO / PESO_INGRESO.sum()))
-        return {"id": _codigo(rng, "EST"), "familia": fid, "grado": grado,
-                "ingreso": anio, "habilidad": rng.normal(),
-                "paralelo": rng.choice(["A", "B", "C", "D"], p=[0.42, 0.34, 0.21, 0.03])}
+        return {
+            "id": _codigo(rng, "EST"),
+            "familia": fid,
+            "grado": grado,
+            "ingreso": anio,
+            "habilidad": rng.normal(),
+            "paralelo": rng.choice(["A", "B", "C", "D"], p=[0.42, 0.34, 0.21, 0.03]),
+        }
 
     # Población inicial: estudiantes que ya estaban antes de 2021
     for _ in range(n_anio):
@@ -157,7 +181,7 @@ def generar(
         estudiantes.append(est)
 
     filas = []
-    deriva = {a: rng.normal(0, 0.15) for a in anios}   # variación entre cohortes
+    deriva = {a: rng.normal(0, 0.15) for a in anios}  # variación entre cohortes
     # C1 menos comparable (pospandemia): más atrasos en pensiones en el primer año
     factor_c1 = 1 + cfg.get("desplazamiento_c1", 0.0)
     for i, anio in enumerate(anios):
@@ -176,40 +200,65 @@ def generar(
             atrasos = int(rng.binomial(9, min(fam["estres"] * factor, 0.95)))
             reserva = rng.random() < 0.97 - 0.5 * fam["estres"]
             u = rng.random()
-            estado = ("pendiente" if u < 0.03 + 0.3 * fam["estres"] else
-                      "extraordinaria" if u < 0.08 + 0.3 * fam["estres"] else "aprobada")
+            estado = (
+                "pendiente"
+                if u < 0.03 + 0.3 * fam["estres"]
+                else "extraordinaria"
+                if u < 0.08 + 0.3 * fam["estres"]
+                else "aprobada"
+            )
             # Textos como aparecen en el sistema de LEMAS, que cambian según el año
-            textos = (ESTADOS_DESDE_2024 if anio >= 2024 else ESTADOS_HASTA_2023)
+            textos = ESTADOS_DESDE_2024 if anio >= 2024 else ESTADOS_HASTA_2023
             estado_texto = rng.choice(textos[estado])
             extra = rng.random() < 0.10 + 0.4 * fam["estres"]
             inicio = pd.Timestamp(anio, 11, 1) if extra else pd.Timestamp(anio, 9, 15)
-            fecha_reserva = inicio + pd.Timedelta(days=int(rng.integers(0, 30)),
-                                                  hours=int(rng.integers(7, 19)))
+            fecha_reserva = inicio + pd.Timedelta(
+                days=int(rng.integers(0, 30)), hours=int(rng.integers(7, 19))
+            )
             if rng.random() < 0.01:
-                fecha_reserva = pd.Timestamp(anio + 1, 3, 1)   # activación tardía
+                fecha_reserva = pd.Timestamp(anio + 1, 3, 1)  # activación tardía
             curso, subnivel = GRADOS[est["grado"]]
-            registros.append({
-                "anoa": anio, "anos": anio + 1, "Sede": fam["sede"],
-                "Nivel": f"{curso} {est['paralelo']} - {subnivel}", "Paralelo": est["paralelo"],
-                "P.Académico": _nota(p["promedio_media"], p["promedio_desv"],
-                                     0.8 * est["habilidad"] + 0.6 * rng.normal()),
-                "P.Conducta": _letra_conducta(0.53 * est["habilidad"] + 0.85 * rng.normal(),
-                                              p["conducta_letras"]),
-                "fecha_pago": pago.strftime("%Y-%m-%d"),
-                "Reserva": "SI" if reserva else "NO HIZO",
-                "RColegio": estado_texto if reserva else "NO HIZO",
-                "Fecha Reserva": fecha_reserva.strftime("%Y-%m-%d %H:%M") if reserva else "",
-                "Tiempo": ("EXTRAORDINARIA" if extra else "ORDINARIA") if reserva else "NO HIZO",
-                "beca": "SI" if fam["beca"] else "", "# meses caído": atrasos,
-                # El prefijo del código corresponde al año del proceso de admisión
-                "anio_ingreso": est["ingreso"] - 1, "id_seudonimo": est["id"],
-                "id_familia_seudonimo": est["familia"],
-                # Riesgo latente: supuesto plausible, NO estimado de datos reales
-                "_logit": (3.25 * (atrasos / 9 - estres_escala) - 0.45 * est["habilidad"]
-                           - 0.3 * fam["beca"] - 0.25 * min(anio - est["ingreso"], 6) / 6
-                           + (1.2 if estado == "pendiente" else 0) + deriva[anio]),
-                "_reserva": reserva, "_terminal": est["grado"] == ULTIMO_GRADO,
-            })
+            registros.append(
+                {
+                    "anoa": anio,
+                    "anos": anio + 1,
+                    "Sede": fam["sede"],
+                    "Nivel": f"{curso} {est['paralelo']} - {subnivel}",
+                    "Paralelo": est["paralelo"],
+                    "P.Académico": _nota(
+                        p["promedio_media"],
+                        p["promedio_desv"],
+                        0.8 * est["habilidad"] + 0.6 * rng.normal(),
+                    ),
+                    "P.Conducta": _letra_conducta(
+                        0.53 * est["habilidad"] + 0.85 * rng.normal(), p["conducta_letras"]
+                    ),
+                    "fecha_pago": pago.strftime("%Y-%m-%d"),
+                    "Reserva": "SI" if reserva else "NO HIZO",
+                    "RColegio": estado_texto if reserva else "NO HIZO",
+                    "Fecha Reserva": fecha_reserva.strftime("%Y-%m-%d %H:%M") if reserva else "",
+                    "Tiempo": ("EXTRAORDINARIA" if extra else "ORDINARIA")
+                    if reserva
+                    else "NO HIZO",
+                    "beca": "SI" if fam["beca"] else "",
+                    "# meses caído": atrasos,
+                    # El prefijo del código corresponde al año del proceso de admisión
+                    "anio_ingreso": est["ingreso"] - 1,
+                    "id_seudonimo": est["id"],
+                    "id_familia_seudonimo": est["familia"],
+                    # Riesgo latente: supuesto plausible, NO estimado de datos reales
+                    "_logit": (
+                        3.25 * (atrasos / 9 - estres_escala)
+                        - 0.45 * est["habilidad"]
+                        - 0.3 * fam["beca"]
+                        - 0.25 * min(anio - est["ingreso"], 6) / 6
+                        + (1.2 if estado == "pendiente" else 0)
+                        + deriva[anio]
+                    ),
+                    "_reserva": reserva,
+                    "_terminal": est["grado"] == ULTIMO_GRADO,
+                }
+            )
         tabla = pd.DataFrame(registros)
         filas.append(tabla)
         if i == len(anios) - 1:
@@ -225,7 +274,8 @@ def generar(
         prob_salida = np.where(tabla["_reserva"], _sigmoide(intercepto + tabla["_logit"]), 0.9)
         # Las familias tienden a decidir en bloque
         choque_familiar = tabla.groupby("id_familia_seudonimo")["_logit"].transform(
-            lambda s: rng.normal(0, 0.8))
+            lambda s: rng.normal(0, 0.8)
+        )
         prob_salida = np.clip(prob_salida + 0.08 * choque_familiar, 0, 1)
         sale = rng.random(len(tabla)) < prob_salida
 
@@ -233,7 +283,7 @@ def generar(
         for est, sale_i, terminal in zip(estudiantes, sale, tabla["_terminal"], strict=False):
             if terminal:
                 continue
-            tardio = sale_i and rng.random() < 0.15      # parte de las "salidas" son tardías
+            tardio = sale_i and rng.random() < 0.15  # parte de las "salidas" son tardías
             if sale_i and not tardio:
                 continue
             est = dict(est, grado=est["grado"] + 1, tardio=tardio)
@@ -268,7 +318,8 @@ def main(argv: list[str] | None = None) -> int:
         parametros = None
     if args.guardar_parametros and parametros:
         Path(args.guardar_parametros).write_text(
-            json.dumps(parametros, indent=2, ensure_ascii=False), encoding="utf-8")
+            json.dumps(parametros, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
         log.info("Parámetros guardados en %s", args.guardar_parametros)
     base = generar(config, parametros)
     salida = Path(args.salida) if args.salida else RAIZ / config["rutas"]["base_sintetica"]

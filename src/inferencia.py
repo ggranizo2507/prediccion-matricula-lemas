@@ -33,6 +33,7 @@ import numpy as np
 import pandas as pd
 
 from src.data_processing import (
+    _a_fecha,
     agregar_predictores,
     construir_dataset,
     construir_matriz_x,
@@ -48,10 +49,26 @@ MODOS = ("demo", "institucional")
 # Columnas que delatan identificadores directos: nunca se aceptan en la app
 PATRON_IDENTIFICADOR = re.compile(
     r"(?i)^(ci|c[eé]dula.*|cedulap|nombre.*|nombres.*|apellido.*|codigo|c[oó]digo|"
-    r"tel[eé]fono.*|correo.*|email.*|direcci[oó]n.*)$")
-COLUMNAS_MINIMAS = ["anoa", "Sede", "Nivel", "Paralelo", "P.Académico", "P.Conducta",
-                    "fecha_pago", "Reserva", "RColegio", "Fecha Reserva", "Tiempo", "beca",
-                    "# meses caído", "anio_ingreso", "id_seudonimo", "id_familia_seudonimo"]
+    r"tel[eé]fono.*|correo.*|email.*|direcci[oó]n.*)$"
+)
+COLUMNAS_MINIMAS = [
+    "anoa",
+    "Sede",
+    "Nivel",
+    "Paralelo",
+    "P.Académico",
+    "P.Conducta",
+    "fecha_pago",
+    "Reserva",
+    "RColegio",
+    "Fecha Reserva",
+    "Tiempo",
+    "beca",
+    "# meses caído",
+    "anio_ingreso",
+    "id_seudonimo",
+    "id_familia_seudonimo",
+]
 REGLA_PRIORIZACION = "D2 · señales administrativas"
 # Hiperparámetros de la logística híbrida elegidos por Optuna en la Fase 2 (datos reales);
 # en modo demo se reentrena con ellos sobre la base sintética.
@@ -82,7 +99,8 @@ def validar_entrada(df: pd.DataFrame, modo: str) -> None:
             "El archivo contiene columnas con identificadores directos "
             f"({', '.join(identificadores)}). Un archivo CSV debe estar seudonimizado. En "
             "LEMAS, suba el Excel junto con la clave en el modo institucional. La versión "
-            "pública nunca recibe cédulas, nombres ni códigos.")
+            "pública nunca recibe cédulas, nombres ni códigos."
+        )
     faltan = [c for c in COLUMNAS_MINIMAS if c not in df.columns]
     if faltan:
         log.info("Archivo rechazado: faltan %d columnas obligatorias", len(faltan))
@@ -90,17 +108,28 @@ def validar_entrada(df: pd.DataFrame, modo: str) -> None:
             raise ErrorEntrada(
                 "El archivo no tiene ninguna de las columnas esperadas. Revise que sea un CSV "
                 "separado por comas con la estructura del manual de usuario (sección 7), o "
-                "pruebe primero con el botón «Prueba con ejemplo».")
+                "pruebe primero con el botón «Prueba con ejemplo»."
+            )
         muestra = ", ".join(faltan[:4]) + (f" y {len(faltan) - 4} más" if len(faltan) > 4 else "")
-        raise ErrorEntrada(f"Faltan {len(faltan)} columnas obligatorias ({muestra}). La lista "
-                           "completa está en el manual de usuario, sección 7.")
+        raise ErrorEntrada(
+            f"Faltan {len(faltan)} columnas obligatorias ({muestra}). La lista "
+            "completa está en el manual de usuario, sección 7."
+        )
+    fechas = df["fecha_pago"].dropna().astype(str).str.strip()
+    fechas = fechas[fechas != ""]
+    if len(fechas) and _a_fecha(fechas).isna().all():
+        raise ErrorEntrada(
+            "La columna fecha_pago no tiene ninguna fecha reconocible. Use el formato "
+            "aaaa-mm-dd o dd/mm/aaaa, como en el archivo de ejemplo."
+        )
     if modo == "demo":
         origen = df.get("origen_datos", pd.Series(dtype=str)).astype(str).str.upper()
         if origen.empty or not (origen == "SINTETICO").all():
             raise ErrorEntrada(
                 "La versión pública solo acepta datos sintéticos (columna origen_datos = "
                 "SINTETICO). Los datos reales se procesan únicamente en el modo institucional, "
-                "dentro de LEMAS.")
+                "dentro de LEMAS."
+            )
 
 
 # --------------------------------------------------------------------------- #
@@ -110,29 +139,37 @@ def anios_disponibles(base_limpia: pd.DataFrame) -> list[int]:
     return sorted(int(a) for a in base_limpia["anio_origen"].dropna().unique())
 
 
-def construir_poblacion(base_limpia: pd.DataFrame, anio_origen: int, config: dict) -> tuple[
-        pd.DataFrame, dict]:
+def construir_poblacion(
+    base_limpia: pd.DataFrame, anio_origen: int, config: dict
+) -> tuple[pd.DataFrame, dict]:
     """Elegibles del ciclo `anio_origen` en la foto t0 (sin etiqueta: aún no se conoce)."""
     mes, dia = config["calendario"]["t0_mes_dia"]
     t0 = pd.Timestamp(year=anio_origen + 1, month=mes, day=dia)
     reglas = config["elegibilidad"]
     origen = agregar_predictores(base_limpia[base_limpia["anio_origen"] == anio_origen], config)
-    resumen = {"ciclo": f"{anio_origen}-{anio_origen + 1}", "corte_t0": t0.date().isoformat(),
-               "estudiantes_ciclo": len(origen)}
+    resumen = {
+        "ciclo": f"{anio_origen}-{anio_origen + 1}",
+        "corte_t0": t0.date().isoformat(),
+        "estudiantes_ciclo": len(origen),
+    }
     paso = origen[origen["categoria_reserva"].isin(reglas["estados_aprobados"])]
     resumen["reserva_aprobada"] = len(paso)
     paso = paso[~(paso["fecha_reserva"].notna() & (paso["fecha_reserva"] >= t0))]
     paso = paso[~es_curso_terminal(paso, reglas["cursos_terminales_regex"])]
     destino = base_limpia[base_limpia["anio_origen"] == anio_origen + 1]
-    if not destino.empty:   # si ya hay pagos del ciclo siguiente antes de t0, ya se matricularon
+    if not destino.empty:  # si ya hay pagos del ciclo siguiente antes de t0, ya se matricularon
         pagos = destino.set_index("id_estudiante")["fecha_pago"]
         ya_pagaron = paso["id_estudiante"].map(pagos) < t0
         resumen["ya_matriculados_antes_t0"] = int(ya_pagaron.sum())
         paso = paso[~ya_pagaron.fillna(False)]
     resumen["elegibles"] = len(paso)
     resumen["representantes"] = int(paso["id_familia"].nunique())
-    log.info("Ciclo %s: %d elegibles, %d representantes", resumen["ciclo"],
-             resumen["elegibles"], resumen["representantes"])
+    log.info(
+        "Ciclo %s: %d elegibles, %d representantes",
+        resumen["ciclo"],
+        resumen["elegibles"],
+        resumen["representantes"],
+    )
     return paso.reset_index(drop=True), resumen
 
 
@@ -147,26 +184,36 @@ class Sistema:
     descripcion: str
 
 
-def entrenar_sistema(base_limpia: pd.DataFrame, config: dict, params: dict | None = None
-                     ) -> Sistema:
+def entrenar_sistema(
+    base_limpia: pd.DataFrame, config: dict, params: dict | None = None
+) -> Sistema:
     """Reproduce el protocolo de la Fase 2 con la base dada: entrena la logística híbrida
     con C2+C3, la calibra en C4 y calcula k con el multiplicador aprobado."""
     dataset, _ = construir_dataset(base_limpia, config)
     entrenamiento = dataset[dataset["cohorte"].isin(["C2", "C3"])]
     seleccion = dataset[dataset["rol"] == "seleccion"]
     if entrenamiento.empty or seleccion.empty:
-        raise ErrorEntrada("La base no tiene suficientes ciclos para entrenar (se "
-                              "necesitan al menos 2022 a 2025).")
-    log.info("Entrenando el modelo de apoyo: %d estudiantes (C2+C3), calibración con %d (C4)",
-             len(entrenamiento), len(seleccion))
+        raise ErrorEntrada(
+            "La base no tiene suficientes ciclos para entrenar (se necesitan al menos 2022 a 2025)."
+        )
+    log.info(
+        "Entrenando el modelo de apoyo: %d estudiantes (C2+C3), calibración con %d (C4)",
+        len(entrenamiento),
+        len(seleccion),
+    )
     modelo = construir_modelo("hibrido", params or PARAMS_DEMO, config["proyecto"]["semilla"])
     modelo.fit(construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"])
-    k = calcular_k_por_sede(consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
-                            config["capacidad"].get("multiplicador_k", 1.0))
-    return Sistema(calibrar(modelo, seleccion), k,
-                   float(entrenamiento["y_no_matricula"].mean()),
-                   "Lista: regla de tres señales administrativas. Probabilidad y proyección: "
-                   "modelo de apoyo calibrado con el ciclo 2024-2025.")
+    k = calcular_k_por_sede(
+        consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
+        config["capacidad"].get("multiplicador_k", 1.0),
+    )
+    return Sistema(
+        calibrar(modelo, seleccion),
+        k,
+        float(entrenamiento["y_no_matricula"].mean()),
+        "Lista: regla de tres señales administrativas. Probabilidad y proyección: "
+        "modelo de apoyo calibrado con el ciclo 2024-2025.",
+    )
 
 
 def cargar_sistema_congelado(ruta) -> Sistema | None:
@@ -179,9 +226,12 @@ def cargar_sistema_congelado(ruta) -> Sistema | None:
     if not ruta.exists():
         return None
     guardado = joblib.load(ruta)
-    return Sistema(guardado["calibrado"], guardado["k_por_sede"],
-                   float(guardado["tasa_historica_no_matricula"]),
-                   f"Sistema congelado de la Fase 2 ({guardado.get('nombre', 'modelo')})")
+    return Sistema(
+        guardado["calibrado"],
+        guardado["k_por_sede"],
+        float(guardado["tasa_historica_no_matricula"]),
+        f"Sistema congelado de la Fase 2 ({guardado.get('nombre', 'modelo')})",
+    )
 
 
 def puntuar(poblacion: pd.DataFrame, sistema: Sistema) -> pd.DataFrame:
@@ -217,45 +267,61 @@ def revisar_senales(poblacion: pd.DataFrame, config: dict) -> dict:
     con_historia = pago[pago != "nuevo"]
     if nuevos > max_nuevos:
         afectadas.add("pago")
-        avisos.append(f"El {nuevos:.0%} de los estudiantes figura como nuevo. Revise que se "
-                      "haya cargado la hoja del ciclo anterior: sin ella no se conoce el pago "
-                      "tardío de la matrícula.")
+        avisos.append(
+            f"El {nuevos:.0%} de los estudiantes figura como nuevo. Revise que se "
+            "haya cargado la hoja del ciclo anterior: sin ella no se conoce el pago "
+            "tardío de la matrícula."
+        )
     elif len(con_historia):
         vacios = float((con_historia == "sin_dato").mean())
         if vacios > max_vacios:
             afectadas.add("pago")
-            avisos.append(f"Falta la fecha de pago de la matrícula anterior en el {vacios:.0%} "
-                          "de los estudiantes que no son nuevos: la señal «pagó tarde» queda "
-                          "incompleta.")
+            avisos.append(
+                f"Falta la fecha de pago de la matrícula anterior en el {vacios:.0%} "
+                "de los estudiantes que no son nuevos: la señal «pagó tarde» queda "
+                "incompleta."
+            )
         elif not (con_historia == "tardio").any():
             afectadas.add("pago")
-            avisos.append("Ningún estudiante figura con pago tardío de la matrícula anterior. "
-                          "En los años revisados siempre hubo casos: verifique las fechas de "
-                          "pago del ciclo anterior.")
+            avisos.append(
+                "Ningún estudiante figura con pago tardío de la matrícula anterior. "
+                "En los años revisados siempre hubo casos: verifique las fechas de "
+                "pago del ciclo anterior."
+            )
     atrasos = pd.to_numeric(poblacion["atrasos_pension"], errors="coerce")
     if float(atrasos.isna().mean()) > max_vacios:
         afectadas.add("atrasos")
-        avisos.append(f"La columna de pensiones pagadas tarde está vacía en el "
-                      f"{atrasos.isna().mean():.0%} de las filas.")
+        avisos.append(
+            f"La columna de pensiones pagadas tarde está vacía en el "
+            f"{atrasos.isna().mean():.0%} de las filas."
+        )
     elif atrasos.notna().any() and float(atrasos.fillna(0).max()) == 0:
         afectadas.add("atrasos")
-        avisos.append("La columna de pensiones pagadas tarde llegó toda en cero. Verifique que "
-                      "LEMAS la haya calculado (mayo a enero del ciclo).")
+        avisos.append(
+            "La columna de pensiones pagadas tarde llegó toda en cero. Verifique que "
+            "LEMAS la haya calculado (mayo a enero del ciclo)."
+        )
     if "tipo_reserva" in poblacion:
         tipo = poblacion["tipo_reserva"]
         if float(tipo.isna().mean()) > max_vacios:
             afectadas.add("reserva")
-            avisos.append(f"El tipo de reserva está vacío en el {tipo.isna().mean():.0%} de "
-                          "las filas: esas reservas se leen como ordinarias.")
+            avisos.append(
+                f"El tipo de reserva está vacío en el {tipo.isna().mean():.0%} de "
+                "las filas: esas reservas se leen como ordinarias."
+            )
     if not afectadas:
         return {"nivel": "ok", "avisos": []}
     log.warning("Calidad de señales: %d señal(es) afectada(s)", len(afectadas))
     if len(afectadas) >= 2:
-        avisos.append("Con dos o más señales vacías o constantes la lista se acerca a una "
-                      "selección al azar. Corrija el Excel y vuelva a generarla antes de usarla.")
+        avisos.append(
+            "Con dos o más señales vacías o constantes la lista se acerca a una "
+            "selección al azar. Corrija el Excel y vuelva a generarla antes de usarla."
+        )
         return {"nivel": "grave", "avisos": avisos}
-    avisos.append("Con una sola señal afectada la lista sigue ordenando casi igual, porque las "
-                  "otras dos la compensan; aun así, corrija el Excel cuando pueda.")
+    avisos.append(
+        "Con una sola señal afectada la lista sigue ordenando casi igual, porque las "
+        "otras dos la compensan; aun así, corrija el Excel cuando pueda."
+    )
     return {"nivel": "advertencia", "avisos": avisos}
 
 
@@ -269,8 +335,9 @@ def _motivo(fila: pd.Series) -> str:
     atrasos = fila.get("atrasos_pension")
     if pd.notna(atrasos) and atrasos > 0:
         cantidad = int(atrasos)
-        partes.append("1 pensión pagada tarde" if cantidad == 1
-                      else f"{cantidad} pensiones pagadas tarde")
+        partes.append(
+            "1 pensión pagada tarde" if cantidad == 1 else f"{cantidad} pensiones pagadas tarde"
+        )
     return "; ".join(partes) if partes else "sin señales administrativas"
 
 
@@ -283,13 +350,20 @@ def lista_contactos(puntuados: pd.DataFrame, k_por_sede: dict, semilla: int = 42
     junto a una familia puede leerse como un juicio. Las familias se ordenan antes por su
     seudónimo, para que la lista no dependa del orden de las filas del archivo.
     """
-    datos = puntuados.sort_values(["prioridad_d2", "id_estudiante"], ascending=[False, True],
-                                  kind="stable")
-    familias = datos.groupby("id_familia", sort=False).agg(
-        sede=("sede", "first"), prioridad_d2=("prioridad_d2", "max"),
-        estudiantes=("id_estudiante", "size"),
-        estudiantes_ids=("id_estudiante", lambda s: ", ".join(map(str, s))),
-        motivo=("motivo", "first")).reset_index()
+    datos = puntuados.sort_values(
+        ["prioridad_d2", "id_estudiante"], ascending=[False, True], kind="stable"
+    )
+    familias = (
+        datos.groupby("id_familia", sort=False)
+        .agg(
+            sede=("sede", "first"),
+            prioridad_d2=("prioridad_d2", "max"),
+            estudiantes=("id_estudiante", "size"),
+            estudiantes_ids=("id_estudiante", lambda s: ", ".join(map(str, s))),
+            motivo=("motivo", "first"),
+        )
+        .reset_index()
+    )
     familias = familias.sort_values("id_familia", kind="stable")
     filas = []
     for sede, grupo in familias.groupby("sede"):
@@ -303,9 +377,15 @@ def lista_contactos(puntuados: pd.DataFrame, k_por_sede: dict, semilla: int = 42
     return pd.concat(filas, ignore_index=True)
 
 
-def seguimiento_al_corte(base_limpia: pd.DataFrame, puntuados: pd.DataFrame, anio_origen: int,
-                         fecha_corte, k_por_sede: dict, config: dict,
-                         semilla: int = 42) -> tuple[pd.DataFrame, dict]:
+def seguimiento_al_corte(
+    base_limpia: pd.DataFrame,
+    puntuados: pd.DataFrame,
+    anio_origen: int,
+    fecha_corte,
+    k_por_sede: dict,
+    config: dict,
+    semilla: int = 42,
+) -> tuple[pd.DataFrame, dict]:
     """Segunda etapa de la campaña (D51): familias que siguen sin pagar a una fecha de corte.
 
     Es un **listado**, no una predicción: toma la población del 20 de febrero y deja a las
@@ -320,18 +400,21 @@ def seguimiento_al_corte(base_limpia: pd.DataFrame, puntuados: pd.DataFrame, ani
     lista entregada ese día si se usa la misma k y los datos de origen no cambiaron.
     """
     calendario = config["calendario"]
-    t0 = pd.Timestamp(year=anio_origen + 1, month=calendario["t0_mes_dia"][0],
-                      day=calendario["t0_mes_dia"][1])
-    cierre = pd.Timestamp(year=anio_origen + 1, month=calendario["h_mes_dia"][0],
-                          day=calendario["h_mes_dia"][1])
+    t0 = pd.Timestamp(
+        year=anio_origen + 1, month=calendario["t0_mes_dia"][0], day=calendario["t0_mes_dia"][1]
+    )
+    cierre = pd.Timestamp(
+        year=anio_origen + 1, month=calendario["h_mes_dia"][0], day=calendario["h_mes_dia"][1]
+    )
     corte = pd.Timestamp(fecha_corte).normalize()
     if not t0 <= corte <= cierre:
         raise ErrorEntrada(
-            f"La fecha de corte debe estar entre el {t0:%d-%m-%Y} y el {cierre:%d-%m-%Y}.")
+            f"La fecha de corte debe estar entre el {t0:%d-%m-%Y} y el {cierre:%d-%m-%Y}."
+        )
 
     destino = base_limpia[base_limpia["anio_origen"] == anio_origen + 1]
     pagos = destino.set_index("id_estudiante")["fecha_pago"]
-    if destino.empty:       # aún no existe la hoja del ciclo siguiente: nadie ha pagado
+    if destino.empty:  # aún no existe la hoja del ciclo siguiente: nadie ha pagado
         fecha_pago = pd.Series(pd.NaT, index=puntuados.index, dtype="datetime64[ns]")
     else:
         fecha_pago = puntuados["id_estudiante"].map(pagos)
@@ -339,14 +422,16 @@ def seguimiento_al_corte(base_limpia: pd.DataFrame, puntuados: pd.DataFrame, ani
     sin_pagar = puntuados[pendiente]
 
     todas = {str(sede): len(puntuados) for sede in puntuados["sede"].unique()}
-    orden = lista_contactos(puntuados, todas, semilla)      # todas las familias, en orden D2
+    orden = lista_contactos(puntuados, todas, semilla)  # todas las familias, en orden D2
     por_familia = sin_pagar.sort_values("id_estudiante").groupby("id_familia")["id_estudiante"]
     orden["en_lista_inicial"] = orden["puesto"] <= orden["sede"].map(
-        lambda sede: int(k_por_sede.get(str(sede), 0)))
+        lambda sede: int(k_por_sede.get(str(sede), 0))
+    )
     lista = orden[orden["id_familia"].isin(sin_pagar["id_familia"])].copy()
     lista["estudiantes"] = lista["id_familia"].map(por_familia.size())
     lista["estudiantes_ids"] = lista["id_familia"].map(
-        por_familia.agg(lambda ids: ", ".join(map(str, ids))))
+        por_familia.agg(lambda ids: ", ".join(map(str, ids)))
+    )
     lista = lista.rename(columns={"puesto": "puesto_inicial"})
     lista.insert(0, "puesto", lista.groupby("sede").cumcount() + 1)
 
@@ -361,8 +446,9 @@ def seguimiento_al_corte(base_limpia: pd.DataFrame, puntuados: pd.DataFrame, ani
         "pendientes_fuera_de_lista_inicial": int((~lista["en_lista_inicial"]).sum()),
         "pagos_desde_t0": int(len(en_ventana)),
         "pendientes_sin_representante": int(sin_pagar["id_familia"].isna().sum()),
-        "ultimo_pago_registrado": (None if pagos.dropna().empty
-                                   else pagos.max().date().isoformat()),
+        "ultimo_pago_registrado": (
+            None if pagos.dropna().empty else pagos.max().date().isoformat()
+        ),
     }
     return lista.reset_index(drop=True), resumen
 
@@ -371,7 +457,8 @@ def proyeccion_actual(puntuados: pd.DataFrame, tasa_historica: float) -> pd.Data
     """Matrículas esperadas del ciclo siguiente por sede y subnivel (modelo y B1)."""
     tabla = puntuados.groupby(["sede", "subnivel"]).agg(
         elegibles=("prob_no_matricula", "size"),
-        esperadas_modelo=("prob_no_matricula", lambda p: float((1 - p).sum())))
+        esperadas_modelo=("prob_no_matricula", lambda p: float((1 - p).sum())),
+    )
     tabla["esperadas_B1"] = tabla["elegibles"] * (1 - tasa_historica)
     return tabla.round(1).reset_index()
 
@@ -383,10 +470,16 @@ def estimar_estudiante(valores: dict, sistema: Sistema) -> dict:
         fila[col] = fila.get(col, pd.Series([np.nan]))
     prob = float(sistema.calibrado.predict_proba(construir_matriz_x(fila))[:, 1][0])
     d2 = float(puntajes_reglas(fila)[REGLA_PRIORIZACION][0])
-    nivel = ("Alta" if d2 >= 100 else "Media" if d2 >= 20 or valores["atrasos_pension"] >= 3
-             else "Baja")
-    return {"prob_no_matricula": prob, "prioridad_d2": d2, "nivel": nivel,
-            "motivo": _motivo(fila.iloc[0]), "tasa_historica": sistema.tasa_historica}
+    nivel = (
+        "Alta" if d2 >= 100 else "Media" if d2 >= 20 or valores["atrasos_pension"] >= 3 else "Baja"
+    )
+    return {
+        "prob_no_matricula": prob,
+        "prioridad_d2": d2,
+        "nivel": nivel,
+        "motivo": _motivo(fila.iloc[0]),
+        "tasa_historica": sistema.tasa_historica,
+    }
 
 
 def preparar_base(df: pd.DataFrame, config: dict) -> pd.DataFrame:

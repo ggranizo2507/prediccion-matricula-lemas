@@ -32,15 +32,14 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
 log = logging.getLogger("perfil")
 warnings.filterwarnings("ignore", message="Could not infer format")
 
-MIN_CELDA = 5            # umbral de supresión de celdas pequeñas
-MAX_CATEGORIAS = 100     # más categorías que esto se trata como texto libre
-UMBRAL_ID = 0.9          # proporción de valores únicos para considerar identificador
+MIN_CELDA = 5  # umbral de supresión de celdas pequeñas
+MAX_CATEGORIAS = 100  # más categorías que esto se trata como texto libre
+UMBRAL_ID = 0.9  # proporción de valores únicos para considerar identificador
 
 
 def _suprimir(conteos: pd.Series) -> dict:
     """Convierte conteos en dict y reemplaza celdas pequeñas por '<5'."""
-    return {str(k): (int(v) if v >= MIN_CELDA else f"<{MIN_CELDA}")
-            for k, v in conteos.items()}
+    return {str(k): (int(v) if v >= MIN_CELDA else f"<{MIN_CELDA}") for k, v in conteos.items()}
 
 
 def _es_fecha(serie: pd.Series) -> bool:
@@ -61,12 +60,15 @@ def perfilar_columna(serie: pd.Series, cohortes: pd.Series | None) -> dict:
         "pct_nulos": round(100 * (1 - len(no_nulos) / n), 2) if n else None,
         "n_unicos": int(no_nulos.nunique()),
     }
-    if len(no_nulos) and no_nulos.nunique() / len(no_nulos) > UMBRAL_ID \
-            and not pd.api.types.is_numeric_dtype(serie):
+    if (
+        len(no_nulos)
+        and no_nulos.nunique() / len(no_nulos) > UMBRAL_ID
+        and not pd.api.types.is_numeric_dtype(serie)
+    ):
         info["tipo"] = "identificador"
         info["ejemplo_formato"] = "".join(
-            "9" if c.isdigit() else "A" if c.isalpha() else c
-            for c in str(no_nulos.iloc[0]))
+            "9" if c.isdigit() else "A" if c.isalpha() else c for c in str(no_nulos.iloc[0])
+        )
         return info
 
     if _es_fecha(serie):
@@ -89,8 +91,10 @@ def perfilar_columna(serie: pd.Series, cohortes: pd.Series | None) -> dict:
     if numerica.notna().sum() >= 0.95 * len(no_nulos) and no_nulos.nunique() > MAX_CATEGORIAS:
         v = numerica.dropna()
         info["tipo"] = "numerica"
-        info["percentiles"] = {f"p{int(q*100)}": round(float(v.quantile(q)), 3)
-                               for q in (0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99)}
+        info["percentiles"] = {
+            f"p{int(q * 100)}": round(float(v.quantile(q)), 3)
+            for q in (0.01, 0.05, 0.25, 0.5, 0.75, 0.95, 0.99)
+        }
         info["media"] = round(float(v.mean()), 3)
         info["desv"] = round(float(v.std()), 3)
         return info
@@ -104,8 +108,13 @@ def perfilar_columna(serie: pd.Series, cohortes: pd.Series | None) -> dict:
     return info
 
 
-def perfilar(df: pd.DataFrame, col_cohorte: str | None, col_objetivo: str | None,
-             agrupar: list[str], col_familia: str | None = None) -> dict:
+def perfilar(
+    df: pd.DataFrame,
+    col_cohorte: str | None,
+    col_objetivo: str | None,
+    agrupar: list[str],
+    col_familia: str | None = None,
+) -> dict:
     cohortes = df[col_cohorte].astype(str) if col_cohorte else None
     perfil = {
         "filas": int(len(df)),
@@ -120,11 +129,17 @@ def perfilar(df: pd.DataFrame, col_cohorte: str | None, col_objetivo: str | None
         claves = [col_cohorte, col_familia] if col_cohorte else [col_familia]
         tamanos = df.groupby(claves).size()
         tamanos = tamanos.clip(upper=4)
-        dist = (tamanos.groupby(level=0).value_counts().sort_index()
-                if col_cohorte else tamanos.value_counts().sort_index())
+        dist = (
+            tamanos.groupby(level=0).value_counts().sort_index()
+            if col_cohorte
+            else tamanos.value_counts().sort_index()
+        )
         perfil["estudiantes_por_familia"] = {
-            " | ".join(map(str, k if isinstance(k, tuple) else (k,))).replace("| 4", "| 4+"):
-                (int(v) if v >= MIN_CELDA else f"<{MIN_CELDA}") for k, v in dist.items()}
+            " | ".join(map(str, k if isinstance(k, tuple) else (k,))).replace("| 4", "| 4+"): (
+                int(v) if v >= MIN_CELDA else f"<{MIN_CELDA}"
+            )
+            for k, v in dist.items()
+        }
     if col_cohorte and col_objetivo:
         y = pd.to_numeric(df[col_objetivo], errors="coerce")
         tasas = {}
@@ -132,9 +147,11 @@ def perfilar(df: pd.DataFrame, col_cohorte: str | None, col_objetivo: str | None
             tabla = y.groupby([df[d].astype(str) for d in dims]).agg(["count", "mean"])
             clave_tabla = " x ".join(dims)
             tasas[clave_tabla] = {
-                " | ".join(map(str, k if isinstance(k, tuple) else (k,))):
-                    ({"n": int(r["count"]), "tasa": round(float(r["mean"]), 3)}
-                     if r["count"] >= MIN_CELDA else f"<{MIN_CELDA}")
+                " | ".join(map(str, k if isinstance(k, tuple) else (k,))): (
+                    {"n": int(r["count"]), "tasa": round(float(r["mean"]), 3)}
+                    if r["count"] >= MIN_CELDA
+                    else f"<{MIN_CELDA}"
+                )
                 for k, r in tabla.iterrows()
             }
         perfil["tasas_objetivo"] = tasas
@@ -142,8 +159,9 @@ def perfilar(df: pd.DataFrame, col_cohorte: str | None, col_objetivo: str | None
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--entrada", required=True)
     parser.add_argument("--salida", required=True)
     parser.add_argument("--col-cohorte")
@@ -155,20 +173,24 @@ def main(argv: list[str] | None = None) -> int:
 
     ruta = Path(args.entrada)
     try:
-        df = (pd.read_excel(ruta, sheet_name=args.hoja, dtype=str)
-              if ruta.suffix.lower() in {".xlsx", ".xls"} else pd.read_csv(ruta, dtype=str))
-        faltan = [c for c in [args.col_cohorte, args.col_objetivo, *args.agrupar]
-                  if c and c not in df.columns]
+        df = (
+            pd.read_excel(ruta, sheet_name=args.hoja, dtype=str)
+            if ruta.suffix.lower() in {".xlsx", ".xls"}
+            else pd.read_csv(ruta, dtype=str)
+        )
+        faltan = [
+            c
+            for c in [args.col_cohorte, args.col_objetivo, *args.agrupar]
+            if c and c not in df.columns
+        ]
         if faltan:
             raise KeyError(f"Columnas inexistentes: {faltan}")
-        perfil = perfilar(df, args.col_cohorte, args.col_objetivo, args.agrupar,
-                          args.col_familia)
+        perfil = perfilar(df, args.col_cohorte, args.col_objetivo, args.agrupar, args.col_familia)
     except (OSError, ValueError, KeyError) as exc:
         log.error("%s", exc)
         return 1
 
-    Path(args.salida).write_text(json.dumps(perfil, indent=2, ensure_ascii=False),
-                                 encoding="utf-8")
+    Path(args.salida).write_text(json.dumps(perfil, indent=2, ensure_ascii=False), encoding="utf-8")
     log.info("Perfil guardado en %s. Revíselo antes de compartirlo.", args.salida)
     return 0
 

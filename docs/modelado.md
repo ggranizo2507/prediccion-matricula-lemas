@@ -22,6 +22,8 @@ Por qué validación temporal y no validación cruzada aleatoria, y qué técnic
 - Gradient boosting con monotonía creciente en atrasos.
 - Logística híbrida: señales de D2 más variables académicas. Se registró como **intento único** (D39) antes de verla en C4.
 
+**Selección adaptativa (declarada en la revisión final, D60).** La logística híbrida se diseñó **después** de conocer los resultados en C4 de la regresión logística (1,40) y del gradient boosting (1,06). Aunque su propio resultado en C4 no se miró antes de registrarla, su diseño sí aprovechó lo aprendido en C4: es una segunda mirada a la cohorte de selección. Por eso su 1,53 en C4 es algo optimista, y la única evaluación independiente de todos los candidatos es la prueba única en C5, donde la híbrida obtuvo 0,98. La regla de no probar más variantes (D39) limitó el efecto: hubo un solo intento adicional.
+
 ## 2. Selección en C4
 
 | Candidato | Precision@k | Lift@k | Recall@k | PR-AUC | ROC-AUC |
@@ -40,6 +42,15 @@ Por qué validación temporal y no validación cruzada aleatoria, y qué técnic
 | Gradient boosting | 0,245 | 0,103 | 0,141 | **Sobreajuste**: aprende particularidades de C2–C3 |
 | Logística híbrida | 0,126 | 0,125 | 0,000 | Límite de señal: estable; con más capacidad (interacciones) solo memoriza (D54) |
 
+### 2.1 Eventos por variable (EPV)
+El umbral registrado en la Fase 1 era de al menos 10 eventos por columna del modelo lineal (D18). Con C2 + C3 hay 193 eventos y el conjunto completo de variables genera 31 columnas tras la codificación: **EPV ≈ 6,2, por debajo del umbral**. El cuaderno 01 lo marcó como advertencia («preferir modelos regularizados y simples»), y el equipo no detuvo el modelado por tres razones, que hasta esta revisión no estaban escritas (D60):
+
+- **El umbral se aplicó como advertencia y no como prohibición.** Se respondió con regularización (elastic-net, cuya fuerza ajustó Optuna), con la opción de un conjunto reducido sin `curso` (unas 17 columnas, EPV ≈ 11) dentro de la búsqueda y con árboles poco profundos y hojas grandes.
+- **El modelo que se conservó cumple el umbral.** La logística híbrida usa 13 columnas (EPV ≈ 15).
+- **La regla D2 no se estima.** No tiene coeficientes, así que el EPV no la afecta.
+
+El resultado confirma la advertencia: el modelo con más columnas (gradient boosting) se sobreajustó y ninguno superó a la regla. Con un EPV bajo, lo prudente habría sido empezar por un modelo de pocas variables; queda como lección para la cohorte de 2027.
+
 **Decisión (D40):** ningún modelo supera a D2, así que **la priorización final es la regla D2**. La logística híbrida calibrada se conserva para las probabilidades y la proyección.
 
 ## 3. Prueba final en C5 (una sola vez)
@@ -52,6 +63,7 @@ Por qué validación temporal y no validación cruzada aleatoria, y qué técnic
 | A · selección al azar de k familias | 0,073 | 1,08 | 0,16 | 0,074 |
 
 - **D2 se confirma en una cohorte que no intervino en su elección ni en ningún ajuste.** Contactando al 15 % de los representantes se llega al **30 % de las familias que no pagan la matrícula en plazo**, casi el doble que al azar. Los empates dentro de un mismo puntaje se resolvieron al azar con semilla fija; la aplicación usa el mismo desempate (D48). El IC de Lift@k no incluye el 1. Dos matices: el orden de las señales de D2 se tomó del análisis exploratorio, que usó las cinco cohortes, y el IC no compara D2 con D (sus intervalos se solapan). Ambos se revisan en la sección 9.
+- **Carga operativa:** con la lista se necesitan **7,5 llamadas por cada familia en riesgo encontrada** (165 llamadas, 22 casos), frente a unas **15 al azar** (1 / 6,8 %). Es la mitad del esfuerzo por caso (`results/metrics/incertidumbre_real.json`, D60).
 - **La logística híbrida no supera al azar en C5.** Esto confirma que la decisión tomada en C4 fue correcta.
 
 **Calibración (Brier por estudiante en C5; menor es mejor):**
@@ -108,7 +120,7 @@ El MAPE se calcula sobre los ocho grupos de sede y subnivel. Esa tabla no se pub
 
 Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además para que la de Bachillerato no pueda deducirse por diferencia (D48).
 
-- **Recall menor en familias becadas** (18 % frente a 32 %). Solo hay 11 eventos, así que la diferencia es incierta. Aun así, se recomienda que Secretaría revise también a las familias becadas con atrasos.
+- **Recall menor en familias becadas** (18 % [IC 95 % Wilson: 5 %; 48 %] frente a 32 % [22 %; 44 %]; prueba exacta de Fisher p = 0,49). Con 11 eventos la diferencia no es demostrable ni descartable: se mantiene como alerta y se recomienda que Secretaría revise también a las familias becadas con atrasos. Intervalos y pruebas de los demás grupos en [consideraciones_eticas.md, sección 5](consideraciones_eticas.md#5-equidad) (D60).
 - **Diferencia entre sedes:** se explica porque k es menor en Mucho Lote 2 (47), proporcional a su historial.
 - **Representante con cédula genérica:** no aparece en C5, así que la equidad de ese grupo no se pudo evaluar.
 
@@ -117,7 +129,7 @@ Las celdas con menos de 5 casos no se muestran; la de Inicial se oculta además 
 En C5 la lista encontró 22 de las 74 familias que no pagaron en plazo (30 %). Tenía 165 cupos, más que casos, así que el 70 % restante es un límite de señal y no de capacidad. El análisis de ese límite está en [alcance_lista.md](alcance_lista.md); es descriptivo, usa C2 a C4, no toca C5 y no cambia la regla. Lo principal:
 
 - La regla añade entre 9 y 12 puntos de recall sobre el azar con cualquier tamaño de lista. Su Lift fue 1,38 en C2, 1,49 en C3 y 1,93 en C4.
-- En C4 el resultado depende del sorteo entre familias empatadas: el Lift va de 1,53 a 1,99, con una media de 1,75. El 1,93 con el que se eligió la regla está en la parte alta; la media sigue por encima del 1,53 de la logística híbrida. En adelante conviene informar el promedio de varios sorteos.
+- En C4 el resultado depende del sorteo entre familias empatadas: el Lift va de 1,53 a 1,99, con una media de 1,75, en cien sorteos; con 500 sorteos va de 1,40 a 2,06, con media 1,77 (sección 9.2). El 1,93 con el que se eligió la regla está en la parte alta; la media sigue por encima del 1,53 de la logística híbrida. En adelante conviene informar el promedio de varios sorteos.
 - El 86 % de los casos son familias que no registran ningún pago en el ciclo siguiente; solo el 5 % paga todo después del 30 de abril. La lista encuentra al 24 % de las primeras y al 43 % del resto.
 - El 77 % de las familias paga en las primeras cuatro semanas. Hacia el día 35 quedan unas 200 pendientes por año y el 44 % son casos.
 - Desde la cuarta semana la regla no ordena mejor que el azar entre las familias que siguen sin pagar.
@@ -127,7 +139,7 @@ De ahí sale la propuesta de una campaña en dos etapas para 2027: la lista D2 e
 ## 8. Conclusión de la Fase 2
 
 1. **Resultado principal:** una regla de priorización derivada del análisis de datos (D2) duplica la efectividad del contacto frente al azar. Se validó en C5, sin ajustar nada, con IC 95 %, y cumple las metas técnicas del Canvas. Sus límites (el diseño vio todas las cohortes; D2 frente a D no está demostrado) se discuten en la sección 9.
-2. **Resultado de los modelos:** con alrededor de 200 eventos de entrenamiento y señales débiles, los modelos de aprendizaje automático no superan a la regla. Es un resultado válido y previsto en el v5: la IA sirvió para descubrir, validar y cuantificar la regla, y para medir la incertidumbre de forma honesta.
+2. **Resultado de los modelos:** con alrededor de 200 eventos de entrenamiento y señales débiles, los modelos de aprendizaje automático no superan a la regla. Es un resultado válido y previsto en el v5: la regla salió del análisis exploratorio, y el aprendizaje automático sirvió para comprobar que no había más señal que aprovechar y para medir la incertidumbre de forma honesta.
 3. **Para la app (Fase 3):** se usa D2 para la lista de contactos. Las probabilidades individuales se presentan como "tasa histórica ajustada", sin afirmar más precisión de la que tienen, y la proyección por sede y subnivel se acompaña de B1.
 
 ## 9. Comprobaciones de la revisión final (D59)
@@ -154,7 +166,7 @@ Las tasas por señal del cuaderno 01 (figuras 3 a 6 de [analisis_datos.md](anali
 - Por cohorte solo se publica el riesgo relativo: con los conteos por cohorte y los del grupo se podría deducir, por diferencia, la celda suprimida de C3 (`results/metrics/revision_senales_real.csv`).
 
 ### 9.2 El sorteo de desempate
-Muchas familias empatan en el puntaje de D2. En C4 el Lift@k variaba de 1,53 a 1,99 según el sorteo, con media 1,75 (sección 7); el 1,93 con el que se eligió D2 está en la parte alta. El cuaderno 08 mide la distribución con 500 sorteos.
+Muchas familias empatan en el puntaje de D2. En C4 el Lift@k variaba de 1,53 a 1,99 según el sorteo, con media 1,75 en cien sorteos (sección 7); el 1,93 con el que se eligió D2 está en la parte alta. El cuaderno 08 mide la distribución con 500 sorteos.
 
 El IC de C5 (1,24 a 2,56) ya incluye buena parte de esa variación: en cada remuestra del bootstrap las familias cambian de orden y los empates se resuelven de nuevo. El 1,97 puntual, en cambio, es el de un solo sorteo. No se sabe en qué posición quedó el sorteo de C5. Si hubiera sido tan favorable como el de C4 (unos 0,16 puntos sobre la media), el Lift@k medio de C5 rondaría 1,8: menos que el 1,97 publicado, pero todavía muy por encima de la meta de 1,20.
 

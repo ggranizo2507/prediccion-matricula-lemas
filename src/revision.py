@@ -28,16 +28,26 @@ import pandas as pd
 from src.evaluate import consolidar_familias, precision_at_k_familiar
 from src.reglas import PESOS_D2, senales
 
-__all__ = ["NOMBRES_SENALES", "senales_por_periodo", "orden_senales", "para_publicar",
-           "sorteos_desempate",
-           "resumen_sorteos", "diferencia_pareada", "azar_dos_versiones", "descriptivos",
-           "conclusiones"]
+__all__ = [
+    "NOMBRES_SENALES",
+    "senales_por_periodo",
+    "orden_senales",
+    "para_publicar",
+    "sorteos_desempate",
+    "resumen_sorteos",
+    "diferencia_pareada",
+    "azar_dos_versiones",
+    "descriptivos",
+    "conclusiones",
+]
 
 log = logging.getLogger("lemas.revision")
 
-NOMBRES_SENALES = {"pago_tardio": "pago tardío de la matrícula anterior",
-                   "reserva_extraordinaria": "reserva extraordinaria",
-                   "atrasos_pension": "al menos una pensión pagada tarde"}
+NOMBRES_SENALES = {
+    "pago_tardio": "pago tardío de la matrícula anterior",
+    "reserva_extraordinaria": "reserva extraordinaria",
+    "atrasos_pension": "al menos una pensión pagada tarde",
+}
 TRAMOS_ATRASOS = [(0, 0, "0"), (1, 2, "1-2"), (3, 5, "3-5"), (6, 99, "6 o más")]
 NUMERICAS = ["promedio", "conducta", "anios_permanencia", "atrasos_pension", "hermanos_lemas"]
 
@@ -45,19 +55,32 @@ NUMERICAS = ["promedio", "conducta", "anios_permanencia", "atrasos_pension", "he
 # --------------------------------------------------------------------------- #
 # 1. Descubrimiento de D2 con C1–C3
 # --------------------------------------------------------------------------- #
-def _fila(periodo: str, senal: str, nivel: str, mascara: np.ndarray, y: np.ndarray,
-          referencia: float, min_celda: int) -> dict:
+def _fila(
+    periodo: str,
+    senal: str,
+    nivel: str,
+    mascara: np.ndarray,
+    y: np.ndarray,
+    referencia: float,
+    min_celda: int,
+) -> dict:
     estudiantes, eventos = int(mascara.sum()), int(y[mascara].sum())
     tasa = eventos / estudiantes if estudiantes else np.nan
     visible = estudiantes >= min_celda and eventos >= min_celda
-    return {"periodo": periodo, "senal": senal, "nivel": nivel,
-            "estudiantes": estudiantes, "eventos": eventos if visible else np.nan,
-            "tasa": round(tasa, 4) if visible else np.nan,
-            "riesgo_relativo": round(tasa / referencia, 2) if visible and referencia else np.nan}
+    return {
+        "periodo": periodo,
+        "senal": senal,
+        "nivel": nivel,
+        "estudiantes": estudiantes,
+        "eventos": eventos if visible else np.nan,
+        "tasa": round(tasa, 4) if visible else np.nan,
+        "riesgo_relativo": round(tasa / referencia, 2) if visible and referencia else np.nan,
+    }
 
 
-def senales_por_periodo(dataset: pd.DataFrame, periodos: dict[str, list[str]],
-                        min_celda: int = 5) -> pd.DataFrame:
+def senales_por_periodo(
+    dataset: pd.DataFrame, periodos: dict[str, list[str]], min_celda: int = 5
+) -> pd.DataFrame:
     """Tasa de no matrícula por señal de D2, para cada periodo (lista de cohortes).
 
     El riesgo relativo compara cada nivel con el nivel sin la señal (0 atrasos, pago en
@@ -80,8 +103,7 @@ def senales_por_periodo(dataset: pd.DataFrame, periodos: dict[str, list[str]],
         for bajo, alto, etiqueta in TRAMOS_ATRASOS:
             mascara = (atrasos >= bajo) & (atrasos <= alto)
             filas.append(_fila(periodo, "atrasos_pension", etiqueta, mascara, y, base, min_celda))
-        filas.append(_fila(periodo, "atrasos_pension", "1 o más", atrasos >= 1, y, base,
-                           min_celda))
+        filas.append(_fila(periodo, "atrasos_pension", "1 o más", atrasos >= 1, y, base, min_celda))
     return pd.DataFrame(filas)
 
 
@@ -101,11 +123,15 @@ def orden_senales(tabla: pd.DataFrame) -> pd.DataFrame:
         comparables = [s for s in esperado if not np.isnan(rr[s])]
         orden = sorted(comparables, key=lambda s: -rr[s])
         completo = len(comparables) == len(esperado)
-        filas.append({"periodo": periodo,
-                      **{f"rr_{s}": rr[s] for s in esperado},
-                      "orden": " > ".join(orden),
-                      # sin las tres señales (celdas suprimidas) no hay veredicto
-                      "igual_a_D2": (orden == esperado) if completo else None})
+        filas.append(
+            {
+                "periodo": periodo,
+                **{f"rr_{s}": rr[s] for s in esperado},
+                "orden": " > ".join(orden),
+                # sin las tres señales (celdas suprimidas) no hay veredicto
+                "igual_a_D2": (orden == esperado) if completo else None,
+            }
+        )
     return pd.DataFrame(filas)
 
 
@@ -118,12 +144,14 @@ def para_publicar(tabla: pd.DataFrame, agrupados: list[str]) -> pd.DataFrame:
     """
     salida = tabla.copy()
     detalle = ~salida["periodo"].isin(agrupados)
-    salida[["estudiantes", "eventos", "tasa"]] = salida[
-        ["estudiantes", "eventos", "tasa"]].astype(float)
+    salida[["estudiantes", "eventos", "tasa"]] = salida[["estudiantes", "eventos", "tasa"]].astype(
+        float
+    )
     salida.loc[detalle, ["estudiantes", "eventos", "tasa"]] = np.nan
     # Si un nivel se suprimió, se suprime el riesgo relativo de toda esa señal en el periodo
     suprimida = salida.groupby(["periodo", "senal"])["riesgo_relativo"].transform(
-        lambda v: v.isna().any())
+        lambda v: v.isna().any()
+    )
     salida.loc[detalle & suprimida, "riesgo_relativo"] = np.nan
     return salida
 
@@ -131,40 +159,62 @@ def para_publicar(tabla: pd.DataFrame, agrupados: list[str]) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # 2. Sorteo de desempate
 # --------------------------------------------------------------------------- #
-def sorteos_desempate(datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict,
-                      semillas: list[int] | range) -> pd.DataFrame:
+def sorteos_desempate(
+    datos: pd.DataFrame, riesgo: np.ndarray, k_por_sede: dict, semillas: list[int] | range
+) -> pd.DataFrame:
     """Lift@k, Recall@k y Precision@k con cada semilla de desempate."""
     familias = consolidar_familias(datos, riesgo)
     filas = []
     for semilla in semillas:
-        total = precision_at_k_familiar(familias, k_por_sede, int(semilla)).query(
-            "sede == 'TOTAL'").iloc[0]
-        filas.append({"semilla": int(semilla), "lift_k": float(total["lift_k"]),
-                      "recall_k": float(total["recall_k"]),
-                      "precision_k": float(total["precision_k"])})
+        total = (
+            precision_at_k_familiar(familias, k_por_sede, int(semilla))
+            .query("sede == 'TOTAL'")
+            .iloc[0]
+        )
+        filas.append(
+            {
+                "semilla": int(semilla),
+                "lift_k": float(total["lift_k"]),
+                "recall_k": float(total["recall_k"]),
+                "precision_k": float(total["precision_k"]),
+            }
+        )
     return pd.DataFrame(filas)
 
 
 def resumen_sorteos(sorteos: pd.DataFrame, semilla_oficial: int) -> dict:
     """Media, percentiles y posición del valor con la semilla oficial."""
     lift = sorteos["lift_k"].to_numpy()
-    oficial = float(sorteos.loc[sorteos["semilla"] == semilla_oficial, "lift_k"].iloc[0]) \
-        if (sorteos["semilla"] == semilla_oficial).any() else np.nan
-    return {"sorteos": len(lift), "lift_media": round(float(lift.mean()), 4),
-            "lift_p05": round(float(np.percentile(lift, 5)), 4),
-            "lift_p50": round(float(np.percentile(lift, 50)), 4),
-            "lift_p95": round(float(np.percentile(lift, 95)), 4),
-            "lift_min": round(float(lift.min()), 4), "lift_max": round(float(lift.max()), 4),
-            "lift_semilla_oficial": round(oficial, 4),
-            "percentil_semilla_oficial": round(float((lift < oficial).mean() * 100), 1),
-            "recall_media": round(float(sorteos["recall_k"].mean()), 4)}
+    oficial = (
+        float(sorteos.loc[sorteos["semilla"] == semilla_oficial, "lift_k"].iloc[0])
+        if (sorteos["semilla"] == semilla_oficial).any()
+        else np.nan
+    )
+    return {
+        "sorteos": len(lift),
+        "lift_media": round(float(lift.mean()), 4),
+        "lift_p05": round(float(np.percentile(lift, 5)), 4),
+        "lift_p50": round(float(np.percentile(lift, 50)), 4),
+        "lift_p95": round(float(np.percentile(lift, 95)), 4),
+        "lift_min": round(float(lift.min()), 4),
+        "lift_max": round(float(lift.max()), 4),
+        "lift_semilla_oficial": round(oficial, 4),
+        "percentil_semilla_oficial": round(float((lift < oficial).mean() * 100), 1),
+        "recall_media": round(float(sorteos["recall_k"].mean()), 4),
+    }
 
 
 # --------------------------------------------------------------------------- #
 # 3. Diferencia pareada
 # --------------------------------------------------------------------------- #
-def diferencia_pareada(datos: pd.DataFrame, riesgo_a: np.ndarray, riesgo_b: np.ndarray,
-                       k_por_sede: dict, semilla: int, repeticiones: int = 2000) -> dict:
+def diferencia_pareada(
+    datos: pd.DataFrame,
+    riesgo_a: np.ndarray,
+    riesgo_b: np.ndarray,
+    k_por_sede: dict,
+    semilla: int,
+    repeticiones: int = 2000,
+) -> dict:
     """IC 95 % del Lift@k de A, de B y de A − B sobre las mismas remuestras de representantes.
 
     En cada repetición se remuestrean representantes por sede (con reemplazo) y se usa un
@@ -180,29 +230,39 @@ def diferencia_pareada(datos: pd.DataFrame, riesgo_a: np.ndarray, riesgo_b: np.n
         indices = np.concatenate([rng.choice(g, size=len(g), replace=True) for g in grupos])
         for tabla, destino in ((fa, lifts_a), (fb, lifts_b)):
             muestra = tabla.iloc[indices].reset_index()
-            muestra["sede"] = sedes[indices]     # misma sede para A y B
+            muestra["sede"] = sedes[indices]  # misma sede para A y B
             muestra["id_familia"] = np.arange(len(muestra))
             total = precision_at_k_familiar(muestra, k_por_sede, semilla + i).query(
-                "sede == 'TOTAL'")
+                "sede == 'TOTAL'"
+            )
             destino.append(float(total["lift_k"].iloc[0]))
     a, b = np.array(lifts_a), np.array(lifts_b)
     d = a - b
 
     def ic(v):
-        return [round(float(np.nanpercentile(v, 2.5)), 4),
-                round(float(np.nanpercentile(v, 97.5)), 4)]
+        return [
+            round(float(np.nanpercentile(v, 2.5)), 4),
+            round(float(np.nanpercentile(v, 97.5)), 4),
+        ]
 
-    return {"repeticiones": repeticiones, "lift_a_media": round(float(np.nanmean(a)), 4),
-            "ic95_lift_a": ic(a), "lift_b_media": round(float(np.nanmean(b)), 4),
-            "ic95_lift_b": ic(b), "diferencia_media": round(float(np.nanmean(d)), 4),
-            "ic95_diferencia": ic(d), "prob_a_mejor": round(float(np.nanmean(d > 0)), 3)}
+    return {
+        "repeticiones": repeticiones,
+        "lift_a_media": round(float(np.nanmean(a)), 4),
+        "ic95_lift_a": ic(a),
+        "lift_b_media": round(float(np.nanmean(b)), 4),
+        "ic95_lift_b": ic(b),
+        "diferencia_media": round(float(np.nanmean(d)), 4),
+        "ic95_diferencia": ic(d),
+        "prob_a_mejor": round(float(np.nanmean(d > 0)), 3),
+    }
 
 
 # --------------------------------------------------------------------------- #
 # 4. Línea base del azar
 # --------------------------------------------------------------------------- #
-def azar_dos_versiones(datos: pd.DataFrame, k_por_sede: dict, semilla: int,
-                       repeticiones: int = 500) -> dict:
+def azar_dos_versiones(
+    datos: pd.DataFrame, k_por_sede: dict, semilla: int, repeticiones: int = 500
+) -> dict:
     """Lift@k medio del azar por estudiante (la referencia A publicada) y por familia.
 
     Por estudiante, una familia con más hijos tiene más números en el sorteo y más
@@ -214,24 +274,37 @@ def azar_dos_versiones(datos: pd.DataFrame, k_por_sede: dict, semilla: int,
     por_estudiante, por_familia = [], []
     for _ in range(repeticiones):
         familias = consolidar_familias(datos, rng.random(len(datos)))
-        por_estudiante.append(float(precision_at_k_familiar(familias, k_por_sede, semilla)
-                                    .query("sede == 'TOTAL'")["lift_k"].iloc[0]))
+        por_estudiante.append(
+            float(
+                precision_at_k_familiar(familias, k_por_sede, semilla)
+                .query("sede == 'TOTAL'")["lift_k"]
+                .iloc[0]
+            )
+        )
         uniforme = base.assign(score=rng.random(len(base)))
-        por_familia.append(float(precision_at_k_familiar(uniforme, k_por_sede, semilla)
-                                 .query("sede == 'TOTAL'")["lift_k"].iloc[0]))
+        por_familia.append(
+            float(
+                precision_at_k_familiar(uniforme, k_por_sede, semilla)
+                .query("sede == 'TOTAL'")["lift_k"]
+                .iloc[0]
+            )
+        )
     con, sin = base[base["evento"] == 1], base[base["evento"] == 0]
-    return {"repeticiones": repeticiones,
-            "lift_azar_por_estudiante": round(float(np.mean(por_estudiante)), 4),
-            "lift_azar_por_familia": round(float(np.mean(por_familia)), 4),
-            "estudiantes_por_familia_con_caso": round(float(con["estudiantes"].mean()), 3),
-            "estudiantes_por_familia_sin_caso": round(float(sin["estudiantes"].mean()), 3)}
+    return {
+        "repeticiones": repeticiones,
+        "lift_azar_por_estudiante": round(float(np.mean(por_estudiante)), 4),
+        "lift_azar_por_familia": round(float(np.mean(por_familia)), 4),
+        "estudiantes_por_familia_con_caso": round(float(con["estudiantes"].mean()), 3),
+        "estudiantes_por_familia_sin_caso": round(float(sin["estudiantes"].mean()), 3),
+    }
 
 
 # --------------------------------------------------------------------------- #
 # 5. Estadísticos descriptivos
 # --------------------------------------------------------------------------- #
-def descriptivos(dataset: pd.DataFrame, columnas: list[str] | None = None,
-                 min_celda: int = 5) -> pd.DataFrame:
+def descriptivos(
+    dataset: pd.DataFrame, columnas: list[str] | None = None, min_celda: int = 5
+) -> pd.DataFrame:
     """Media, DE y percentiles (5, 25, 50, 75, 95) por cohorte y en total.
 
     Se informan los percentiles 5 y 95 en lugar del mínimo y el máximo, que serían valores
@@ -247,11 +320,20 @@ def descriptivos(dataset: pd.DataFrame, columnas: list[str] | None = None,
                 continue
             vacios = int(datos[col].isna().sum())
             # n = estudiantes del grupo (con y sin dato): así n no revela un vacío suprimido
-            filas.append({"cohorte": grupo, "variable": col, "n": len(datos),
-                          "vacios": f"<{min_celda}" if 0 < vacios < min_celda else vacios,
-                          "media": round(float(v.mean()), 2), "de": round(float(v.std()), 2),
-                          **{f"p{p:02d}": round(float(np.percentile(v, p)), 2)
-                             for p in (5, 25, 50, 75, 95)}})
+            filas.append(
+                {
+                    "cohorte": grupo,
+                    "variable": col,
+                    "n": len(datos),
+                    "vacios": f"<{min_celda}" if 0 < vacios < min_celda else vacios,
+                    "media": round(float(v.mean()), 2),
+                    "de": round(float(v.std()), 2),
+                    **{
+                        f"p{p:02d}": round(float(np.percentile(v, p)), 2)
+                        for p in (5, 25, 50, 75, 95)
+                    },
+                }
+            )
     return pd.DataFrame(filas)
 
 
@@ -262,35 +344,41 @@ def _n(valor: float, decimales: int = 2) -> str:
     return f"{valor:.{decimales}f}".replace(".", ",")
 
 
-def conclusiones(orden: pd.DataFrame, sorteos: dict, pareada: dict, azar: dict,
-                 cohorte: str = "C4") -> list[str]:
+def conclusiones(
+    orden: pd.DataFrame, sorteos: dict, pareada: dict, azar: dict, cohorte: str = "C4"
+) -> list[str]:
     """Frases en español con las cifras de cada comprobación."""
     textos = []
     for _, fila in orden.iterrows():
         if fila["igual_a_D2"] is None or pd.isna(fila["igual_a_D2"]):
-            textos.append(f"Con {fila['periodo']} no se pueden comparar las tres señales: alguna "
-                          "tiene menos casos que el mínimo publicable.")
+            textos.append(
+                f"Con {fila['periodo']} no se pueden comparar las tres señales: alguna "
+                "tiene menos casos que el mínimo publicable."
+            )
             continue
         nombres = " > ".join(NOMBRES_SENALES[s] for s in fila["orden"].split(" > "))
-        veredicto = ("el mismo orden de D2" if fila["igual_a_D2"]
-                     else "un orden distinto al de D2")
-        textos.append(f"Con {fila['periodo']}, las señales se ordenan así por riesgo relativo: "
-                      f"{nombres}; es {veredicto}.")
+        veredicto = "el mismo orden de D2" if fila["igual_a_D2"] else "un orden distinto al de D2"
+        textos.append(
+            f"Con {fila['periodo']}, las señales se ordenan así por riesgo relativo: "
+            f"{nombres}; es {veredicto}."
+        )
     textos.append(
         f"En {cohorte}, con {sorteos['sorteos']} sorteos de desempate, el Lift@k de D2 tiene "
         f"media {_n(sorteos['lift_media'])} (percentiles 5 y 95: {_n(sorteos['lift_p05'])} y "
         f"{_n(sorteos['lift_p95'])}); la semilla oficial da {_n(sorteos['lift_semilla_oficial'])}"
-        f", más que el {_n(sorteos['percentil_semilla_oficial'], 0)} % de los sorteos.")
+        f", más que el {_n(sorteos['percentil_semilla_oficial'], 0)} % de los sorteos."
+    )
     bajo, alto = pareada["ic95_diferencia"]
-    signo = ("D2 es mejor que D" if bajo > 0 else
-             "no se puede afirmar que D2 sea mejor que D")
+    signo = "D2 es mejor que D" if bajo > 0 else "no se puede afirmar que D2 sea mejor que D"
     textos.append(
         f"En {cohorte}, la diferencia de Lift@k D2 − D es {_n(pareada['diferencia_media'])} "
         f"[IC 95 %: {_n(bajo)}; {_n(alto)}]; D2 supera a D en el "
-        f"{_n(100 * pareada['prob_a_mejor'], 0)} % de las remuestras: {signo}.")
+        f"{_n(100 * pareada['prob_a_mejor'], 0)} % de las remuestras: {signo}."
+    )
     textos.append(
         f"El azar por estudiante da un Lift@k medio de {_n(azar['lift_azar_por_estudiante'])} y "
         f"el azar por familia, {_n(azar['lift_azar_por_familia'])}. Las familias con caso tienen "
         f"{_n(azar['estudiantes_por_familia_con_caso'])} estudiantes en promedio, frente a "
-        f"{_n(azar['estudiantes_por_familia_sin_caso'])} las demás.")
+        f"{_n(azar['estudiantes_por_familia_sin_caso'])} las demás."
+    )
     return textos

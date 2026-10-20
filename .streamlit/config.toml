@@ -10,3 +10,6 @@ maxUploadSize = 20
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"   # oculta «Deploy» y las opciones de desarrollador

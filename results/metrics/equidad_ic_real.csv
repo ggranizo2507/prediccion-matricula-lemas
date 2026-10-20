@@ -1,0 +1,9 @@
+variable,grupo,familias,seleccionadas,pct_seleccion,eventos,hallados,recall,seleccion_ic_bajo,seleccion_ic_alto,recall_ic_bajo,recall_ic_alto
+sede,Mucho Lote 1,640,118,0.1844,44.0,14.0,0.3182,0.1562,0.2163,0.2,0.4656
+sede,Mucho Lote 2,453,47,0.1038,30.0,8.0,0.2667,0.0789,0.1352,0.1418,0.4445
+beca,0,930,148,0.1591,63.0,20.0,0.3175,0.137,0.184,0.2159,0.44
+beca,1,163,17,0.1043,11.0,2.0,0.1818,0.0661,0.1607,0.0514,0.477
+subnivel,Bachillerato,122,20,0.1639,,,,0.1087,0.2397,,
+subnivel,Educación General Básica,743,122,0.1642,55.0,15.0,0.2727,0.1393,0.1926,0.1728,0.4023
+subnivel,Inicial,115,10,0.087,,,,0.0479,0.1527,,
+subnivel,Preparatoria,113,13,0.115,12.0,5.0,0.4167,0.0685,0.1869,0.1933,0.6805

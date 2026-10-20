@@ -1,0 +1,30 @@
+{
+  "fuente": "sintetica",
+  "cohorte": "C5",
+  "regla": "D2 · señales administrativas",
+  "familias": 1088,
+  "familias_con_caso": 87,
+  "carga_operativa": {
+    "llamadas": 188,
+    "casos_hallados": 19,
+    "llamadas_por_caso_lista": 9.89,
+    "llamadas_por_caso_azar": 12.51
+  },
+  "supuestos_reserva": {
+    "tasa_sin_llamar": 0.1011,
+    "alfa": 0.05,
+    "potencia": 0.8,
+    "familias_por_campana": 188
+  },
+  "conclusiones": [
+    "beca = 1 frente a 0: Recall@k 29 % [8 %–64 %] frente a 30 % [21 %–41 %]; prueba exacta de Fisher p = 1,00. Razón de selección 1,00 [0,69–1,46], p = 1,000.",
+    "sede = Mucho Lote 2 frente a Mucho Lote 1: Recall@k 33 % [20 %–50 %] frente a 27 % [17 %–41 %]; prueba exacta de Fisher p = 0,64. Razón de selección 1,09 [0,84–1,43], p = 0,509.",
+    "subnivel = Bachillerato frente a Educación General Básica: Recall@k 10 % [2 %–40 %] frente a 35 % [23 %–49 %]; prueba exacta de Fisher p = 0,15. Razón de selección 0,54 [0,32–0,92], p = 0,014.",
+    "subnivel = Inicial frente a Educación General Básica: Recall@k 35 % [17 %–59 %] frente a 35 % [23 %–49 %]; prueba exacta de Fisher p = 1,00. Razón de selección 0,97 [0,67–1,40], p = 0,909.",
+    "subnivel = Preparatoria frente a Educación General Básica: Recall@k 18 % [5 %–48 %] frente a 35 % [23 %–49 %]; prueba exacta de Fisher p = 0,48. Razón de selección 0,77 [0,48–1,22], p = 0,301.",
+    "Carga operativa: 9,9 llamadas por familia en riesgo hallada con la lista, frente a 12,5 al azar.",
+    "Para detectar que la llamada reduce la no matrícula un 50 % (reservando la mitad de la lista sin llamar) se necesitan unas 860 familias, unas 4,6 campañas de la lista actual.",
+    "Para detectar que la llamada reduce la no matrícula un 25 % (reservando la mitad de la lista sin llamar) se necesitan unas 3.962 familias, unas 21,1 campañas de la lista actual.",
+    "Para detectar que la llamada reduce la no matrícula un 10 % (reservando la mitad de la lista sin llamar) se necesitan unas 26.666 familias, unas 141,8 campañas de la lista actual."
+  ]
+}

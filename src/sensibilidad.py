@@ -43,10 +43,13 @@ optuna.logging.set_verbosity(optuna.logging.WARNING)
 # Los mismos espacios con los que se optimizó: una sola definición, en config.yaml
 ESPACIOS: dict[str, dict] = {tipo: espacio_de(tipo) for tipo in ("logistica", "arboles", "hibrido")}
 PREFIJOS = {"Regresión": "logistica", "Gradient": "arboles", "Logística": "hibrido"}
-NOMBRES = {"logistica": "Regresión logística", "arboles": "Gradient boosting",
-           "hibrido": "Logística híbrida"}
+NOMBRES = {
+    "logistica": "Regresión logística",
+    "arboles": "Gradient boosting",
+    "hibrido": "Logística híbrida",
+}
 SEMILLAS = (42, 7, 123, 2024, 9)
-N_ALEATORIAS = 10          # pruebas iniciales aleatorias del muestreador TPE (por defecto)
+N_ALEATORIAS = 10  # pruebas iniciales aleatorias del muestreador TPE (por defecto)
 
 
 def tipo_de(modelo: str) -> str:
@@ -69,8 +72,9 @@ def _valor(nombre: str, crudo, distribucion):
 def pruebas_de(historial: pd.DataFrame, tipo: str) -> pd.DataFrame:
     """Las pruebas de un modelo, con columnas `value` y una por hiperparámetro."""
     datos = historial[historial["modelo"].map(tipo_de) == tipo].sort_values("number")
-    salida = pd.DataFrame({"number": datos["number"].to_numpy(),
-                           "value": datos["value"].to_numpy(dtype=float)})
+    salida = pd.DataFrame(
+        {"number": datos["number"].to_numpy(), "value": datos["value"].to_numpy(dtype=float)}
+    )
     for nombre, dist in ESPACIOS[tipo].items():
         salida[nombre] = [_valor(nombre, v, dist) for v in datos[f"params_{nombre}"]]
     return salida
@@ -81,27 +85,46 @@ def reconstruir_estudio(pruebas: pd.DataFrame, tipo: str) -> optuna.Study:
     estudio = optuna.create_study(direction="maximize")
     for _, fila in pruebas.iterrows():
         params = {n: fila[n] for n in ESPACIOS[tipo]}
-        estudio.add_trial(optuna.trial.create_trial(
-            params=params, distributions=ESPACIOS[tipo], value=float(fila["value"])))
+        estudio.add_trial(
+            optuna.trial.create_trial(
+                params=params, distributions=ESPACIOS[tipo], value=float(fila["value"])
+            )
+        )
     return estudio
 
 
-def importancias(pruebas: pd.DataFrame, tipo: str,
-                 semillas: tuple = SEMILLAS) -> pd.DataFrame:
+def importancias(pruebas: pd.DataFrame, tipo: str, semillas: tuple = SEMILLAS) -> pd.DataFrame:
     """Importancia por fANOVA y por impureza, media y desviación entre semillas."""
     estudio = reconstruir_estudio(pruebas, tipo)
     filas = []
-    for metodo, clase in (("fANOVA", optuna.importance.FanovaImportanceEvaluator),
-                          ("Impureza", optuna.importance.MeanDecreaseImpurityImportanceEvaluator)):
-        valores = pd.DataFrame([optuna.importance.get_param_importances(
-            estudio, evaluator=clase(seed=s), normalize=True) for s in semillas])
+    for metodo, clase in (
+        ("fANOVA", optuna.importance.FanovaImportanceEvaluator),
+        ("Impureza", optuna.importance.MeanDecreaseImpurityImportanceEvaluator),
+    ):
+        valores = pd.DataFrame(
+            [
+                optuna.importance.get_param_importances(
+                    estudio, evaluator=clase(seed=s), normalize=True
+                )
+                for s in semillas
+            ]
+        )
         for nombre in valores.columns:
-            filas.append({"modelo": NOMBRES[tipo], "metodo": metodo, "hiperparametro": nombre,
-                          "importancia": round(float(valores[nombre].mean()), 4),
-                          "desviacion": round(float(valores[nombre].std(ddof=0)), 4)})
+            filas.append(
+                {
+                    "modelo": NOMBRES[tipo],
+                    "metodo": metodo,
+                    "hiperparametro": nombre,
+                    "importancia": round(float(valores[nombre].mean()), 4),
+                    "desviacion": round(float(valores[nombre].std(ddof=0)), 4),
+                }
+            )
     tabla = pd.DataFrame(filas)
-    orden = (tabla[tabla["metodo"] == "fANOVA"].sort_values("importancia", ascending=False)
-             ["hiperparametro"].tolist())
+    orden = (
+        tabla[tabla["metodo"] == "fANOVA"]
+        .sort_values("importancia", ascending=False)["hiperparametro"]
+        .tolist()
+    )
     tabla["puesto"] = tabla["hiperparametro"].map({n: i + 1 for i, n in enumerate(orden)})
     return tabla.sort_values(["metodo", "puesto"]).reset_index(drop=True)
 
@@ -134,12 +157,12 @@ def _codificar(pruebas: pd.DataFrame, tipo: str) -> pd.DataFrame:
     return X
 
 
-def ajustar_sustituto(pruebas: pd.DataFrame, tipo: str, semilla: int = 42,
-                      arboles: int = 500) -> Sustituto:
+def ajustar_sustituto(
+    pruebas: pd.DataFrame, tipo: str, semilla: int = 42, arboles: int = 500
+) -> Sustituto:
     """Bosque aleatorio que aproxima la PR-AUC como función de los hiperparámetros."""
     X = _codificar(pruebas, tipo)
-    modelo = RandomForestRegressor(n_estimators=arboles, min_samples_leaf=3,
-                                   random_state=semilla)
+    modelo = RandomForestRegressor(n_estimators=arboles, min_samples_leaf=3, random_state=semilla)
     modelo.fit(X, pruebas["value"].to_numpy())
     return Sustituto(tipo, list(X.columns), modelo, X)
 
@@ -160,13 +183,20 @@ def dependencia_parcial(sustituto: Sustituto, nombre: str, puntos: int = 25) -> 
     for valor in _rejilla(sustituto, nombre, puntos):
         X = sustituto.X.copy()
         X[nombre] = valor
-        filas.append({"hiperparametro": nombre, "valor_codificado": valor,
-                      "pr_auc": float(sustituto.predecir(X).mean())})
+        filas.append(
+            {
+                "hiperparametro": nombre,
+                "valor_codificado": valor,
+                "pr_auc": float(sustituto.predecir(X).mean()),
+            }
+        )
     tabla = pd.DataFrame(filas)
     dist = ESPACIOS[sustituto.tipo][nombre]
     if isinstance(dist, CategoricalDistribution):
-        tabla["valor"] = [str(dist.choices[0]) if v == 1 else str(dist.choices[1])
-                          for v in tabla["valor_codificado"]]
+        tabla["valor"] = [
+            str(dist.choices[0]) if v == 1 else str(dist.choices[1])
+            for v in tabla["valor_codificado"]
+        ]
     elif getattr(dist, "log", False):
         tabla["valor"] = 10 ** tabla["valor_codificado"]
     else:
@@ -192,12 +222,22 @@ def interacciones(sustituto: Sustituto) -> pd.DataFrame:
     filas = []
     for a, b in itertools.combinations(sustituto.columnas, 2):
         conjunta = _pd_puntual(sustituto, [a, b])
-        denominador = float((conjunta ** 2).sum())
-        h2 = (float(((conjunta - individuales[a] - individuales[b]) ** 2).sum()) / denominador
-              if denominador > 0 else 0.0)
-        filas.append({"modelo": NOMBRES[sustituto.tipo], "par": f"{a} × {b}",
-                      "a": a, "b": b, "h2": round(min(max(h2, 0.0), 1.0), 4),
-                      "variacion_conjunta": round(float(np.sqrt(denominador / len(conjunta))), 5)})
+        denominador = float((conjunta**2).sum())
+        h2 = (
+            float(((conjunta - individuales[a] - individuales[b]) ** 2).sum()) / denominador
+            if denominador > 0
+            else 0.0
+        )
+        filas.append(
+            {
+                "modelo": NOMBRES[sustituto.tipo],
+                "par": f"{a} × {b}",
+                "a": a,
+                "b": b,
+                "h2": round(min(max(h2, 0.0), 1.0), 4),
+                "variacion_conjunta": round(float(np.sqrt(denominador / len(conjunta))), 5),
+            }
+        )
     return pd.DataFrame(filas).sort_values("h2", ascending=False).reset_index(drop=True)
 
 
@@ -222,45 +262,63 @@ def sensibilidad(sustituto: Sustituto, pruebas: pd.DataFrame) -> pd.DataFrame:
             X = mejor.copy()
             X[nombre] = v
             valores.append(float(sustituto.predecir(X)[0]))
-        filas.append({"modelo": NOMBRES[sustituto.tipo], "hiperparametro": nombre,
-                      "pr_auc_min": round(min(valores), 4), "pr_auc_max": round(max(valores), 4),
-                      "rango": round(max(valores) - min(valores), 4)})
+        filas.append(
+            {
+                "modelo": NOMBRES[sustituto.tipo],
+                "hiperparametro": nombre,
+                "pr_auc_min": round(min(valores), 4),
+                "pr_auc_max": round(max(valores), 4),
+                "rango": round(max(valores) - min(valores), 4),
+            }
+        )
     return pd.DataFrame(filas).sort_values("rango", ascending=False).reset_index(drop=True)
 
 
-def antes_despues(pruebas: pd.DataFrame, tipo: str, tasa_validacion: float | None = None
-                  ) -> dict:
+def antes_despues(pruebas: pd.DataFrame, tipo: str, tasa_validacion: float | None = None) -> dict:
     """PR-AUC de la primera prueba, mediana de la fase aleatoria y mejor prueba."""
     mejor = pruebas.loc[pruebas["value"].idxmax()]
-    salida = {"modelo": NOMBRES[tipo],
-              "primera_prueba": round(float(pruebas["value"].iloc[0]), 4),
-              "mediana_aleatorias": round(float(pruebas["value"].iloc[:N_ALEATORIAS].median()), 4),
-              "mediana_todas": round(float(pruebas["value"].median()), 4),
-              "mejor": round(float(mejor["value"]), 4), "prueba_mejor": int(mejor["number"])}
+    salida = {
+        "modelo": NOMBRES[tipo],
+        "primera_prueba": round(float(pruebas["value"].iloc[0]), 4),
+        "mediana_aleatorias": round(float(pruebas["value"].iloc[:N_ALEATORIAS].median()), 4),
+        "mediana_todas": round(float(pruebas["value"].median()), 4),
+        "mejor": round(float(mejor["value"]), 4),
+        "prueba_mejor": int(mejor["number"]),
+    }
     salida["ganancia_sobre_aleatorias"] = round(salida["mejor"] - salida["mediana_aleatorias"], 4)
     if tasa_validacion:
         salida["veces_azar_mejor"] = round(salida["mejor"] / tasa_validacion, 2)
     return salida
 
 
-def conclusiones(imp: pd.DataFrame, inter: pd.DataFrame, sens: pd.DataFrame,
-                 antes: pd.DataFrame) -> list[str]:
+def conclusiones(
+    imp: pd.DataFrame, inter: pd.DataFrame, sens: pd.DataFrame, antes: pd.DataFrame
+) -> list[str]:
     textos = []
     fan = imp[imp["metodo"] == "fANOVA"]
     for modelo, grupo in fan.groupby("modelo", sort=False):
         top = grupo.sort_values("importancia", ascending=False).head(2)
-        partes = [f"{f['hiperparametro']} ({numero(100 * f['importancia'], 0)} %)"
-                  for _, f in top.iterrows()]
-        textos.append(f"{modelo}: lo que más explica la variación de la PR-AUC es "
-                      + " y ".join(partes) + " (fANOVA).")
+        partes = [
+            f"{f['hiperparametro']} ({numero(100 * f['importancia'], 0)} %)"
+            for _, f in top.iterrows()
+        ]
+        textos.append(
+            f"{modelo}: lo que más explica la variación de la PR-AUC es "
+            + " y ".join(partes)
+            + " (fANOVA)."
+        )
     for modelo, grupo in inter.groupby("modelo", sort=False):
         f = grupo.iloc[0]
         nivel = "débil" if f["h2"] < 0.1 else "moderada" if f["h2"] < 0.3 else "fuerte"
-        textos.append(f"{modelo}: la interacción más fuerte es {f['par']} "
-                      f"(H² = {numero(f['h2'], 2)}, {nivel}).")
+        textos.append(
+            f"{modelo}: la interacción más fuerte es {f['par']} "
+            f"(H² = {numero(f['h2'], 2)}, {nivel})."
+        )
     for _, f in antes.iterrows():
-        textos.append(f"{f['modelo']}: la búsqueda pasó de una mediana de "
-                      f"{numero(f['mediana_aleatorias'], 3)} en las 10 pruebas aleatorias a "
-                      f"{numero(f['mejor'], 3)} en la mejor "
-                      f"(+{numero(f['ganancia_sobre_aleatorias'], 3)}).")
+        textos.append(
+            f"{f['modelo']}: la búsqueda pasó de una mediana de "
+            f"{numero(f['mediana_aleatorias'], 3)} en las 10 pruebas aleatorias a "
+            f"{numero(f['mejor'], 3)} en la mejor "
+            f"(+{numero(f['ganancia_sobre_aleatorias'], 3)})."
+        )
     return textos
