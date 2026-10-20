@@ -28,7 +28,8 @@ import pandas as pd
 from src.evaluate import consolidar_familias, precision_at_k_familiar
 from src.reglas import PESOS_D2, senales
 
-__all__ = ["NOMBRES_SENALES", "senales_por_periodo", "orden_senales", "sorteos_desempate",
+__all__ = ["NOMBRES_SENALES", "senales_por_periodo", "orden_senales", "para_publicar",
+           "sorteos_desempate",
            "resumen_sorteos", "diferencia_pareada", "azar_dos_versiones", "descriptivos",
            "conclusiones"]
 
@@ -97,11 +98,34 @@ def orden_senales(tabla: pd.DataFrame) -> pd.DataFrame:
         for s, n in nivel.items():
             valor = datos.loc[(datos["senal"] == s) & (datos["nivel"] == n), "riesgo_relativo"]
             rr[s] = float(valor.iloc[0]) if len(valor) else np.nan
-        orden = sorted(rr, key=lambda s: -np.nan_to_num(rr[s], nan=-np.inf))
+        comparables = [s for s in esperado if not np.isnan(rr[s])]
+        orden = sorted(comparables, key=lambda s: -rr[s])
+        completo = len(comparables) == len(esperado)
         filas.append({"periodo": periodo,
                       **{f"rr_{s}": rr[s] for s in esperado},
-                      "orden": " > ".join(orden), "igual_a_D2": orden == esperado})
+                      "orden": " > ".join(orden),
+                      # sin las tres señales (celdas suprimidas) no hay veredicto
+                      "igual_a_D2": (orden == esperado) if completo else None})
     return pd.DataFrame(filas)
+
+
+def para_publicar(tabla: pd.DataFrame, agrupados: list[str]) -> pd.DataFrame:
+    """Versión publicable de `senales_por_periodo`.
+
+    Los conteos y tasas solo se publican para los periodos agrupados (p. ej. C1–C3). En los
+    periodos de una sola cohorte se deja únicamente el riesgo relativo: con los conteos por
+    cohorte y los del grupo se podría deducir, por diferencia, una celda suprimida.
+    """
+    salida = tabla.copy()
+    detalle = ~salida["periodo"].isin(agrupados)
+    salida[["estudiantes", "eventos", "tasa"]] = salida[
+        ["estudiantes", "eventos", "tasa"]].astype(float)
+    salida.loc[detalle, ["estudiantes", "eventos", "tasa"]] = np.nan
+    # Si un nivel se suprimió, se suprime el riesgo relativo de toda esa señal en el periodo
+    suprimida = salida.groupby(["periodo", "senal"])["riesgo_relativo"].transform(
+        lambda v: v.isna().any())
+    salida.loc[detalle & suprimida, "riesgo_relativo"] = np.nan
+    return salida
 
 
 # --------------------------------------------------------------------------- #
@@ -221,8 +245,10 @@ def descriptivos(dataset: pd.DataFrame, columnas: list[str] | None = None,
             v = pd.to_numeric(datos[col], errors="coerce").dropna()
             if len(v) < min_celda:
                 continue
-            filas.append({"cohorte": grupo, "variable": col, "n": len(v),
-                          "vacios": int(datos[col].isna().sum()),
+            vacios = int(datos[col].isna().sum())
+            # n = estudiantes del grupo (con y sin dato): así n no revela un vacío suprimido
+            filas.append({"cohorte": grupo, "variable": col, "n": len(datos),
+                          "vacios": f"<{min_celda}" if 0 < vacios < min_celda else vacios,
                           "media": round(float(v.mean()), 2), "de": round(float(v.std()), 2),
                           **{f"p{p:02d}": round(float(np.percentile(v, p)), 2)
                              for p in (5, 25, 50, 75, 95)}})
@@ -241,6 +267,10 @@ def conclusiones(orden: pd.DataFrame, sorteos: dict, pareada: dict, azar: dict,
     """Frases en español con las cifras de cada comprobación."""
     textos = []
     for _, fila in orden.iterrows():
+        if fila["igual_a_D2"] is None or pd.isna(fila["igual_a_D2"]):
+            textos.append(f"Con {fila['periodo']} no se pueden comparar las tres señales: alguna "
+                          "tiene menos casos que el mínimo publicable.")
+            continue
         nombres = " > ".join(NOMBRES_SENALES[s] for s in fila["orden"].split(" > "))
         veredicto = ("el mismo orden de D2" if fila["igual_a_D2"]
                      else "un orden distinto al de D2")

@@ -59,6 +59,33 @@
 | **Hoja 2026–2027** (17,5 % de vacíos) | Solo se usa como destino de C5 (fecha de pago) | Es el ciclo en curso: es esperable que no tenga notas ni reservas |
 | **Valores atípicos** | Las notas bajas del promedio (Figura 5) se conservan, porque son notas válidas. El representante con 39 estudiantes (cédula genérica) se trata como atípico (D29) | Quitar notas bajas eliminaría justo a estudiantes que importan. La cédula genérica inflaba la variable de hermanos |
 
+### 3.2 Estadísticos descriptivos de las variables numéricas
+
+Estudiantes modelables de C1 a C5 (6.361); *n* es el total de estudiantes y los estadísticos se calculan sobre los que tienen dato. Se informan los percentiles 5 y 95 en lugar del mínimo y el máximo, que serían el valor de un solo estudiante; los vacíos menores que 5 se muestran como `<5`. Fuente: `results/metrics/descriptivos_real.csv` (cuaderno 08, D59). Son características de entrada, sin la etiqueta.
+
+| Variable | n | Vacíos | Media | DE | P5 | P25 | Mediana | P75 | P95 |
+|---|---|---|---|---|---|---|---|---|---|
+| Promedio final (0–10) | 6.361 | 0 | 9,25 | 0,55 | 8,23 | 8,87 | 9,34 | 9,71 | 9,95 |
+| Conducta (5 = A) | 6.361 | 0 | 4,95 | 0,22 | 5,00 | 5,00 | 5,00 | 5,00 | 5,00 |
+| Años en LEMAS | 6.361 | <5 | 3,98 | 3,47 | 0,00 | 1,00 | 3,00 | 6,00 | 11,00 |
+| Pensiones pagadas tarde (mayo–enero) | 6.361 | <5 | 1,25 | 2,43 | 0,00 | 0,00 | 0,00 | 1,00 | 8,00 |
+| Hermanos en LEMAS | 6.361 | 0 | 0,55 | 0,66 | 0,00 | 0,00 | 0,00 | 1,00 | 2,00 |
+
+Por cohorte:
+
+| Cohorte | Promedio (media) | Pensiones tarde (media) | Pensiones tarde (P75) | Años en LEMAS (media) | Hermanos (media) |
+|---|---|---|---|---|---|
+| C1 | 9,36 | 1,25 | 1,00 | 4,08 | 0,51 |
+| C2 | 9,31 | 1,25 | 1,00 | 3,88 | 0,54 |
+| C3 | 9,19 | 2,17 | 2,00 | 4,00 | 0,57 |
+| C4 | 9,18 | 0,90 | 0,00 | 3,99 | 0,59 |
+| C5 | 9,23 | 0,75 | 0,00 | 3,97 | 0,53 |
+
+- **Promedio:** muy concentrado (la mitad de los estudiantes entre 8,87 y 9,71). Por eso aporta poca separación.
+- **Conducta:** casi todo es A; la media baja en C2 por el cambio de escala ya descrito (D34).
+- **Pensiones pagadas tarde:** muy asimétrica. La mediana es 0, pero una cola llega a 8 o más; en C3 la media sube a 2,17 y en C4 y C5 baja a 0,90 y 0,75. Es un cambio de distribución entre años que conviene vigilar, porque los atrasos son una de las tres señales de D2.
+- **Años en LEMAS y hermanos:** distribuciones estables entre cohortes.
+
 ## 4. Validación del calendario (t0 = 20-feb, H = 30-abr)
 
 Entre 2023 y 2026, el 99 % de los estudiantes **antiguos** pagó la matrícula dentro de la ventana [t0, H]. En 2022 la proporción fue del 95 %, con 50 pagos tardíos. Los pagos de antiguos antes de t0 son menos de 5 por año. Esto respalda el corte t0 = 20-feb (D01).
@@ -79,7 +106,7 @@ Los **nuevos** pagan sobre todo antes de t0 (entre 107 y 125 por año). No forma
 
 Las correlaciones de Spearman con el resultado son débiles (|ρ| ≤ 0,07). Ninguna variable separa los casos por sí sola, así que se espera una discriminación modesta.
 
-> **Aviso sobre el uso de C4 y C5 en esta sección (declarado en la revisión final, D59).** Las tasas de esta tabla y de las figuras 3 a 6 se calcularon con las **cinco cohortes**, incluidas C4 (selección) y C5 (prueba). De estas tasas salió el orden de las señales de la regla D2. Ningún parámetro se estimó con C4 o C5, pero el diseño de D2 sí las vio de forma agregada. El cuaderno 08 repite el cálculo solo con C1–C3; el resultado está en [modelado.md, sección 9.1](modelado.md#91-el-diseño-de-d2-vio-todas-las-cohortes). En una próxima versión, el análisis exploratorio debe usar solo las cohortes de entrenamiento.
+> **Aviso sobre el uso de C4 y C5 en esta sección (declarado en la revisión final, D59).** Las tasas de esta tabla y de las figuras 3 a 6 se calcularon con las **cinco cohortes**, incluidas C4 (selección) y C5 (prueba). De estas tasas salió el orden de las señales de la regla D2. Ningún parámetro se estimó con C4 o C5, pero el diseño de D2 sí las vio de forma agregada. El cuaderno 08 repite el cálculo solo con C1–C3: el orden de las señales es el mismo (riesgo relativo 2,88 para el pago tardío, 1,47 para la reserva extraordinaria y 1,27 para al menos una pensión pagada tarde), así que D2 se habría construido igual. Detalle en [modelado.md, sección 9.1](modelado.md#91-el-diseño-de-d2-vio-todas-las-cohortes). En una próxima versión, el análisis exploratorio debe usar solo las cohortes de entrenamiento.
 
 ![Figura 3. Tasa de no matrícula por variable categórica](../results/figures/real_03_tasa_categoricas.png)
 

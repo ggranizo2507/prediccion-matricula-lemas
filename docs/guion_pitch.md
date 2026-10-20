@@ -104,7 +104,7 @@ Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que 
 | Ensayar y cronometrar | Dos ensayos completos; si un bloque se pasa, recortar ejemplos y no cifras | Por hacer |
 | Repartir la palabra | Guillermo: problema, demo, resultados y cierre. José: datos, método, optimización y ética | Hecho |
 | Cerrar con una acción clara | Logro, siguiente paso y los dos QR | Hecho |
-| Preparar las preguntas | [Banco de 35 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
+| Preparar las preguntas | [Banco de 49 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
 | Cuidar audio e imagen | Micrófono externo, lugar silencioso, 1080p, zoom del navegador al 110–125 % | Por hacer |
 
 Errores frecuentes que conviene evitar: leer las diapositivas, pasarse de los 5 minutos, mostrar código, dejar la ética para una frase final y presentar el resultado como mejor de lo que es.
