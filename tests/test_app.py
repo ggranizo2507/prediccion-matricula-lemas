@@ -329,3 +329,44 @@ def test_interfaz_recorrido_completo():
     formulario = next(b for b in app.button if b.label == "Estimar")
     formulario.click().run()
     assert not app.exception
+
+
+def test_motivo_en_singular_y_plural(preparado):
+    _, sistema = preparado
+    base = {"sede": "Mucho Lote 1", "subnivel": "Bachillerato", "pago_origen": "en_plazo",
+            "reserva_extraordinaria": 0, "promedio": 9.0, "conducta": 5}
+    uno = estimar_estudiante({**base, "atrasos_pension": 1}, sistema)
+    tres = estimar_estudiante({**base, "atrasos_pension": 3}, sistema)
+    assert "1 pensión pagada tarde" in uno["motivo"]
+    assert "3 pensiones pagadas tarde" in tres["motivo"]
+
+
+def test_mensajes_de_columnas_faltantes_sin_jerga(crudo):
+    with pytest.raises(ErrorEntrada, match="ninguna de las columnas esperadas"):
+        validar_entrada(pd.DataFrame({"anoa;Sede;Nivel": ["2024;x;y"]}), "demo")
+    with pytest.raises(ErrorEntrada, match=r"Faltan 2 columnas obligatorias .*sección 7"):
+        validar_entrada(crudo.drop(columns=["beca", "Tiempo"]), "demo")
+
+
+def test_interfaz_boton_ciclo_anterior_y_formulario_validado():
+    from streamlit.testing.v1 import AppTest
+
+    app = AppTest.from_file(str(RAIZ / "app/app.py"), default_timeout=120)
+    app.run()
+    app.sidebar.button[0].click().run()
+    next(b for b in app.button if b.label == "Generar lista").click().run()
+    ciclo = app.sidebar.selectbox[0].value
+    next(b for b in app.button if b.label.startswith("Ver el seguimiento del ciclo")).click().run()
+    assert not app.exception
+    assert app.sidebar.selectbox[0].value == ciclo - 1
+    assert not any("no registra pagos" in aviso.value for aviso in app.warning)
+    # promedio inválido: mensaje claro; válido con coma decimal: resultado en puntos porcentuales
+    app.text_input[0].set_value("once").run()
+    next(b for b in app.button if b.label == "Estimar").click().run()
+    assert any("entre 0 y 10" in e.value for e in app.error)
+    app.text_input[0].set_value("8,75").run()
+    next(b for b in app.button if b.label == "Estimar").click().run()
+    assert not app.exception
+    prioridad = [m for m in app.metric if m.label == "Prioridad en la lista"]
+    probabilidad = [m for m in app.metric if m.label == "Prob. de no matrícula"]
+    assert prioridad and probabilidad and "p. p." in str(probabilidad[0].delta)

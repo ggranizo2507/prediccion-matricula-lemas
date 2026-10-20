@@ -139,6 +139,34 @@ prohibidas_en_X:
   - "representante_atipico"   # solo para equidad (D33): equivaldría a usar nacionalidad
 
 # -----------------------------------------------------------------------------
+# Optimización de hiperparámetros (Fase 2, D36-D39): Optuna TPE con semilla, PR-AUC en la
+# validación interna C2 → C3. El orden de los hiperparámetros es el orden en que Optuna los
+# sugiere: cambiarlo cambia la secuencia de pruebas y los resultados. Lo leen
+# `modeling.entrenar_candidatos` y `sensibilidad` (docs/optimizacion.md).
+# Tipos: categorica (opciones), real (min, max, log) y entero (min, max).
+# -----------------------------------------------------------------------------
+optimizacion:
+  trials_por_modelo: 60
+  espacios:
+    logistica:
+      conjunto: {tipo: categorica, opciones: [completo, reducido]}
+      balanceado: {tipo: categorica, opciones: [true, false]}
+      C: {tipo: real, min: 0.001, max: 10, log: true}
+      l1_ratio: {tipo: real, min: 0.0, max: 1.0}
+    arboles:
+      conjunto: {tipo: categorica, opciones: [completo, reducido]}
+      balanceado: {tipo: categorica, opciones: [true, false]}
+      learning_rate: {tipo: real, min: 0.01, max: 0.2, log: true}
+      max_depth: {tipo: entero, min: 2, max: 4}
+      max_leaf_nodes: {tipo: entero, min: 4, max: 15}
+      min_samples_leaf: {tipo: entero, min: 20, max: 120}
+      l2_regularization: {tipo: real, min: 0.001, max: 10, log: true}
+      max_iter: {tipo: entero, min: 50, max: 400}
+    hibrido:        # variables fijas (D39): solo se ajusta la regularización
+      balanceado: {tipo: categorica, opciones: [true, false]}
+      C: {tipo: real, min: 0.001, max: 10, log: true}
+
+# -----------------------------------------------------------------------------
 # Capacidad de contacto: k por sede = promedio histórico (cohortes de
 # entrenamiento) de representantes con no matrícula en esa sede.
 # El personal se usa para verificar que k sea atendible.
@@ -162,6 +190,9 @@ capacidad:
 escenarios:
   repeticiones: 50          # perturbaciones (y sorteos de empates) por nivel
   umbral_lift: 1.20         # meta del proyecto: por debajo, la lista deja de ser útil
+revision:                   # comprobaciones de la revisión final (cuaderno 08, D59)
+  sorteos: 500              # semillas de desempate para la distribución del Lift@k de D2
+  repeticiones_bootstrap: 2000
 calidad_senales:
   max_vacios: 0.30          # una señal con más vacíos que esto cuenta como afectada
   max_nuevos: 0.80          # si casi todos figuran como nuevos, falta la hoja anterior

@@ -24,6 +24,7 @@ Modos (D42):
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -40,6 +41,8 @@ from src.data_processing import (
 )
 from src.evaluate import calcular_k_por_sede, consolidar_familias, primeras_k
 from src.modeling import calibrar, construir_modelo, puntajes_reglas
+
+log = logging.getLogger("lemas.app")
 
 MODOS = ("demo", "institucional")
 # Columnas que delatan identificadores directos: nunca se aceptan en la app
@@ -78,11 +81,19 @@ def validar_entrada(df: pd.DataFrame, modo: str) -> None:
         raise ErrorEntrada(
             "El archivo contiene columnas con identificadores directos "
             f"({', '.join(identificadores)}). Un archivo CSV debe estar seudonimizado. En "
-            "LEMAS, suba el Excel junto con la clave en el modo institucional (o use el "
-            "cuaderno 00a). La versión pública nunca recibe cédulas, nombres ni códigos.")
+            "LEMAS, suba el Excel junto con la clave en el modo institucional. La versión "
+            "pública nunca recibe cédulas, nombres ni códigos.")
     faltan = [c for c in COLUMNAS_MINIMAS if c not in df.columns]
     if faltan:
-        raise ErrorEntrada(f"Faltan columnas obligatorias: {', '.join(faltan)}.")
+        log.info("Archivo rechazado: faltan %d columnas obligatorias", len(faltan))
+        if len(faltan) == len(COLUMNAS_MINIMAS):
+            raise ErrorEntrada(
+                "El archivo no tiene ninguna de las columnas esperadas. Revise que sea un CSV "
+                "separado por comas con la estructura del manual de usuario (sección 7), o "
+                "pruebe primero con el botón «Prueba con ejemplo».")
+        muestra = ", ".join(faltan[:4]) + (f" y {len(faltan) - 4} más" if len(faltan) > 4 else "")
+        raise ErrorEntrada(f"Faltan {len(faltan)} columnas obligatorias ({muestra}). La lista "
+                           "completa está en el manual de usuario, sección 7.")
     if modo == "demo":
         origen = df.get("origen_datos", pd.Series(dtype=str)).astype(str).str.upper()
         if origen.empty or not (origen == "SINTETICO").all():
@@ -120,6 +131,8 @@ def construir_poblacion(base_limpia: pd.DataFrame, anio_origen: int, config: dic
         paso = paso[~ya_pagaron.fillna(False)]
     resumen["elegibles"] = len(paso)
     resumen["representantes"] = int(paso["id_familia"].nunique())
+    log.info("Ciclo %s: %d elegibles, %d representantes", resumen["ciclo"],
+             resumen["elegibles"], resumen["representantes"])
     return paso.reset_index(drop=True), resumen
 
 
@@ -144,13 +157,16 @@ def entrenar_sistema(base_limpia: pd.DataFrame, config: dict, params: dict | Non
     if entrenamiento.empty or seleccion.empty:
         raise ErrorEntrada("La base no tiene suficientes ciclos para entrenar (se "
                               "necesitan al menos 2022 a 2025).")
+    log.info("Entrenando el modelo de apoyo: %d estudiantes (C2+C3), calibración con %d (C4)",
+             len(entrenamiento), len(seleccion))
     modelo = construir_modelo("hibrido", params or PARAMS_DEMO, config["proyecto"]["semilla"])
     modelo.fit(construir_matriz_x(entrenamiento), entrenamiento["y_no_matricula"])
     k = calcular_k_por_sede(consolidar_familias(entrenamiento, np.zeros(len(entrenamiento))),
                             config["capacidad"].get("multiplicador_k", 1.0))
     return Sistema(calibrar(modelo, seleccion), k,
                    float(entrenamiento["y_no_matricula"].mean()),
-                   "Logística híbrida calibrada (Platt en C4)")
+                   "Lista: regla de tres señales administrativas. Probabilidad y proyección: "
+                   "modelo de apoyo calibrado con el ciclo 2024-2025.")
 
 
 def cargar_sistema_congelado(ruta) -> Sistema | None:
@@ -233,6 +249,7 @@ def revisar_senales(poblacion: pd.DataFrame, config: dict) -> dict:
                           "las filas: esas reservas se leen como ordinarias.")
     if not afectadas:
         return {"nivel": "ok", "avisos": []}
+    log.warning("Calidad de señales: %d señal(es) afectada(s)", len(afectadas))
     if len(afectadas) >= 2:
         avisos.append("Con dos o más señales vacías o constantes la lista se acerca a una "
                       "selección al azar. Corrija el Excel y vuelva a generarla antes de usarla.")
@@ -251,7 +268,9 @@ def _motivo(fila: pd.Series) -> str:
         partes.append("reserva extraordinaria")
     atrasos = fila.get("atrasos_pension")
     if pd.notna(atrasos) and atrasos > 0:
-        partes.append(f"{int(atrasos)} pensiones pagadas tarde")
+        cantidad = int(atrasos)
+        partes.append("1 pensión pagada tarde" if cantidad == 1
+                      else f"{cantidad} pensiones pagadas tarde")
     return "; ".join(partes) if partes else "sin señales administrativas"
 
 

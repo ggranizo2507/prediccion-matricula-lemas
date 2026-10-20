@@ -170,7 +170,8 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 | "No se encuentra la aplicación junto a este archivo" (ventana negra) | Descomprima la carpeta completa del proyecto; no abra el archivo desde dentro del `.zip` |
 | "Modo institucional abierto desde otro equipo" | Abra la aplicación en el mismo computador, con `iniciar_lemas.bat` |
 | "Se necesitan los dos archivos: el Excel y la clave" | Suba el archivo que falta |
-| "Faltan columnas obligatorias" | Revise que los encabezados sean los estándar (`data/README.md`) |
+| "Faltan N columnas obligatorias" | El CSV debe tener estas 16 columnas: `anoa`, `Sede`, `Nivel`, `Paralelo`, `P.Académico`, `P.Conducta`, `fecha_pago`, `Reserva`, `RColegio`, `Fecha Reserva`, `Tiempo`, `beca`, `# meses caído`, `anio_ingreso`, `id_seudonimo` e `id_familia_seudonimo` (diccionario en `data/README.md`). Compare con el archivo de ejemplo |
+| "El archivo no tiene ninguna de las columnas esperadas" | Suele ser un CSV separado por punto y coma (;) o un archivo que no es la base. Guárdelo como CSV separado por comas, o pruebe primero con *Prueba con ejemplo* |
 | "La base no tiene suficientes ciclos para entrenar" | Incluya en el Excel las hojas de los ciclos 2022 a 2025, o coloque `models/sistema_real.joblib` |
 | "**Revise los datos cuando pueda**" (aviso amarillo sobre la lista) | Una de las tres señales llegó vacía o constante (falta la hoja del ciclo anterior, faltan fechas de pago, los atrasos llegaron en cero o el tipo de reserva está vacío). La lista sigue ordenando casi igual, porque las otras dos señales la compensan, pero conviene corregir el Excel ([escenarios_criticos.md](escenarios_criticos.md) §4) |
 | "**Revise los datos antes de usar esta lista**" (aviso rojo sobre la lista) | Dos o más señales llegaron vacías o constantes: la lista se acerca a una selección al azar. Corrija el Excel (o pida a LEMAS que recalcule la columna) y vuelva a generar la lista antes de usarla |
@@ -194,7 +195,7 @@ Estas familias **no están en mora**: el plazo vence el 30 de abril. El contacto
 | Tipo de consulta | A quién acudir |
 |---|---|
 | Uso de la aplicación, errores o instalación en el computador de LEMAS | Guillermo Granizo, responsable técnico del proyecto en LEMAS: [guillermo.granizov@uees.edu.ec](mailto:guillermo.granizov@uees.edu.ec) |
-| Datos personales, pedidos de las familias (ver, corregir u oponerse) o dudas legales | La persona que designe la Dirección de LEMAS para la protección de datos (decisión 3 de la presentación a la Dirección) |
+| Datos personales, pedidos de las familias (ver, corregir u oponerse) o dudas legales | La persona que designe la Dirección de LEMAS para la protección de datos (decisión que corresponde a la Dirección de LEMAS) |
 | Código, documentación o reporte de un fallo | Repositorio del proyecto: pestaña *Issues* en [github.com/ggranizo2507/prediccion-matricula-lemas](https://github.com/ggranizo2507/prediccion-matricula-lemas/issues) |
 
 Al reportar un problema, indique la pestaña, el mensaje exacto y la hora. **No adjunte el Excel, la clave ni listas con nombres.**

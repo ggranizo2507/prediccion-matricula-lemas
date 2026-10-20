@@ -2,7 +2,7 @@
 
 El sistema trata datos de **menores de edad y sus familias** y orienta acciones de una institución educativa sobre ellas. Por eso la ética no es un anexo: condicionó el diseño de los datos, del modelo, de la aplicación y de la forma de comunicar los resultados.
 
-Este documento sigue los siete puntos que pide la guía del proyecto (sesgos, equidad, privacidad, transparencia, impacto social, responsabilidad y mal uso) y añade los temas de la semana 4 del curso: principios, dilemas, mapa de actores, cadena de responsabilidad, marcos de referencia y cumplimiento normativo. El workshop de impacto social y responsabilidad lo resume en ocho partes, con severidad y probabilidad de cada riesgo, una estrategia de mitigación por riesgo y el compromiso ético del equipo: [impacto_social_responsabilidad.md](impacto_social_responsabilidad.md).
+Este documento sigue los ocho puntos que pide la guía del proyecto (sesgos, equidad, privacidad, transparencia, impacto social, responsabilidad, mal uso y limitaciones) y añade los temas de la semana 4 del curso: principios, dilemas, mapa de actores, cadena de responsabilidad, marcos de referencia y cumplimiento normativo. El workshop de impacto social y responsabilidad lo resume en ocho partes, con severidad y probabilidad de cada riesgo, una estrategia de mitigación por riesgo y el compromiso ético del equipo: [impacto_social_responsabilidad.md](impacto_social_responsabilidad.md).
 
 > **Alcance de lo que aquí se afirma.** Distinguimos lo que **ya está implementado** en el proyecto de lo que **LEMAS debe completar** antes de un uso permanente. La lectura de las normas es la de un equipo técnico, no una asesoría legal: LEMAS debe confirmarla con su asesor jurídico o su delegado de protección de datos.
 
@@ -20,8 +20,8 @@ Este documento sigue los siete puntos que pide la guía del proyecto (sesgos, eq
 | 10 | Uso dual y mal uso | 7 |
 | 11 | Regulación y cumplimiento | 3 |
 | 12 | Consideraciones prácticas de implementación | 6 |
-| 13 | Honestidad sobre las capacidades | — |
-| 14 | Limitaciones éticas reconocidas | — |
+| 13 | Honestidad sobre las capacidades | 8 |
+| 14 | Limitaciones éticas reconocidas | 8 |
 | 15 | Lista de verificación | — |
 
 ## 1. Propósito y uso permitido
@@ -45,8 +45,8 @@ Tomamos como referencia los principios de la Recomendación de la UNESCO sobre l
 | Privacidad y protección de datos | Seudónimos, y ningún dato real en el repositorio ni en la app pública | Sección 6 | Medidas implementadas; pendientes de LEMAS en la sección 11 |
 | Transparencia y explicabilidad | Cualquier persona puede entender por qué una familia está en la lista | Regla D2 pública; columna *motivo* en la app; SHAP y permutación | Implementado hacia el personal; pendiente hacia las familias |
 | Supervisión y decisión humana | La lista no ejecuta ninguna acción | Secretaría decide; k es editable | Implementado |
-| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D53, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
-| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 179 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
+| Responsabilidad y rendición de cuentas | Queda registro de quién decidió qué y por qué | Registro de decisiones D01–D59, sistema congelado con SHA-256, actas | Implementado en el desarrollo; gobernanza propuesta para la operación |
+| Seguridad y robustez | El sistema se probó fuera de muestra y falla de forma controlada | Prueba única en C5 con IC 95 %; 252 pruebas automáticas; la app pública rechaza archivos sin la marca de datos sintéticos | Implementado |
 | Sensibilización | El personal sabe leer la lista y conoce sus límites | Manual de usuario, Excel de práctica ficticio, pestaña *Acerca de* | Parcial: falta la validación con usuarios |
 
 ## 3. Dilemas éticos del proyecto
@@ -164,7 +164,7 @@ La regla D2 se eligió por su Lift@k en C4, no por estos análisis. Lo que aport
 |---|---|---|---|---|
 | Estudiantes | Indirectamente: su continuidad depende de la decisión de la familia | Menos interrupciones de su escolaridad | Ser tratados distinto si la etiqueta se filtra a docentes | Ninguna (menores; sus datos van seudonimizados) |
 | Familias y representantes | Reciben o no una llamada de apoyo | Información y facilidades a tiempo | Sentirse vigiladas o presionadas; estigma económico | Ninguna todavía: limitación reconocida |
-| Secretaría y Admisiones | Usan la lista para organizar su trabajo | Enfocar 69 días y 10 personas donde más sirve | Confiar de más en la lista y descuidar al resto | Definieron k y el proceso; falta la validación de uso (anexo E del documento técnico) |
+| Secretaría y Admisiones | Usan la lista para organizar su trabajo | Enfocar 69 días y 10 personas donde más sirve | Confiar de más en la lista y descuidar al resto | Definieron k y el proceso; falta la validación de uso (anexo E del [documento técnico v6](Documento_Tecnico_Prediccion_Matricula_v6.docx)) |
 | Dirección | Decide si el sistema se usa y responde por él | Planificación de cupos y personal | Tomar decisiones sobre una proyección que no mejora a la tasa histórica | Autorizó el estudio |
 | Custodio de datos | Guarda la clave y aprueba cada extracción | Proceso ordenado y trazable | Concentrar un riesgo: si la clave se pierde o se filtra | Ejecuta la seudonimización |
 | Docentes | No usan el sistema | Paralelos más estables | Ninguno directo, si la lista no circula | Ninguna |
@@ -198,7 +198,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 | Una familia que no se matricula no estaba en la lista | Ninguna adicional: recibe la atención habitual | Secretaría | La lista no reemplaza la atención a todas las familias |
 | Una familia listada sí pensaba matricularse | Una llamada innecesaria | Secretaría | Contacto breve y de apoyo; se registra el resultado |
 | La regla deja de ordenar mejor que el azar | Esfuerzo mal dirigido | Equipo técnico y Dirección | Revalidación anual; se suspende si no supera al azar (9.4) |
-| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 179 pruebas automáticas |
+| Error técnico (archivo mal leído, clave equivocada) | Lista incorrecta o seudónimos que no coinciden | Equipo técnico | Verificaciones al cargar, huella de la clave, 252 pruebas automáticas |
 | Uso indebido (cobro, exclusión) | Daño a la familia y a la confianza | Dirección | Uso prohibido documentado; revisión anual por Dirección |
 | Fuga de datos personales | Daño a los titulares | LEMAS como responsable del tratamiento; custodio | Protocolo de incidentes (9.5) |
 
@@ -208,7 +208,7 @@ El sistema no decide: propone un orden. La responsabilidad de lo que se hace con
 |---|---|---|---|
 | 1. Datos de origen | Secretaría de LEMAS | Calidad de lo que se registra | Excel institucional |
 | 2. Extracción y seudonimización | Custodio de datos | Qué sale y con qué clave | Acta con huella SHA-256 del archivo; la app muestra además la huella de la clave |
-| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D53; código y pruebas; sistema congelado con SHA-256 |
+| 3. Desarrollo y validación | Equipo técnico (Guillermo Granizo y José Ulloa) | Variables, protocolo, modelo o regla | Registro de decisiones D01–D59; código y pruebas; sistema congelado con SHA-256 |
 | 4. Aprobación de uso | Dirección | Si el sistema se usa y con qué límites | Autorización del estudio (30-sep-2026). La del uso operativo está pendiente |
 | 5. Generación de la lista | Secretaría, con el custodio | Ciclo, k por sede | Bitácora con fecha, k y quién la generó (propuesto: hoy el archivo no lo registra) |
 | 6. Contacto | Secretaría y Admisiones | A quién llamar y qué ofrecer | Resultado del contacto (propuesto) |
@@ -319,6 +319,8 @@ Como referencia, la Ley de IA de la Unión Europea clasifica como de **alto ries
 | Resolución SPDP-SPD-2025-0030-R (2025) | Reglas para seudonimizar, anonimizar, bloquear y eliminar datos personales |
 | Resolución SPDP-SPD-2026-0009-R (febrero de 2026) | Norma sobre protección de datos en sistemas de IA: información clara al titular, gestión de riesgos y evaluación de impacto previa, registro de las actividades de tratamiento con IA, medidas de seguridad y auditorías según el riesgo |
 
+Enlaces oficiales y fechas de cada norma en la sección *Referencias*, al final de este documento.
+
 **Comparación con el RGPD.** La ley ecuatoriana sigue una estructura parecida: bases de licitud (RGPD art. 6; LOPDP art. 7), consentimiento cuando los titulares son menores (art. 8; art. 21), decisiones automatizadas (art. 22; art. 20) y evaluación de impacto (art. 35; art. 42). Una diferencia que nos afecta: el RGPD habla de decisiones basadas *únicamente* en el tratamiento automatizado, y la ley ecuatoriana incluye las basadas *parcialmente* en él.
 
 Ecuador no tiene una ley general de IA: en septiembre de 2026 la Asamblea archivó el proyecto de ley que buscaba regularla, tras el informe de la comisión que lo estudió. Sí existe una estrategia nacional para el uso ético y responsable de la IA (Acuerdo MINTEL-MINTEL-2025-0030, publicado en enero de 2026), que incluye la educación entre sus ámbitos.
@@ -353,7 +355,7 @@ Lo que LEMAS tendría que hacer, en orden, para pasar del estudio al uso real.
 3. Hacer la evaluación de impacto y anotar el tratamiento en su registro de actividades.
 4. Designar por escrito al custodio de la clave y a quienes pueden ver la lista con nombres.
 5. Capacitar a Secretaría con el Excel de práctica ficticio y el protocolo de contacto.
-6. Validar la aplicación con el personal (anexo E del documento técnico).
+6. Validar la aplicación con el personal (anexo E del [documento técnico v6](Documento_Tecnico_Prediccion_Matricula_v6.docx)).
 
 **En cada campaña (20 de febrero a 30 de abril)**
 1. Usar solo el modo institucional, en un equipo de LEMAS.

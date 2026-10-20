@@ -26,6 +26,7 @@ from src.data_processing import (
     construir_preprocesador,
 )
 from src.evaluate import calcular_k_por_sede, consolidar_familias, precision_at_k_familiar
+from src.reglas import puntajes_reglas
 
 log = logging.getLogger("lemas.auditoria")
 
@@ -248,18 +249,6 @@ def sensibilidad_estados(base: pd.DataFrame, config: dict) -> pd.DataFrame:
 # --------------------------------------------------------------------------- #
 # 3. Referencias (líneas base) en la cohorte de selección
 # --------------------------------------------------------------------------- #
-def _puntaje_reglas(datos: pd.DataFrame) -> dict[str, np.ndarray]:
-    """Reglas sin aprendizaje que podría aplicar Secretaría con los datos de t0."""
-    atrasos = pd.to_numeric(datos["atrasos_pension"], errors="coerce").fillna(0).to_numpy()
-    tardio = (datos["pago_origen"] == "tardio").to_numpy().astype(float)
-    extra = pd.to_numeric(datos["reserva_extraordinaria"], errors="coerce").fillna(0).to_numpy()
-    return {
-        "D · más atrasos primero": atrasos,
-        # Prioridad lexicográfica: pago anterior tardío, luego reserva extraordinaria, luego atrasos
-        "D2 · señales administrativas": 100 * tardio + 20 * extra + atrasos,
-    }
-
-
 def evaluar_referencias(
     dataset: pd.DataFrame, config: dict, cohortes_entrenamiento: list[str],
     k_por_sede: dict[str, int], repeticiones_azar: int = 500,
@@ -292,7 +281,7 @@ def evaluar_referencias(
                   "lift_k_C4": round(float(np.mean([a["lift_k"] for a in azar])), 4),
                   "recall_k_C4": round(float(np.mean([a["recall_k"] for a in azar])), 4),
                   "pr_auc_C4": round(float(y.mean()), 4)})
-    for nombre, puntaje in _puntaje_reglas(seleccion).items():
+    for nombre, puntaje in puntajes_reglas(seleccion).items():
         _fila(nombre, puntaje)
     modelo = _modelo_referencia(semilla).fit(construir_matriz_x(entrenamiento),
                                              entrenamiento["y_no_matricula"])

@@ -1,6 +1,13 @@
 # Reportes
 
-Los reportes generados se guardan junto a la documentación que los explica, en `docs/`:
+**Reportes generados en esta carpeta** (desde los agregados de `results/metrics`; se regeneran con `python tools/generar_resumen.py --fuente real` o `--fuente sintetica`):
+
+| Reporte | Contenido |
+|---|---|
+| [`resumen_resultados_real.md`](resumen_resultados_real.md) | Selección en C4, prueba final en C5 con IC 95 %, calibración, proyección, hiperparámetros del sistema congelado y comprobaciones de la revisión final (D59) |
+| [`resumen_resultados_sintetica.md`](resumen_resultados_sintetica.md) | Lo mismo con la base sintética: sirve para comprobar el código, no describe a LEMAS |
+
+**Reportes que se guardan junto a la documentación que los explica**, en `docs/`:
 
 | Reporte | Contenido |
 |---|---|

@@ -70,7 +70,7 @@ Prueba final en **C5** (matrícula 2026–2027), evaluada **una sola vez** con e
 | Logística híbrida (mejor modelo de ML en C4) | 0,067 | 0,98 [0,47; 1,52] | 0,15 |
 | A · selección al azar | 0,073 | 1,08 | 0,16 |
 
-- **Hallazgo principal:** contactando al 15 % de las familias se llega al **30 %** de las que no se matriculan. La regla D2 (pago anterior tardío → reserva extraordinaria → pensiones pagadas tarde) surgió del análisis de datos y se confirmó fuera de muestra.
+- **Hallazgo principal:** contactando al 15 % de las familias se llega al **30 %** de las que no se matriculan. La regla D2 (pago anterior tardío → reserva extraordinaria → pensiones pagadas tarde) se definió en la Fase 1 a partir del análisis exploratorio y se confirmó en C5 sin ajustar nada. **Ese análisis exploratorio usó las cinco cohortes**, así que D2 no es "fuera de muestra" en su diseño; el cuaderno 08 repite el análisis solo con C1–C3 para comprobar que el orden de las señales sale igual (D59, [`docs/modelado.md`](docs/modelado.md#9-comprobaciones-de-la-revisión-final-d59)).
 - **Los modelos de aprendizaje automático no superaron a la regla** con 193 eventos de entrenamiento: el gradient boosting se sobreajustó y los modelos lineales se quedaron cortos. Es un resultado válido y está documentado.
 - **Calibración y proyección:** la logística híbrida calibrada iguala a la tasa histórica (Brier 0,0648 frente a 0,0647; MAPE 2,8 % en ambos).
 - **Equidad:** menor detección en familias becadas (recall 0,18 frente a 0,32), que se advierte en la app.
@@ -95,18 +95,21 @@ Cada notebook trae una celda **0 · Preparar el entorno**. Esa celda clona el re
 | `05_evaluacion` | Resultados de la prueba única en C5: IC 95 %, Brier frente a R/B0/B1, criterios del Canvas, explicabilidad, equidad y proyección. Lee resultados guardados | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/05_evaluacion.ipynb) |
 | `overfitting_analysis` | **Actividad de la semana 3:** seguimiento de métricas, curvas de aprendizaje (pérdida y PR-AUC por iteración, por tamaño de datos y por hiperparámetro), diagnóstico de sobreajuste y subajuste (con la segunda etapa: falta de capacidad o límite de señal), y siete estrategias limpias con antes/después, intervalo bootstrap, réplica C2 → C3 y cinco semillas (D54). No usa C5. Se guarda ejecutado, con sus salidas | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/overfitting_analysis.ipynb) |
 | `06_alcance_lista` | Por qué la lista no llega a más familias: qué hay dentro del evento (paga tarde, paga en parte o no registra ningún pago), alcance según el número de contactos y lista fija frente a lista semanal. Descriptivo; no usa C5 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/06_alcance_lista.ipynb) |
-| `07_escenarios_criticos` | **Workshop de la semana 5:** errores de registro, datos faltantes, desbalance extremo, cambio de distribución y señal caída sobre C4, con el sistema ya elegido y límites operativos (Lift@k ≥ 1,20). No usa C5 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/07_escenarios_criticos.ipynb) |
+| `07_escenarios_criticos` | **Workshop de escenarios críticos (semana 5):** errores de registro, datos faltantes, desbalance extremo, cambio de distribución y señal caída sobre C4, con el sistema ya elegido y límites operativos (Lift@k ≥ 1,20). No usa C5 | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/07_escenarios_criticos.ipynb) |
+| `08_revision_final` | **Comprobaciones de la revisión final (D59):** orden de las señales de D2 solo con C1–C3, distribución del Lift@k con 500 sorteos de desempate, IC 95 % de la diferencia D2 − D, azar por estudiante frente a azar por familia y estadísticos descriptivos. No usa C5 salvo que se marque `INCLUIR_C5` | [![Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ggranizo2507/prediccion-matricula-lemas/blob/main/notebooks/08_revision_final.ipynb) |
 
-En los notebooks 01, 02 y 03, el parámetro `FUENTE` elige entre `sintetica` (cualquier persona) y `real` (solo en el entorno autorizado de LEMAS). Los notebooks 04 y 05 leen los **agregados reales ya publicados** en `results/` (autorizados por LEMAS), así que cualquier persona puede ejecutarlos.
+En los notebooks 01, 02, 03, 06, 07 y 08, el parámetro `FUENTE` elige entre `sintetica` (cualquier persona) y `real` (solo en el entorno autorizado de LEMAS). Los notebooks 04 y 05 leen los **agregados reales ya publicados** en `results/` (autorizados por LEMAS), así que cualquier persona puede ejecutarlos.
+
+> ⚠️ **Qué se puede reproducir fuera de LEMAS.** Con la base sintética se reproduce **el código** (todas las pruebas, todos los cuadernos y la aplicación), no **las conclusiones**. La base sintética respeta los totales por cohorte, pero sus relaciones entre variables son supuestos del generador: con ella, el cuaderno 03 concluye que la logística híbrida supera a D2, al revés que con los datos reales. Los resultados reales no son reproducibles fuera de LEMAS por diseño (datos de menores, LOPDP). Su evidencia es indirecta y verificable: las salidas agregadas de los cuadernos 04, 05, 07, 08 y `overfitting_analysis` ejecutados con `Fuente: real`, el SHA-256 del sistema congelado (`results/metrics/resultados_finales_real.json`) y el registro de decisiones fechadas ([`docs/planificacion.md`](docs/planificacion.md)).
 
 ### Opción B · Entorno local
 ```bash
 git clone https://github.com/ggranizo2507/prediccion-matricula-lemas.git
 cd prediccion-matricula-lemas
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt                     # versiones exactas: requirements-lock.txt
+pip install -r requirements.txt                     # versiones exactas
 
-python -m src.synthetic                              # regenera el dataset sintético
+python -m src.synthetic --parametros data/synthetic/parametros_calibracion.json  # regenera la base sintética publicada (idéntica)
 python -m src.data_processing                        # construye la tabla de modelado
 pytest -q                                            # ejecuta las pruebas
 ```
@@ -144,29 +147,30 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | Carpeta | Contenido |
 |---|---|
 | `data/` | `raw/` y `processed/` (vacías en el repositorio público) y `synthetic/` con la base artificial |
-| `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (entrena, optimiza, calibra y evalúa una vez en C5), 04 optimización, 05 evaluación (análisis de resultados guardados), 06 alcance de la lista y 07 escenarios críticos, listos para Colab |
-| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `modeling` (entrenamiento, Optuna, calibración, evaluación), `inferencia` (lógica de la app), `institucional`, `diagnostico`, `sensibilidad`, `alcance`, `costo`, `escenarios`, sus módulos de figuras (`graficos_*`), `synthetic` y `utils` |
-| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) y la sensibilidad de hiperparámetros (`generar_sensibilidad.py`), que solo leen tablas agregadas de `results/metrics` |
+| `notebooks/` | 00a seudonimización, 00b perfil, 01 EDA, 02 preprocesamiento, 03 modelado (entrena, optimiza, calibra y evalúa una vez en C5), 04 optimización, 05 evaluación (análisis de resultados guardados), 06 alcance de la lista, 07 escenarios críticos y 08 comprobaciones de la revisión final, listos para Colab |
+| `src/` | Código modular: `data_processing`, `auditoria`, `evaluate` (métricas por familia), `reglas` (D y D2, una sola definición), `modeling` (entrenamiento, Optuna, calibración, evaluación), `model` y `train` (puntos de entrada de la guía), `revision` (comprobaciones D59), `inferencia` (lógica de la app), `institucional`, `diagnostico`, `sensibilidad`, `alcance`, `costo`, `escenarios`, sus módulos de figuras (`graficos_*`), `synthetic` y `utils` |
+| `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) la sensibilidad de hiperparámetros (`generar_sensibilidad.py`) y el resumen de resultados (`generar_resumen.py`), que solo leen tablas agregadas de `results/metrics` |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 234 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
+| `tests/` | 252 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
-| `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros y capacidad |
+| `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna |
 
 **Equivalencias con la estructura de la guía del curso.** Algunos nombres cambian porque el proyecto trabaja con datos de menores: el modelo entrenado con datos reales nunca se publica.
 
 | La guía pide | En este repositorio | Motivo |
 |---|---|---|
-| `src/model.py` y `src/train.py` | `src/modeling.py`: definición de los modelos (`construir_modelo`), Optuna (`optimizar`), entrenamiento (`entrenar_candidatos`), calibración y congelamiento. Se ejecuta desde `notebooks/03_modelado.ipynb` | Un solo módulo para definir, entrenar y congelar con el mismo protocolo temporal |
+| `src/model.py` y `src/train.py` | Existen como puntos de entrada delgados: `model.py` reexporta la definición de los modelos y de las reglas, y `python -m src.train` entrena y compara en C4 sin abrir C5. La implementación está en `src/modeling.py` (modelos, Optuna, calibración, congelamiento) y `src/reglas.py` (D y D2) | Un solo módulo para definir, entrenar y congelar con el mismo protocolo temporal, sin duplicar código |
 | `models/best_model.pkl` y `model_v1.pkl` | `models/sistema_sintetica.joblib` y `.json`, el sistema completo entrenado con la base sintética. El real (`sistema_real.joblib`) existe solo en LEMAS | Un modelo entrenado con datos reales puede memorizar casos; la solución final es la regla D2, que no necesita archivo de modelo |
 | `tests/test_model.py` | `tests/test_modeling.py` (más otras nueve pruebas por módulo) | Mismo nombre que el módulo que prueba |
-| `results/reports/` | Reportes en `docs/`: [`diagnostic_report.pdf`](docs/diagnostic_report.pdf) y el [workshop](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf); índice en [`results/reports/README.md`](results/reports/README.md) | Se entregan junto a la documentación que los explica |
+| `results/reports/` | [`resumen_resultados_real.md`](results/reports/resumen_resultados_real.md), generado desde las métricas (`tools/generar_resumen.py`). Los reportes en PDF ([`diagnostic_report.pdf`](docs/diagnostic_report.pdf) y el [workshop](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf)) están en `docs/`; índice en [`results/reports/README.md`](results/reports/README.md) | Los PDF se entregan junto a la documentación que los explica |
 
 ### Documentación
 | Documento | Contenido |
 |---|---|
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D57 |
+| [`docs/glosario.md`](docs/glosario.md) | Siglas y términos del proyecto (cohortes, reglas, líneas base, métricas y normas). Conviene leerlo primero |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D59 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados, análisis de sensibilidad (importancia, dependencia parcial e interacciones), antes/después y diagnóstico de ajuste |

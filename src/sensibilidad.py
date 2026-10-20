@@ -32,36 +32,16 @@ from dataclasses import dataclass
 import numpy as np
 import optuna
 import pandas as pd
-from optuna.distributions import CategoricalDistribution, FloatDistribution, IntDistribution
+from optuna.distributions import CategoricalDistribution, IntDistribution
 from sklearn.ensemble import RandomForestRegressor
 
 from src.diagnostico import numero
+from src.modeling import espacio_de
 
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-# Mismos espacios que `modeling._espacio` (no se importan para no depender de un objeto Trial)
-ESPACIOS: dict[str, dict] = {
-    "logistica": {
-        "conjunto": CategoricalDistribution(["completo", "reducido"]),
-        "balanceado": CategoricalDistribution([True, False]),
-        "C": FloatDistribution(1e-3, 10, log=True),
-        "l1_ratio": FloatDistribution(0.0, 1.0),
-    },
-    "arboles": {
-        "conjunto": CategoricalDistribution(["completo", "reducido"]),
-        "balanceado": CategoricalDistribution([True, False]),
-        "learning_rate": FloatDistribution(0.01, 0.2, log=True),
-        "max_depth": IntDistribution(2, 4),
-        "max_leaf_nodes": IntDistribution(4, 15),
-        "min_samples_leaf": IntDistribution(20, 120),
-        "l2_regularization": FloatDistribution(1e-3, 10, log=True),
-        "max_iter": IntDistribution(50, 400),
-    },
-    "hibrido": {
-        "balanceado": CategoricalDistribution([True, False]),
-        "C": FloatDistribution(1e-3, 10, log=True),
-    },
-}
+# Los mismos espacios con los que se optimizó: una sola definición, en config.yaml
+ESPACIOS: dict[str, dict] = {tipo: espacio_de(tipo) for tipo in ("logistica", "arboles", "hibrido")}
 PREFIJOS = {"Regresión": "logistica", "Gradient": "arboles", "Logística": "hibrido"}
 NOMBRES = {"logistica": "Regresión logística", "arboles": "Gradient boosting",
            "hibrido": "Logística híbrida"}

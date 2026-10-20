@@ -116,7 +116,7 @@ Con un doble clic abre la app en modo institucional y sube el Excel de siempre j
 Siempre una persona de Secretaría. La app muestra el motivo de cada familia para que la decisión sea explicable y revisable.
 
 **27. ¿Cómo se mantendría el sistema?**
-Cada mayo, cuando se conoce el resultado del ciclo, se compara la lista con las matrículas reales, se actualiza el historial y se revalidan la regla y el modelo con la cohorte nueva. Si cambian las políticas de cobro o de reservas, D2 debe revalidarse antes de usarse. El siguiente paso es la validación con usuarios (anexo E del documento técnico).
+Cada mayo, cuando se conoce el resultado del ciclo, se compara la lista con las matrículas reales, se actualiza el historial y se revalidan la regla y el modelo con la cohorte nueva. Si cambian las políticas de cobro o de reservas, D2 debe revalidarse antes de usarse. El siguiente paso es la validación con usuarios (anexo E del [documento técnico v6](Documento_Tecnico_Prediccion_Matricula_v6.docx)).
 
 ## G. Ética, responsabilidad y regulación
 

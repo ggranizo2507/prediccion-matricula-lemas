@@ -131,7 +131,7 @@ La lista se muestra igual, porque quien decide es una persona, pero el aviso no 
 
 **Contra los errores de registro**, que ninguna comprobación automática detecta, la medida es de procedimiento. Antes de llamar, quien tenga la lista confirma en el sistema de Secretaría que el motivo de cada familia es correcto, sobre todo «pagó tarde la matrícula anterior». La lista tiene 165 familias, así que la revisión es breve, y es justo donde un error hace más daño (sección 3.1).
 
-**Después de la campaña (cada mayo).** Con el resultado del ciclo se recalcula el Lift@k de la lista. Si baja de 1,20 se revisa la regla, y si no supera al azar dos años seguidos se suspende su uso ([ficha_modelo.md](ficha_modelo.md) §8). En un año con muy pocos casos (menos del 3 %), un solo año no basta para decidir (sección 3.3). La persona que designe la Dirección decide la suspensión (decisión 5 de la presentación a la Dirección).
+**Después de la campaña (cada mayo).** Con el resultado del ciclo se recalcula el Lift@k de la lista. Si baja de 1,20 se revisa la regla, y si no supera al azar dos años seguidos se suspende su uso ([ficha_modelo.md](ficha_modelo.md) §8). En un año con muy pocos casos (menos del 3 %), un solo año no basta para decidir (sección 3.3). La persona que designe la Dirección decide la suspensión (decisión propuesta a la Dirección de LEMAS).
 
 ## 5. Límites de la simulación
 

@@ -1,6 +1,6 @@
 # Modelado y evaluación final · Fase 2
 
-> **Estado: cerrada (01-oct-2026).** Datos reales de LEMAS, cuaderno `03_modelado`. Todas las cifras son agregados.
+> **Estado: cerrada (01-oct-2026); última revisión: 19-oct-2026 (sección 9, D59).** Datos reales de LEMAS, cuaderno `03_modelado`. Todas las cifras son agregados.
 >
 > Fuentes: `seleccion_C4_real.csv`, `diagnostico_ajuste_real.csv`, `shap_importancia_real.csv`, `permutacion_real.csv`, `resultados_finales_real.json`, `equidad_C5_real.csv`, `proyeccion_C5_real.csv` y figuras 9 a 12.
 
@@ -51,7 +51,7 @@ Por qué validación temporal y no validación cruzada aleatoria, y qué técnic
 | Logística híbrida (calibrada) | 0,067 [0,030; 0,103] | 0,98 [0,47; 1,52] | 0,15 [0,07; 0,23] | 0,088 |
 | A · selección al azar de k familias | 0,073 | 1,08 | 0,16 | 0,074 |
 
-- **D2 se confirma fuera de muestra.** Contactando al 15 % de los representantes se llega al **30 % de las familias que no pagan la matrícula en plazo**, casi el doble que al azar. Los empates dentro de un mismo puntaje se resolvieron al azar con semilla fija; la aplicación usa el mismo desempate (D48). El IC de Lift@k no incluye el 1.
+- **D2 se confirma en una cohorte que no intervino en su elección ni en ningún ajuste.** Contactando al 15 % de los representantes se llega al **30 % de las familias que no pagan la matrícula en plazo**, casi el doble que al azar. Los empates dentro de un mismo puntaje se resolvieron al azar con semilla fija; la aplicación usa el mismo desempate (D48). El IC de Lift@k no incluye el 1. Dos matices: el orden de las señales de D2 se tomó del análisis exploratorio, que usó las cinco cohortes, y el IC no compara D2 con D (sus intervalos se solapan). Ambos se revisan en la sección 9.
 - **La logística híbrida no supera al azar en C5.** Esto confirma que la decisión tomada en C4 fue correcta.
 
 **Calibración (Brier por estudiante en C5; menor es mejor):**
@@ -126,6 +126,38 @@ De ahí sale la propuesta de una campaña en dos etapas para 2027: la lista D2 e
 
 ## 8. Conclusión de la Fase 2
 
-1. **Resultado principal:** una regla de priorización derivada del análisis de datos (D2) duplica la efectividad del contacto frente al azar. Se validó fuera de muestra con IC 95 % y cumple las metas técnicas del Canvas.
+1. **Resultado principal:** una regla de priorización derivada del análisis de datos (D2) duplica la efectividad del contacto frente al azar. Se validó en C5, sin ajustar nada, con IC 95 %, y cumple las metas técnicas del Canvas. Sus límites (el diseño vio todas las cohortes; D2 frente a D no está demostrado) se discuten en la sección 9.
 2. **Resultado de los modelos:** con alrededor de 200 eventos de entrenamiento y señales débiles, los modelos de aprendizaje automático no superan a la regla. Es un resultado válido y previsto en el v5: la IA sirvió para descubrir, validar y cuantificar la regla, y para medir la incertidumbre de forma honesta.
 3. **Para la app (Fase 3):** se usa D2 para la lista de contactos. Las probabilidades individuales se presentan como "tasa histórica ajustada", sin afirmar más precisión de la que tienen, y la proyección por sede y subnivel se acompaña de B1.
+
+## 9. Comprobaciones de la revisión final (D59)
+
+Una revisión independiente de la entrega (19-oct-2026) planteó cuatro dudas sobre la evaluación. Se responden con el cuaderno [`08_revision_final`](../notebooks/08_revision_final.ipynb) y el módulo `src/revision.py`, sin cambiar el sistema elegido. Ninguna usa C5, salvo la medición opcional de la sección 9.5.
+
+### 9.1 El diseño de D2 vio todas las cohortes
+Las tasas por señal del cuaderno 01 (figuras 3 a 6 de [analisis_datos.md](analisis_datos.md)) se calcularon con C1 a C5. El orden de las señales de D2 (pago tardío → reserva extraordinaria → atrasos) se tomó de esas tasas. Por eso la prueba en C5 es **fuera de ajuste** (D2 no tiene parámetros que se hayan estimado con C5 y nada se cambió después de verla), pero **no fuera de diseño**: quien ordenó las señales ya había visto, de forma agregada, las tasas de C4 y C5. No se declaró hasta esta revisión.
+
+**Comprobación:** el cuaderno 08 repite las tasas y el riesgo relativo de cada señal solo con C1–C3, con C2–C3 (las cohortes de entrenamiento) y con cada cohorte por separado. Si el orden por riesgo relativo es el mismo, D2 se habría construido igual sin mirar C4 ni C5, y el resultado de C5 vale también como prueba del diseño.
+
+**Resultado:** *pendiente de ejecutar el cuaderno 08 con datos reales.*
+
+### 9.2 El sorteo de desempate
+Muchas familias empatan en el puntaje de D2. En C4 el Lift@k variaba de 1,53 a 1,99 según el sorteo, con media 1,75 (sección 7); el 1,93 con el que se eligió D2 está en la parte alta. El cuaderno 08 mide la distribución con 500 sorteos.
+
+El IC de C5 (1,24 a 2,56) ya incluye buena parte de esa variación: en cada remuestra del bootstrap las familias cambian de orden y los empates se resuelven de nuevo. El 1,97 puntual, en cambio, es el de un solo sorteo. No se sabe en qué posición quedó el sorteo de C5. Si hubiera sido tan favorable como el de C4 (unos 0,2 puntos sobre la media), el Lift@k medio de C5 rondaría 1,8: menos que el 1,97 publicado, pero todavía muy por encima de la meta de 1,20.
+
+**Resultado en C4:** *pendiente.*
+
+### 9.3 D2 frente a D
+Los IC de D2 [1,24; 2,56] y de D [1,03; 2,30] en C5 se solapan casi por completo, así que **no está demostrado que D2 sea mejor que D**; solo que las dos superan al azar. El cuaderno 08 estima el IC 95 % de la diferencia D2 − D en C4 con un bootstrap **pareado** (las dos reglas sobre las mismas remuestras de representantes, con un sorteo nuevo en cada una). La elección de D2 se mantiene por la regla escrita de antemano (D37: el mayor Lift@k en C4) y porque D2 explica mejor a Secretaría por qué llama a cada familia.
+
+**Resultado en C4:** *pendiente.*
+
+### 9.4 Por qué el azar da 1,08 y no 1,00
+La referencia A sortea un número por **estudiante** y la familia toma el máximo, exactamente como se consolida cualquier puntaje (`evaluate.consolidar_familias`). Una familia con dos hijos tiene dos números en el sorteo y más probabilidad de entrar en la lista. Como el evento es familiar (basta que un hijo no se matricule), las familias con más hijos tienen más casos, y el azar queda un poco por encima de 1. Con un sorteo uniforme **por familia**, el Lift@k esperado es 1. La comparación con D2 no cambia de sentido: el azar publicado es una referencia algo **exigente**, no complaciente. El cuaderno 08 calcula las dos versiones en C4 y el número medio de estudiantes de las familias con y sin caso.
+
+**Resultado en C4:** *pendiente.*
+
+### 9.5 (Opcional) Las mismas mediciones en C5
+Medir en C5 la distribución por sorteos y la diferencia D2 − D no elige ni cambia nada, porque D y D2 son reglas fijas. Aun así, el protocolo dice que C5 se usa una sola vez. El cuaderno deja esa medición desactivada (`INCLUIR_C5 = False`); si el equipo la activa, debe registrarse como una decisión aparte en [planificacion.md](planificacion.md).
+

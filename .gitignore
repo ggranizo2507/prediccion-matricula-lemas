@@ -44,3 +44,6 @@ fase2_*.zip
 diagnostico_*.zip
 /alcance_*/
 alcance_*.zip
+# Paquetes de agregados que descargan los cuadernos 07 y 08 en Colab
+escenarios_*.zip
+revision_*.zip
