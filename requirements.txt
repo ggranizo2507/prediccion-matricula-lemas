@@ -9,13 +9,15 @@ PyYAML==6.0.3
 # --- Modelado, optimización y explicabilidad ---
 scikit-learn==1.8.0
 optuna==5.0.0
-shap==0.52.0
+shap==0.52.0; python_version >= "3.12"
+shap==0.51.0; python_version < "3.12"   # shap 0.52 exige Python 3.12
 joblib==1.5.3
 # --- Visualización, reportes e interfaz ---
 matplotlib==3.10.8
 seaborn==0.13.2
 plotly==7.1.0
 reportlab==4.4.10     # solo para generar docs/diagnostic_report.pdf
+pypdf==6.1.1          # pruebas del reporte PDF
 streamlit==1.64.0
 # --- Calidad ---
 pytest==9.1.1
