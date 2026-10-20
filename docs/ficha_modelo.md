@@ -100,7 +100,6 @@ La celda de Inicial se oculta para que la de Bachillerato no pueda deducirse por
 - El orden de las señales de D2 salió de un análisis exploratorio que usó las cinco cohortes, C4 y C5 incluidas. Al repetirlo solo con C1–C3 el orden es el mismo, así que la prueba en C5 vale también para el diseño ([modelado.md, sección 9](modelado.md#9-comprobaciones-de-la-revisión-final-d59)). Cohorte a cohorte, el orden entre reserva extraordinaria y atrasos no es estable.
 - No está demostrado que D2 sea mejor que la regla D: en C4 la diferencia es 0,00 [IC 95 %: −0,62; 0,62] y sus IC en C5 se solapan. Ambas superan al azar.
 - Con unos 200 eventos de entrenamiento los resultados por grupo son inciertos.
-- Falta confirmar si el promedio final del ciclo de origen ya estaba cerrado al 20 de febrero en las cohortes históricas. Solo lo usa el modelo de apoyo, no la regla D2 ([data/README.md](../data/README.md)).
 - No se ha medido si la llamada cambia la decisión de la familia.
 - Escenarios críticos con datos reales sobre C4 ([escenarios_criticos.md](escenarios_criticos.md)):
   - la lista tolera hasta un 10 % de errores de registro y deja de ser útil hacia el 20 %; es su debilidad principal, por eso conviene revisar los motivos de la lista antes de llamar;
