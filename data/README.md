@@ -63,6 +63,7 @@ En el uso anual, el modo institucional de la aplicación hace el paso 1 en el pr
 ## Limitaciones conocidas
 - No hay fecha de aprobación de la reserva. Se usa el estado actual, y las aprobaciones excepcionales posteriores a enero pueden quedar incluidas. Por eso se hace un análisis de sensibilidad solo con "Aprobar".
 - `# meses caído` se calcula de mayo a enero (confirmado por LEMAS el 18-oct-2026), así que no incluye la pensión de febrero, que vence después de t0. Si en algún año se calculara de otra forma, tendría información futura: hay que mantener el mismo criterio.
+- `P.Académico` es el promedio final del ciclo de origen. **Pendiente de confirmar con LEMAS (D61):** si en las cohortes históricas ese promedio ya estaba cerrado al 20 de febrero. Si se cerraba después, sería información posterior a t0. Solo lo usa el modelo de apoyo (logística híbrida), no la regla D2, así que la lista y sus resultados no dependen de él. En la operación se usaría el promedio disponible a esa fecha.
 - La aprobación de reservas depende también de factores institucionales que no están en los datos.
 - La unidad de contacto es el representante: dos hermanos con distinto representante cuentan como dos contactos.
 
