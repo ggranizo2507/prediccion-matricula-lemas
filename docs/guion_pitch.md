@@ -1,113 +1,220 @@
-# Guion del pitch y plan de grabación
+# Guion del video pitch (5 minutos)
 
-Duración total: **5:00**. Presentación en línea (10 diapositivas), con las notas del orador ya cargadas en cada diapositiva. Formato de entrega: MP4 o YouTube "no listado", 720p como mínimo.
+Guion con el que se grabó el [video pitch](https://drive.google.com/file/d/1Ro0GUAUccS-o9rC0LBZr2Z77k66DGZuU/view?usp=sharing). Acompaña a la presentación de 10 diapositivas, que está en [`docs/pitch/Pitch_Continuidad_LEMAS.pdf`](pitch/Pitch_Continuidad_LEMAS.pdf). El video está pensado para quien necesita la solución (la Dirección y Secretaría de LEMAS) y cubre los siete bloques obligatorios de la guía del proyecto.
 
-## 1. Guion cronometrado
+Hablan Guillermo Granizo (Product Owner) y José Ulloa (Scrum Master).
 
-| # | Diapositiva | Tiempo | Bloque de la guía | Orador |
-|---|---|---|---|---|
-| 1 | Portada | 0:00–0:15 | Introducción y problema (30 s) | Guillermo |
-| 2 | Problema | 0:15–0:30 | | Guillermo |
-| 3 | Datos | 0:30–1:00 | Datos y metodología (1 min) | José |
-| 4 | Metodología | 1:00–1:30 | | José |
-| 5 | Optimización | 1:30–2:15 | Desarrollo y optimización (45 s) | José |
-| 6 | Demo (grabación de pantalla) | 2:15–3:15 | Solución en acción (1 min) | Guillermo |
-| 7 | Resultados | 3:15–3:40 | Evaluación (45 s) | Guillermo |
-| 8 | Alcance | 3:40–4:00 | | Guillermo |
-| 9 | Ética | 4:00–4:45 | Ética (45 s) | José |
-| 10 | Cierre con QR | 4:45–5:00 | Cierre (15 s) | Guillermo |
+## 1. Enfoque del pitch
 
-### Texto por diapositiva
+El video no es una clase: le habla a quien necesita la solución, la Dirección y Secretaría de LEMAS, que no son personas técnicas. Cumple los siete bloques obligatorios de la guía, pero cada término técnico se traduce a lo que cambia en el trabajo del colegio.
 
-**1 · Portada (Guillermo, 0:00–0:15).** Hola, somos Guillermo Granizo y José Ulloa. Presentamos "Continuidad estudiantil en LEMAS", un sistema de IA que ayuda a la Unidad Educativa LEMAS a decidir a qué familias llamar primero cuando una reserva aprobada todavía no se convierte en matrícula pagada.
+### La propuesta de valor en una frase
 
-**2 · Problema (Guillermo, 0:15–0:30).** Cada año, entre 6 y 11 de cada 100 estudiantes con reserva aprobada no pagan la matrícula a tiempo, y el colegio se entera tarde. Hay 69 días y 10 personas para dos sedes. ¿A quién llamar primero?
+> Para la Dirección y Secretaría de LEMAS, que cada febrero no alcanzan a llamar a todas las familias con reserva aprobada, **Continuidad estudiantil** es una herramienta que ordena a quién llamar primero y **encuentra el doble de familias en riesgo con las mismas llamadas**. A diferencia de llamar al azar o por orden de lista, cada familia llega con el motivo de la llamada, y solo usa el Excel que el colegio ya tiene.
 
-**3 · Datos (José, 0:30–1:00).** Trabajamos con datos reales de LEMAS, autorizados: 9.031 registros de seis ciclos, 2.733 estudiantes y 2.017 familias. Antes de tocarlos, reemplazamos las cédulas con HMAC-SHA256; la clave queda solo con el custodio. En la limpieza encontramos tres problemas que cambiaban los resultados: dos formatos de nombre de curso, un último curso que no se reconocía y una cédula genérica usada para familias extranjeras. Solo publicamos agregados.
+### Antes y después, con los números del colegio
 
-**4 · Metodología (José, 1:00–1:30).** Usamos validación temporal: entrenamos con C2 y C3, elegimos en C4 y probamos una sola vez en C5, la matrícula 2026–2027. C1 se excluyó porque una auditoría mostró que no era comparable. Comparamos tres modelos de IA con dos reglas sin IA y con el azar. La métrica es el Lift por familia: cuántas veces más casos encontramos que al azar, contactando solo a las familias que cada sede puede atender.
+| **Indicador (prueba con la matrícula 2026–2027)** | **Hoy (al azar)** | **Con la lista**                |
+|---------------------------------------------------|-------------------|---------------------------------|
+| Familias en riesgo encontradas con 165 llamadas   | ≈ 11 de 74        | 22 de 74                        |
+| Llamadas por cada caso encontrado                 | ≈ 15              | 7,5                             |
+| Casos alcanzados llamando al 15 % de las familias | 15 %              | 30 %                            |
+| Costo adicional                                   | —                 | Ninguno: usa el Excel existente |
 
-**5 · Optimización (José, 1:30–2:15).** Optimizamos con Optuna 180 combinaciones, siempre respetando el orden temporal. El análisis de sensibilidad mostró qué importa. En la regresión logística, la regularización `C`; en los árboles, el tamaño mínimo de hoja, que explica el 90 % de la variación, porque con hojas pequeñas el modelo memoriza. Las interacciones son débiles. La búsqueda sí mejoró la validación interna, de 0,079 a 0,106, pero esa ganancia no llegó a C4: el modelo que ganó en C3 perdió en C4. Con unos 200 casos, el límite es la señal de los datos, no los hiperparámetros. Por eso decidimos en C4 frente a reglas simples.
+*Fuente: prueba única en C5 (1.093 familias, 74 casos); Lift 1,97 con margen de 1,24 a 2,56. Detalle en [ficha_modelo.md](ficha_modelo.md).*
 
-**6 · Demo (Guillermo, 2:15–3:15).** Se reproduce la grabación de pantalla (ver sección 2). Narración sugerida: "Esta es la aplicación pública, que solo trabaja con datos sintéticos. Con un clic genera la lista de familias por sede, cada una con su motivo. En Proyección vemos las matrículas esperadas frente a la tasa histórica. Aquí evaluamos un estudiante con pago tardío y reserva extraordinaria: prioridad alta; y otro sin señales: prioridad baja. Si alguien intenta subir un archivo con cédulas, la aplicación lo rechaza."
+### Del modelo al valor: cómo traducimos lo técnico
 
-**7 · Resultados (Guillermo, 3:15–3:40).** En la prueba final, hecha una sola vez, la regla D2 encontró casi el doble de casos que el azar: Lift de 1,97. Hasta el extremo bajo del intervalo, 1,24, supera nuestra meta de 1,20. Llamando al 15 % de las familias llegamos al 30 % de los casos: 7,5 llamadas por caso, la mitad que al azar.
+| **Lo que dice el equipo técnico**       | **Lo que el cliente se pregunta** | **Cómo lo decimos**                                                                                    |
+|-----------------------------------------|-----------------------------------|--------------------------------------------------------------------------------------------------------|
+| Lift@k = 1,97 \[1,24; 2,56\]            | ¿Cuánto mejor que hoy?            | Con 165 llamadas encontramos 22 familias en riesgo; al azar, unas 11                                   |
+| Seudonimización HMAC-SHA256             | ¿Mis datos están seguros?         | Nombres y cédulas cambiados por códigos; la clave la guarda una persona del colegio                    |
+| Validación temporal, prueba única en C5 | ¿Funciona con un año nuevo?       | Aprendimos de años pasados y lo probamos una sola vez con un año nuevo, sin mirarlo antes              |
+| Optuna, sensibilidad de hiperparámetros | ¿Por qué no algo más avanzado?    | Probamos 180 ajustes de tres modelos de IA; ninguno superó a la regla, que además explica cada llamada |
+| Recall@k = 0,30                         | ¿Y cuándo falla?                  | Llega a 3 de cada 10 casos; los otros 7 no dejan señal el 20 de febrero                                |
 
-**8 · Alcance (Guillermo, 3:40–4:00).** Supera al azar en los cuatro ciclos, de 1,4 a 2,0. «Más atrasos primero» rinde casi igual; elegimos D2 porque explica cada llamada. No llega al 70 % de los casos: al 20 de febrero los datos no los distinguen. Los modelos de IA no superaron a la regla, pero confirmaron que no había más señal.
+## 2. Quién habla y cuándo entra
 
+Hablan los dos. Hay cuatro cambios de voz; cada uno empieza justo después de una frase de paso del compañero. Guillermo abre, presenta la demostración y cierra; José explica los datos, el desarrollo y la ética.
 
-**9 · Ética (José, 4:00–4:45).** Trabajamos con datos de menores. Sesgos: los atrasos reflejan la situación económica, y la regla parece detectar menos casos entre becadas, 18 frente a 32 %; con solo 11 casos no es concluyente, así que lo vigilamos cada año. Impacto: bien usada, la lista lleva ayuda a tiempo; usada para cobrar, dañaría a quienes más la necesitan, y ese uso está prohibido. Mitigaciones: seudónimos con clave custodiada, app pública solo con datos sintéticos, sin nacionalidad, y siempre decide una persona. Limitaciones: falta informar a las familias antes de usarla, hay pocos casos por grupo y no medimos si la llamada cambia la decisión.
+| **\#** | **Tiempo** | **Bloque de la guía**                | **Diapositiva**           | **Habla** | **Palabras** |
+|--------|------------|--------------------------------------|---------------------------|-----------|--------------|
+| 1      | 0:00–0:15  | 1\. Introducción y problema (30 s)   | Portada                   | Guillermo | 37           |
+| 2      | 0:15–0:30  | 1\. Introducción y problema (30 s)   | El problema               | Guillermo | 41           |
+| 3      | 0:30–1:00  | 2\. Datos y metodología (1 min)      | Los datos                 | José      | 77           |
+| 4      | 1:00–1:30  | 2\. Datos y metodología (1 min)      | Cómo lo construimos       | José      | 76           |
+| 5      | 1:30–2:15  | 3\. Desarrollo y optimización (45 s) | Desarrollo y optimización | José      | 106          |
+| 6      | 2:15–3:15  | 4\. La solución en acción (1 min)    | La solución en acción     | Guillermo | 104          |
+| 7      | 3:15–3:40  | 5\. Evaluación y resultados (45 s)   | Resultados                | Guillermo | 65           |
+| 8      | 3:40–4:00  | 5\. Evaluación y resultados (45 s)   | Dónde funciona y dónde no | Guillermo | 53           |
+| 9      | 4:00–4:45  | 6\. Consideraciones éticas (45 s)    | Ética                     | José      | 109          |
+| 10     | 4:45–5:00  | 7\. Cierre (15 s)                    | Cierre                    | Guillermo | 41           |
 
-**10 · Cierre (Guillermo, 4:45–5:00).** Logramos una regla validada con datos reales que LEMAS puede usar cada 20 de febrero. Siguiente paso: una segunda llamada a mitad de campaña, por probar en 2027. Aquí están el repositorio y la aplicación. ¡Gracias!
+*Total: 709 palabras en 5:00, dentro de las 650 a 750 que recomienda la guía. Ninguna diapositiva pasa de unas 165 palabras por minuto.*
 
-## 2. Guion de la grabación de pantalla (60 s)
+### Los cuatro cambios de voz
 
-Grabar la **aplicación real desplegada**: https://continuidad-matricula-lemas.streamlit.app/ (modo demostración, datos sintéticos).
+| **Momento** | **Pasa de → a**  | **Señal de entrada**                                                                                 |
+|-------------|------------------|------------------------------------------------------------------------------------------------------|
+| 0:30        | Guillermo → José | Guillermo termina: «¿A quién llamar primero?». José empieza: «Para resolverlo…»                      |
+| 2:15        | José → Guillermo | José termina: «Guillermo les muestra cómo se usa». Empieza la grabación de pantalla                  |
+| 4:00        | Guillermo → José | Guillermo termina: «José les explica cómo la cuidamos». José empieza: «Son datos de menores…»        |
+| 4:45        | José → Guillermo | José termina: «hay que informar a las familias». Guillermo cierra: «Con lo que el colegio ya tiene…» |
 
-| Segundo | Acción en pantalla | Caso que demuestra |
-|---|---|---|
-| 0–5 | Abrir la app; mostrar el aviso "Modo demostración" | Contexto y seguridad |
-| 5–22 | Pestaña **Lista de contactos** → "Prueba con ejemplo" → "Generar lista". Desplazar la tabla de una sede mostrando la columna *motivo*; cambiar k de una sede | Caso 1: lista priorizada |
-| 22–35 | Pestaña **Proyección**: matrícula esperada por sede y subnivel frente a la tasa histórica | Caso 2: proyección |
-| 35–50 | Pestaña **Evaluar un estudiante**: (a) pago tardío + reserva extraordinaria → prioridad alta; (b) sin señales → prioridad baja | Caso 3: consulta individual |
-| 50–60 | Volver a Lista de contactos y subir un CSV con una columna `CI` → mostrar el mensaje de rechazo | Manejo de errores |
+## 3. Guion palabra por palabra
 
-Preparación previa:
+*No hace falta leerlo literal: lo importante es decir las cifras exactas y respetar los tiempos. Pausa breve después de cada cifra grande.*
 
-- Tener listo un CSV de prueba con columna `CI` (por ejemplo, el ejemplo sintético descargado desde la app con una columna `CI` añadida a mano y valores inventados como `0000000000`). **Nunca usar datos reales.**
-- Abrir la app unos minutos antes (Streamlit Cloud tarda en "despertar" si estuvo inactiva).
-- Navegador en ventana limpia, zoom al 110–125 % para que el texto se lea en 720p; ocultar marcadores y extensiones.
+### Bloque 1. Introducción y problema (30 s)
 
-## 3. Plan de grabación
+**Diapositiva 1 · Portada** 0:00–0:15 (15 s)
 
-**Herramientas sugeridas.** OBS Studio (gratuito) o Loom / grabación de Zoom. Resolución 1920×1080 (cumple de sobra el mínimo de 720p), 30 fps.
+**HABLA: Guillermo Granizo** *· Abre el video.*
 
-**Opción recomendada: grabar por partes y unir.**
+> «Hola, soy Guillermo Granizo y él es José Ulloa. Les presentamos Continuidad estudiantil en LEMAS: una herramienta que le dice al colegio a qué familias llamar primero, para no enterarnos tarde de que un estudiante no volverá.»
 
-1. **Pista de diapositivas.** Abrir la presentación en línea a pantalla completa. Cada orador graba su bloque con su voz (y cámara pequeña en una esquina, si lo desean). Las notas del orador están en cada diapositiva.
-2. **Pista de demo.** Grabar la sección 2 por separado, con la narración de Guillermo.
-3. **Montaje.** Unir en el orden 1–5, demo, 7–10 con un editor sencillo (Clipchamp, iMovie, DaVinci Resolve o Shotcut). Comprobar que el total no pase de 5:00.
+**En pantalla:** Portada: nombre del proyecto, frase de valor y los dos integrantes.
 
-**Ensayo.** Hacer dos ensayos completos cronometrados antes de grabar. Si un bloque se pasa del tiempo, recortar ejemplos, no cifras.
+**Diapositiva 2 · El problema** 0:15–0:30 (15 s)
 
-**Audio.** Usar audífonos con micrófono o un micrófono externo; grabar en un lugar silencioso; misma distancia al micrófono para ambos oradores.
+**HABLA: Guillermo Granizo**
 
-**Exportación y publicación.**
+> «Cada año, entre 6 y 11 de cada 100 estudiantes con reserva aprobada no pagan la matrícula a tiempo, y lo sabemos cuando ya es tarde. Hay 69 días y 10 personas para más de mil familias. ¿A quién llamar primero?»
 
-- Exportar en MP4 (H.264), 1080p o 720p.
-- Subir a YouTube como **no listado**, título "Continuidad estudiantil en LEMAS – Proyecto final IA UEES 2026".
-- Añadir el enlace del video al README (sección de presentación) y a la entrega.
+**En pantalla:** Tres cifras grandes (6 a 11 de cada 100 · 69 días · 10 personas) y la pregunta.
 
-**Lista de verificación final.**
+### Bloque 2. Datos y metodología (1 min)
 
-- [ ] Duración ≤ 5:00.
-- [ ] Están los 7 bloques de la guía con sus tiempos.
-- [ ] La demo usa la app real desplegada, con 3 casos de uso y el manejo de errores.
-- [ ] No aparece ningún dato real ni cédula en pantalla.
-- [ ] Los QR del cierre se ven nítidos y abren el repositorio y la app.
-- [ ] Hablan los dos integrantes.
-- [ ] Video en 720p o más, MP4 o YouTube no listado.
+**Diapositiva 3 · Los datos** 0:30–1:00 (30 s)
 
-## 4. Presentación efectiva: comprobación
+**HABLA: José Ulloa** *· Entra José cuando Guillermo termina «¿A quién llamar primero?».*
 
-Recomendaciones de la semana 4 del curso y de la guía del proyecto, con lo que ya está resuelto y lo que falta hacer al grabar.
+> «Para resolverlo usamos lo que el colegio ya tiene: seis años del Excel de Secretaría, unos 9.000 registros de 2.700 estudiantes, con autorización de LEMAS. Antes de tocarlos, cambiamos nombres y cédulas por códigos; la clave la guarda una persona del colegio. En la limpieza corregimos tres problemas que cambiaban los resultados, como cursos escritos de dos formas. Y solo usamos lo que se sabe el 20 de febrero, el día en que se arma la lista.»
 
-| Recomendación | Cómo se aplica | Estado |
-|---|---|---|
-| Empezar por el problema, no por la técnica | Las diapositivas 1 y 2 presentan a quién llamar primero con 10 personas y 69 días | Hecho |
-| Un mensaje por diapositiva | La mayoría de los títulos enuncia la conclusión («Optimizar no bastó: la señal es débil y cambia entre años»); 10 diapositivas para 5 minutos | Hecho |
-| Poco texto y cifras grandes | Frases cortas en pantalla y las cifras clave en grande; el detalle va en las notas del orador | Hecho |
-| Contar una historia | Problema, datos, lo que probamos, lo que funcionó, lo que no y lo que sigue | Hecho |
-| Mostrar la solución real | Grabación de la app desplegada con tres casos y un error controlado | Por grabar |
-| Ser honestos con las limitaciones | Diapositivas 8 y 9: la IA no superó a la regla; la lista no alcanza al 70 % de los casos; el Lift fue de 1,4 a 2,0 según el ciclo | Hecho |
-| Cubrir los cuatro puntos de ética que pide la guía | Sesgos, impacto social, mitigaciones y limitaciones en la diapositiva 9 | Hecho |
-| Hablar para una audiencia no experta | "Lift" se explica como "cuántas veces más casos que al azar"; sin siglas sin explicar | Revisar en el ensayo |
-| Ensayar y cronometrar | Dos ensayos completos; si un bloque se pasa, recortar ejemplos y no cifras | Por hacer |
-| Repartir la palabra | Guillermo: problema, demo, resultados y cierre. José: datos, método, optimización y ética | Hecho |
-| Cerrar con una acción clara | Logro, siguiente paso y los dos QR | Hecho |
-| Preparar las preguntas | [Banco de 52 preguntas](banco_preguntas.md), con una sección de ética y regulación | Hecho |
-| Cuidar audio e imagen | Micrófono externo, lugar silencioso, 1080p, zoom del navegador al 110–125 % | Por hacer |
+**En pantalla:** Cifras de los datos a la izquierda; a la derecha, protegidos, limpios y sin mirar el futuro.
 
-Ritmo comprobado: ninguna diapositiva pasa de unas 170 palabras por minuto y el total es de unas 650 palabras en 5 minutos.
+**Diapositiva 4 · Cómo lo construimos** 1:00–1:30 (30 s)
 
-Errores frecuentes que conviene evitar: leer las diapositivas, pasarse de los 5 minutos, mostrar código, dejar la ética para una frase final y presentar el resultado como mejor de lo que es.
+**HABLA: José Ulloa**
+
+> «Aprendimos de los años pasados y probamos con un año nuevo, la matrícula 2026–2027, una sola vez y sin mirarlo antes. Pusimos a competir tres modelos de inteligencia artificial, dos regresiones logísticas y un modelo de árboles de decisión, contra dos reglas simples y contra llamar al azar. Ganó una regla de tres señales: primero quien pagó tarde la matrícula anterior, luego quien hizo reserva extraordinaria y, dentro de cada grupo, quien tiene más pensiones atrasadas.»
+
+**En pantalla:** Línea de tiempo: aprender, elegir y probar una vez. Los competidores y la regla ganadora en tres pasos.
+
+### Bloque 3. Desarrollo y optimización (45 s)
+
+**Diapositiva 5 · Desarrollo y optimización** 1:30–2:15 (45 s)
+
+**HABLA: José Ulloa**
+
+> «El reto principal fue que hay pocos casos, unos 200 en dos años, y cada año es distinto. Con tan pocos casos, un programa complejo memoriza el pasado y falla con el año nuevo. Probamos 180 ajustes con Optuna, siempre respetando el orden del tiempo. El análisis de sensibilidad mostró que lo que más importa es frenar esa memorización: en el modelo de árboles, el tamaño mínimo de cada hoja explica el 90 % de la diferencia. Ajustar mejoró la práctica interna, pero no el año siguiente. Por eso elegimos la regla: rinde igual o mejor y explica cada llamada. Guillermo les muestra cómo se usa.»
+
+**En pantalla:** El reto, los 180 ajustes y lo que más importa; abajo, la conclusión.
+
+### Bloque 4. La solución en acción (1 min)
+
+**Diapositiva 6 · La solución en acción** 2:15–3:15 (60 s)
+
+**HABLA: Guillermo Granizo** *· Entra Guillermo cuando José termina «Guillermo les muestra cómo se usa».*
+
+> «Esta es la aplicación real, en modo demostración, con datos inventados. El 20 de febrero, Secretaría carga el Excel que ya usa y, con un clic, obtiene la lista de cada sede, ordenada, con el motivo de cada llamada al lado. Si la Dirección amplía la capacidad, cambia este número y la lista se ajusta. Aquí ve cuántas matrículas esperar por sede y nivel, frente a lo que pasó en años anteriores. Y puede consultar un caso: con pago tardío y reserva extraordinaria, prioridad alta; sin señales, prioridad baja. Si alguien sube un archivo con cédulas, la aplicación lo rechaza y explica por qué.»
+
+**En pantalla:** Aquí entra la grabación de pantalla de la aplicación (sección 4). La diapositiva sirve de respaldo.
+
+### Bloque 5. Evaluación y resultados (45 s)
+
+**Diapositiva 7 · Resultados** 3:15–3:40 (25 s)
+
+**HABLA: Guillermo Granizo**
+
+> «¿Funciona? Lo probamos con la matrícula 2026–2027: 1.093 familias, de las cuales 74 no pagaron a tiempo. Con 165 llamadas al azar habríamos encontrado unas 11. Con la lista encontramos 22: el doble, con el mismo personal. Son 7,5 llamadas por caso en lugar de 15. Técnicamente es un Lift de 1,97, y aun con el margen de error supera la meta que nos pusimos.»
+
+**En pantalla:** Gráfico 11 frente a 22 y la tabla antes y después.
+
+**Diapositiva 8 · Dónde funciona y dónde no** 3:40–4:00 (20 s)
+
+**HABLA: Guillermo Granizo**
+
+> «Funcionó en los cuatro años revisados, entre 1,4 y 2 veces mejor que el azar. Pero tiene límites: llega a 3 de cada 10 casos, porque los otros 7 no dejan ninguna señal el 20 de febrero. Y los modelos de IA no superaron a la regla. José les explica cómo la cuidamos.»
+
+**En pantalla:** Dos columnas: dónde funciona y dónde no.
+
+### Bloque 6. Consideraciones éticas (45 s)
+
+**Diapositiva 9 · Ética** 4:00–4:45 (45 s)
+
+**HABLA: José Ulloa** *· Entra José cuando Guillermo termina «José les explica cómo la cuidamos».*
+
+> «Son datos de menores y de la economía de las familias, así que la ética fue parte del diseño. Sesgos: las señales tienen que ver con pagos, y la lista encontró menos casos entre becadas, 18 frente a 32 de cada 100; con solo 11 casos no es concluyente, por eso se revisa cada año. Impacto: bien usada, lleva ayuda a tiempo; usada para cobrar, dañaría a quien más la necesita, y ese uso está prohibido. Mitigaciones: códigos en lugar de nombres, la aplicación pública solo acepta datos inventados, la nacionalidad nunca se usa y siempre decide una persona. Limitación: antes de usarla hay que informar a las familias.»
+
+**En pantalla:** Cuatro tarjetas: sesgos, impacto social, mitigaciones y limitaciones.
+
+### Bloque 7. Cierre (15 s)
+
+**Diapositiva 10 · Cierre** 4:45–5:00 (15 s)
+
+**HABLA: Guillermo Granizo** *· Entra Guillermo cuando José termina «hay que informar a las familias».*
+
+> «Con lo que el colegio ya tiene, encontramos el doble de familias en riesgo con el mismo esfuerzo. Proponemos un piloto en la campaña 2027, con una segunda llamada a mitad de campaña. Aquí están el repositorio y la aplicación. ¡Gracias!»
+
+**En pantalla:** La propuesta y los QR del repositorio y de la aplicación. Dejarlos 3 segundos quietos.
+
+## 4. Grabación de pantalla (2:15–3:15)
+
+Grabar la aplicación real desplegada, en modo demostración (datos sintéticos): continuidad-matricula-lemas.streamlit.app. Es el bloque crítico de la guía: muestra tres casos de uso, explica lo que se ve y el manejo de errores.
+
+| **Segundo** | **Acción en pantalla**                                                                                           | **Lo que dice Guillermo**                                                                                                                                           |
+|-------------|------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 0–5         | App abierta; señalar el aviso «Modo demostración»                                                                | «Esta es la aplicación real, en modo demostración, con datos inventados.»                                                                                           |
+| 5–24        | Lista de contactos → «Prueba con ejemplo» → «Generar lista». Recorrer la columna Motivo. Cambiar k de una sede   | «El 20 de febrero, Secretaría carga el Excel… con el motivo de cada llamada al lado. Si la Dirección amplía la capacidad, cambia este número y la lista se ajusta.» |
+| 24–36       | Pestaña Proyección: gráfico por sede y nivel                                                                     | «Aquí ve cuántas matrículas esperar por sede y nivel, frente a lo que pasó en años anteriores.»                                                                     |
+| 36–50       | Pestaña Evaluar un estudiante: (a) pago tardío + reserva extraordinaria → prioridad alta; (b) sin señales → baja | «Y puede consultar un caso: con pago tardío y reserva extraordinaria, prioridad alta; sin señales, prioridad baja.»                                                 |
+| 50–60       | Volver a la barra lateral y subir un CSV con columna CI → mensaje de rechazo                                     | «Si alguien sube un archivo con cédulas, la aplicación lo rechaza y explica por qué.»                                                                               |
+
+### Preparación
+
+- Tener listo un CSV de prueba: el ejemplo sintético descargado de la app, con una columna CI añadida a mano y valores inventados como 0000000000. Nunca usar datos reales.
+
+- Abrir la app unos minutos antes: si estuvo inactiva, tarda en despertar.
+
+- Ventana limpia del navegador, zoom al 110–125 % y sin marcadores ni extensiones a la vista.
+
+- Nunca abrir la pestaña «Lista con nombres» ni el Excel real.
+
+## 5. Cómo grabar entre los dos
+
+- **Por partes y unir.** Cada uno graba sus bloques con la presentación a pantalla completa (OBS, Zoom o Loom), con su voz y, si quieren, cámara pequeña en una esquina.
+
+- **Guillermo graba:** diapositivas 1–2, la grabación de pantalla (6), 7–8 y 10.
+
+- **José graba:** diapositivas 3–5 y 9.
+
+- **Montaje en orden:** 1–2 (G) · 3–5 (J) · demo (G) · 7–8 (G) · 9 (J) · 10 (G). Clipchamp, iMovie, Shotcut o DaVinci Resolve.
+
+- **Audio parejo:** audífonos con micrófono, lugar silencioso y la misma distancia al micrófono para los dos; normalizar el volumen al unir.
+
+- **Ensayo:** dos pasadas completas con cronómetro. Si un bloque se pasa, recortar ejemplos, no cifras.
+
+### Exportación
+
+- MP4 (H.264), 1080p (mínimo 720p), 30 fps.
+
+- YouTube «no listado» o Google Drive con acceso para la profesora. Título: «Continuidad estudiantil en LEMAS – Proyecto final IA UEES 2026».
+
+- Agregar el enlace en la sección Videos del README.
+
+## 6. Lista de verificación contra la guía
+
+| **Requisito**                        | **Dónde se cumple**                                                                    | **Estado**        |
+|--------------------------------------|----------------------------------------------------------------------------------------|-------------------|
+| 1\. Introducción y problema (30 s)   | Diapositivas 1–2: nombre, equipo, problema y por qué importa                           | ✔                 |
+| 2\. Datos y metodología (1 min)      | Diapositivas 3–4: dataset, limpieza, protección, modelos comparados y por qué la regla | ✔                 |
+| 3\. Desarrollo y optimización (45 s) | Diapositiva 5: reto, 180 ajustes con Optuna, sensibilidad (tamaño de hoja 90 %)        | ✔                 |
+| 4\. Solución en acción (1 min)       | Grabación: 3 casos de uso, explicación de salidas y error controlado                   | Por grabar        |
+| 5\. Evaluación y resultados (45 s)   | Diapositivas 7–8: métrica, comparación con el azar, dónde funciona y dónde no          | ✔                 |
+| 6\. Ética (45 s)                     | Diapositiva 9: sesgos, impacto, mitigaciones y limitaciones                            | ✔                 |
+| 7\. Cierre (15 s)                    | Diapositiva 10: logro, siguiente paso y QR del repositorio y la app                    | ✔                 |
+| Máximo 10 diapositivas, poco texto   | 10 diapositivas con cifras grandes, íconos, un gráfico y una tabla                     | ✔                 |
+| Duración ≤ 5:00                      | 709 palabras; cronometrar en el ensayo                                                 | Por ensayar       |
+| Hablan los dos integrantes           | Cuatro cambios de voz (sección 2)                                                      | ✔                 |
+| Sin datos reales en pantalla         | La demo usa datos sintéticos                                                           | Revisar al grabar |
