@@ -21,9 +21,9 @@ Desarrollar en 6 semanas (14-sep a 25-oct-2026) un sistema que, validado tempora
 | Fase 2 | Modelado, optimización y evaluación final | 04-oct a 10-oct | 01-oct ✅ (adelantada) |
 | Fase 3 | App Streamlit, ética y documentación | 11-oct a 15-oct | 01-oct a 03-oct ✅ (app en dos modos, seguimiento, ética, workshop de la semana 4) |
 | Fase 3 bis | Revisión tras la calificación de la semana 3 y trabajos del curso | No planificada | 17-oct a 19-oct ✅ (D54 a D58: diagnóstico revisado, evaluación robusta, costo esperado, escenarios críticos, sensibilidad de hiperparámetros, presentación de resultados a la Dirección de LEMAS) |
-| Fase 4 | Pulido final, pitch y video de respuestas | 16-oct a 18-oct | Desde 19-oct (en curso): revisión contra la guía, capturas, cuadernos ejecutados, grabación del pitch; el video de respuestas depende de las preguntas de la docente |
+| Fase 4 | Pulido final, pitch y video de respuestas | 16-oct a 18-oct | 19-oct a 29-oct ✅ (D59 a D62: dos revisiones independientes, cuadernos ejecutados con datos reales, video pitch, video de respuestas a las preguntas de la docente y versión `v1.0`) |
 
-**Diferencias con lo planificado.** Las fases 1 a 3 se adelantaron porque el acceso a los datos se resolvió antes. Lo que corrió el calendario fue trabajo no previsto: la revisión del diagnóstico después de la calificación y tres análisis pedidos en clase (evaluación robusta, costo esperado y escenarios críticos). La Fase 4 empezó un día después de lo planificado y sigue dentro del plazo de entrega (25-oct-2026).
+**Diferencias con lo planificado.** Las fases 1 a 3 se adelantaron porque el acceso a los datos se resolvió antes. Lo que corrió el calendario fue trabajo no previsto: la revisión del diagnóstico después de la calificación y tres análisis pedidos en clase (evaluación robusta, costo esperado y escenarios críticos). La Fase 4 empezó un día después de lo planificado y se extendió hasta el 29-oct-2026: el video de respuestas solo podía grabarse después de recibir las preguntas de la docente, en la última semana de clases, y se sumaron dos revisiones independientes (D59 y D60).
 
 El documento v5 y el Checklist mantienen el cronograma original de 6 semanas (I5); el plan comprimido de 3 semanas se aprobó al inicio del trabajo.
 
