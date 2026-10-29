@@ -308,7 +308,7 @@ Guion con el que se grabó el [video de respuestas](https://drive.google.com/fil
 >
 > «Todo esto lo diseñamos pensando en Secretaría: en español y con coma decimal, con un botón para practicar con un ejemplo, con el motivo de cada familia en palabras y sin probabilidades ni montos. Una limitación: estos controles evitan errores, pero no detienen a quien quiera saltárselos.»
 
-**Nota:** Los cuatro archivos de prueba van en el zip que acompaña este guion. Todos son la base sintética del repositorio con un cambio: una columna CI con 0000000000, origen_datos = REAL, pensiones en cero, y pensiones en cero más tipo de reserva vacío. Los mensajes de este guion se comprobaron con la aplicación del repositorio.
+**Nota:** Los cuatro archivos de prueba se hicieron a partir de `data/synthetic/base_sintetica.csv`, con un solo cambio cada uno (columna `CI` con 0000000000; `origen_datos = REAL`; pensiones en cero; pensiones en cero y tipo de reserva vacío). Los mensajes de este guion se comprobaron con la aplicación del repositorio.
 
 | **Criterio de la rúbrica**     | **Cómo lo cubre esta respuesta**                              |
 |--------------------------------|---------------------------------------------------------------|
