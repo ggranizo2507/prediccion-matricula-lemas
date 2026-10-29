@@ -31,7 +31,7 @@ Sistema de IA que identifica, al **20 de febrero** de cada año, a las familias 
 ## Descripción del problema
 Cada año, entre septiembre y noviembre, las familias de LEMAS reservan un cupo para el ciclo siguiente. No todas las reservas aprobadas terminan en matrícula pagada. Cuando una familia no continúa, la institución se entera tarde, sin tiempo para ofrecer apoyo ni para planificar cupos, docentes y paralelos.
 
-**Qué resuelve.** El modelo ordena a los estudiantes elegibles por su riesgo de no matricularse y consolida el resultado por representante. Así, las 10 personas de Secretaría y Admisiones de las dos sedes concentran su tiempo en las familias que más lo necesitan.
+**Qué resuelve.** Una regla de tres señales administrativas (D2), elegida tras compararla con tres modelos de aprendizaje automático, ordena a las familias con reserva aprobada por su riesgo de no matricularse; un modelo calibrado aporta las probabilidades y la proyección de matrícula. Así, las 10 personas de Secretaría y Admisiones de las dos sedes concentran su tiempo en las familias que más lo necesitan.
 
 **Por qué importa.** Contactar a tiempo permite ofrecer planes de pago, información de becas o atención a inquietudes, y proyectar la matrícula con anticipación.
 
@@ -56,7 +56,7 @@ Cada año, entre septiembre y noviembre, las familias de LEMAS reservan un cupo 
 - **Preprocesamiento:** limpieza, derivación de variables conocidas en t0 y guardas automáticas anti-fuga (`src/data_processing.py`).
 - **Auditoría de datos:** conteo de eventos de no matrícula por cohorte y comparabilidad de C1. Se entrena con y sin C1, se evalúa en C4 y C1 se incluye solo si no degrada la priorización (`src/auditoria.py`).
 - **Optimización:** Optuna (TPE, 60 trials por modelo) con validación interna temporal C2 → C3; selección en C4; calibración de Platt; sistema congelado (SHA-256) y prueba única en C5. Ver [`docs/optimizacion.md`](docs/optimizacion.md).
-- **Métricas:** Precision@k y Lift@k por sede (métrica principal, con k igual a la capacidad de contacto), Recall@k, PR-AUC, ROC-AUC, Brier e intervalos bootstrap por familia. **No se reporta exactitud ni F1:** con 8,3 % de casos, decir «todas se matriculan» acierta el 92 %, y la lista no usa un umbral sino un número fijo de llamadas ([`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) §3).
+- **Métricas:** Precision@k y Lift@k por sede (métrica principal, con k igual a la capacidad de contacto), Recall@k, PR-AUC, ROC-AUC, Brier e intervalos bootstrap por familia. **No se reporta exactitud ni F1:** con 8,3 % de estudiantes sin matrícula en las cinco cohortes, decir «todos se matriculan» acierta el 92 % (en la prueba final, por familia, 6,8 % y 93 %), y la lista no usa un umbral sino un número fijo de llamadas ([`docs/evaluacion_robusta.md`](docs/evaluacion_robusta.md) §3).
 - **Análisis de sensibilidad de hiperparámetros:** importancia por fANOVA, dependencia parcial e interacciones sobre las 180 pruebas de Optuna (D58).
 - **Robustez:** escenarios críticos con datos dañados a propósito (errores de registro, faltantes, desbalance, cambio de distribución y señal caída) sobre C4 ([`docs/escenarios_criticos.md`](docs/escenarios_criticos.md)).
 
@@ -153,7 +153,7 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | `tools/` | Seudonimización y perfil agregado (se ejecutan solo en LEMAS). Además, el reporte de diagnóstico, el costo esperado (`generar_costo.py`) la sensibilidad de hiperparámetros (`generar_sensibilidad.py`) el resumen de resultados (`generar_resumen.py`) y la incertidumbre por grupo (`generar_incertidumbre.py`), que solo leen tablas agregadas de `results/metrics` |
 | `models/` | Sistema entrenado con datos sintéticos (los reales nunca se publican) |
 | `app/` | Aplicación Streamlit, `requirements.txt` propio y recursos |
-| `tests/` | 263 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
+| `tests/` | 269 pruebas (`pytest -q`, también en GitHub Actions): datos, métricas, modelado, diagnóstico de ajuste, sensibilidad, alcance, costo, escenarios críticos, interfaz y modo institucional |
 | `results/` | Figuras (300 DPI) y métricas **agregadas**, sintéticas y reales autorizadas; sin datos individuales |
 | `docs/` | Planificación (con registro de decisiones), datos, arquitectura, optimización, ética y manual de usuario |
 | `config.yaml` | Todas las reglas del estudio: cohortes, t0, H, filtros, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna |
@@ -164,14 +164,14 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 |---|---|---|
 | `src/model.py` y `src/train.py` | Existen como puntos de entrada delgados: `model.py` reexporta la definición de los modelos y de las reglas, y `python -m src.train` entrena y compara en C4 sin abrir C5. La implementación está en `src/modeling.py` (modelos, Optuna, calibración, congelamiento) y `src/reglas.py` (D y D2) | Un solo módulo para definir, entrenar y congelar con el mismo protocolo temporal, sin duplicar código |
 | `models/best_model.pkl` y `model_v1.pkl` | `models/sistema_sintetica.joblib` y `.json`, el sistema completo entrenado con la base sintética. El real (`sistema_real.joblib`) existe solo en LEMAS | Un modelo entrenado con datos reales puede memorizar casos; la solución final es la regla D2, que no necesita archivo de modelo |
-| `tests/test_model.py` | `tests/test_modeling.py` (más otras nueve pruebas por módulo) | Mismo nombre que el módulo que prueba |
+| `tests/test_model.py` | Existe y prueba la fachada `src/model.py`; el entrenamiento detallado está en `tests/test_modeling.py`, junto con otras diez pruebas por módulo | Cada archivo de pruebas lleva el nombre del módulo que prueba |
 | `results/reports/` | [`resumen_resultados_real.md`](results/reports/resumen_resultados_real.md), generado desde las métricas (`tools/generar_resumen.py`). Los reportes en PDF ([`diagnostic_report.pdf`](docs/diagnostic_report.pdf) y el [workshop](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf)) están en `docs/`; índice en [`results/reports/README.md`](results/reports/README.md) | Los PDF se entregan junto a la documentación que los explica |
 
 ### Documentación
 | Documento | Contenido |
 |---|---|
 | [`docs/glosario.md`](docs/glosario.md) | Siglas y términos del proyecto (cohortes, reglas, líneas base, métricas y normas). Conviene leerlo primero |
-| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D61 |
+| [`docs/planificacion.md`](docs/planificacion.md) | Problema, objetivos, alcance, cronograma planificado frente a real, riesgos y registro de decisiones D01–D62 |
 | [`docs/analisis_datos.md`](docs/analisis_datos.md) | Análisis exploratorio, calidad de datos, auditoría de cohortes y referencias |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Flujo de datos, componentes, solución elegida y aplicación en dos modos |
 | [`docs/optimizacion.md`](docs/optimizacion.md) | Optuna, espacios de búsqueda, resultados, análisis de sensibilidad (importancia, dependencia parcial e interacciones), antes/después y diagnóstico de ajuste |
@@ -185,7 +185,8 @@ Guía completa en [`docs/manual_usuario.md`](docs/manual_usuario.md) y diseño e
 | [`docs/hoja_de_datos.md`](docs/hoja_de_datos.md) | Hoja de datos (*datasheet*): origen, composición, recolección, limpieza, usos y distribución del conjunto de datos |
 | [`docs/impacto_social_responsabilidad.md`](docs/impacto_social_responsabilidad.md) | Workshop de la semana 4: stakeholders, impacto social, riesgos éticos con su mitigación, responsabilidad, cumplimiento y compromiso del equipo. Versión entregada: [`Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf`](docs/Workshop_Impacto_Social_y_Responsabilidad_LEMAS.pdf) |
 | [`docs/manual_usuario.md`](docs/manual_usuario.md) | Uso de la app y procedimiento anual en LEMAS |
-| [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion cronometrado del pitch (5 min) y plan de grabación |
+| [`docs/guion_pitch.md`](docs/guion_pitch.md) | Guion con el que se grabó el pitch (5 min): quién habla y cuándo, texto por diapositiva y grabación de pantalla. Presentación en [`docs/pitch/`](docs/pitch/Pitch_Continuidad_LEMAS.pdf) |
+| [`docs/guion_video_respuestas.md`](docs/guion_video_respuestas.md) | Guion del video de respuestas a las 10 preguntas, con la evidencia de cada una y la fuente de cada cifra |
 | [`docs/banco_preguntas.md`](docs/banco_preguntas.md) | 52 preguntas probables de la defensa con sus respuestas, incluidas las de la revisión independiente |
 | [`data/README.md`](data/README.md) · [`models/README.md`](models/README.md) | Diccionario de datos y modelos |
 
@@ -241,3 +242,5 @@ La lista completa está en [`docs/consideraciones_eticas.md`](docs/consideracion
 |---|---|---|
 | **Video pitch** (5 min) | Presentación del proyecto: problema, datos y metodología, optimización, la aplicación en acción, resultados, ética y cierre. Hablan Guillermo Granizo y José Ulloa | [Ver en Google Drive](https://drive.google.com/file/d/1Ro0GUAUccS-o9rC0LBZr2Z77k66DGZuU/view?usp=sharing) |
 | **Video de respuestas** | Respuestas a las 10 preguntas de la profesora, en el orden entregado: Guillermo Granizo responde las impares y José Ulloa las pares | [Ver en Google Drive](https://drive.google.com/file/d/1jeZcgmn2UCN8TkpYqUtu-z1yCMgseG8G/view?usp=sharing) |
+
+Guiones: [pitch](docs/guion_pitch.md) (con la [presentación en PDF](docs/pitch/Pitch_Continuidad_LEMAS.pdf)) y [video de respuestas](docs/guion_video_respuestas.md).

@@ -13,7 +13,7 @@ Resumen de una página del sistema de priorización, con el formato de las ficha
 | Regla D2 | 100 puntos por pago tardío de la matrícula anterior + 20 por reserva extraordinaria + 1 por cada pensión atrasada |
 | Modelo de apoyo | Logística híbrida (señales de D2 y variables académicas), calibrada con el método de Platt. scikit-learn 1.6 o superior |
 | Licencia y código | Repositorio público del proyecto; ver `LICENSE` |
-| Contacto | A través del repositorio de GitHub |
+| Contacto | Guillermo Granizo, responsable técnico en LEMAS: guillermo.granizov@uees.edu.ec (ver también el [manual de usuario](manual_usuario.md#9-soporte)) |
 
 ## 2. Uso previsto
 

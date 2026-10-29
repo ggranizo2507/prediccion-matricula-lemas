@@ -42,7 +42,7 @@ flowchart LR
 | `src/synthetic.py` | Generador de datos sintéticos con la estructura real, calibrado con totales agregados |
 | `app/app.py` | Interfaz Streamlit |
 | `notebooks/` | Flujo reproducible en Colab: 00a → 00b → 01 → 02 → 03 (construcción y prueba única en C5), luego 04 y 05 (lectura de resultados), `overfitting_analysis`, 06, 07 y 08 (análisis sin C5) |
-| `tests/` | 263 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
+| `tests/` | 269 pruebas: reglas del estudio, métricas, modelado, diagnóstico de ajuste, alcance de la lista, protocolo (C5 nunca se usa al ajustar), interfaz y modo institucional |
 | `iniciar_lemas.bat` / `.sh` | Arranque con doble clic del modo institucional, limitado a `localhost` |
 
 ## 3. Solución elegida
@@ -147,7 +147,7 @@ flowchart TB
 
 ## 6. Reproducibilidad y calidad
 - **Semilla única** (42) en datos sintéticos, Optuna, bootstrap y desempates.
-- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D61.
+- **Configuración central** en `config.yaml` (calendario, cohortes, capacidad, privacidad, umbrales y espacio de búsqueda de Optuna) y registro de decisiones D01–D62.
 - **Versiones exactas** en `requirements.txt` y en `app/requirements.txt`.
 - **Integración continua** (GitHub Actions): ruff (PEP 8 y formato) y pytest en cada push, con Python 3.11 y 3.12.
 - **Sistema congelado** con huella SHA-256 registrada antes de abrir C5.
