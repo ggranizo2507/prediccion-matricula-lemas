@@ -237,6 +237,7 @@ Referencias principales:
 La lista completa está en [`docs/consideraciones_eticas.md`](docs/consideraciones_eticas.md) (normativa, marcos y casos) y en [`docs/optimizacion.md`](docs/optimizacion.md) (métodos de optimización).
 
 ## Videos
-*Se agregan en la Fase 4.*
-- Video pitch (5 min): —
-- Video de respuestas: —
+| Video | Contenido | Enlace |
+|---|---|---|
+| **Video pitch** (5 min) | Presentación del proyecto: problema, datos y metodología, optimización, la aplicación en acción, resultados, ética y cierre. Hablan Guillermo Granizo y José Ulloa | [Ver en Google Drive](https://drive.google.com/file/d/1Ro0GUAUccS-o9rC0LBZr2Z77k66DGZuU/view?usp=sharing) |
+| **Video de respuestas** | Respuestas a las 10 preguntas de la profesora, en el orden entregado: Guillermo Granizo responde las impares y José Ulloa las pares | [Ver en Google Drive](https://drive.google.com/file/d/1jeZcgmn2UCN8TkpYqUtu-z1yCMgseG8G/view?usp=sharing) |
